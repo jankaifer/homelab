@@ -1,0 +1,16 @@
+# Nix build outputs
+result
+result-*
+
+# Editor backups
+*~
+*.swp
+.*.swp
+
+# macOS
+.DS_Store
+
+# Secrets (encrypted files are OK, but don't commit decrypted)
+secrets/*.txt
+secrets/*.key
+!secrets/*.age
