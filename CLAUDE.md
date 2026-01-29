@@ -18,14 +18,11 @@ See `docs/PROJECT_PLAN.md` for full architecture details.
 # Quick validation - check config evaluates correctly (fast, works on macOS)
 nix eval .#nixosConfigurations.server-vm.config.system.build.toplevel --apply 'x: x.drvPath'
 
-# Build VM for testing (requires linux-builder running - see below)
-nix build .#nixosConfigurations.server-vm.config.system.build.vm
+# Build and run VM using Docker (recommended for macOS)
+./scripts/run-vm-docker.sh
 
-# Run VM
-./result/bin/run-server-vm
-
-# Run VM with port forwarding (access Homepage on localhost:3000, SSH on 2222)
-QEMU_NET_OPTS="hostfwd=tcp::3000-:3000,hostfwd=tcp::2222-:22" ./result/bin/run-server-vm
+# Build only (can run in background)
+./scripts/run-vm-docker.sh --build
 
 # Format nix files
 nix fmt
@@ -49,40 +46,41 @@ Services use `homelab.services.<name>.enable` pattern. Machines import modules a
 
 ## Building on macOS (Apple Silicon)
 
-Building NixOS requires a Linux builder. Use the free nixpkgs linux-builder:
+Building NixOS requires a Linux environment. We use Docker for simplicity.
 
-### One-time setup
+### Prerequisites
 
-```bash
-# 1. Start the linux-builder (will prompt for sudo to install SSH keys)
-nix run nixpkgs#darwin.linux-builder
+- Docker Desktop installed and running
 
-# 2. In another terminal, add builder to nix config
-sudo tee -a /etc/nix/nix.custom.conf << 'EOF'
-builders = ssh-ng://linux-builder aarch64-linux /etc/nix/builder_ed25519 4 - - - c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSU9BMWZHWVRYZ1B0SG9OMkVVSTlVTjAyRUhIVU5Fd2oyWXV3aG5NOUVVTmkgcm9vdEBuaXhvcwo=
-builders-use-substitutes = true
-EOF
-
-# 3. Restart nix daemon
-sudo launchctl kickstart -k system/systems.determinate.nix-daemon
-```
-
-### Each session
+### Building and Running
 
 ```bash
-# Terminal 1: Keep linux-builder running
-nix run nixpkgs#darwin.linux-builder
+# Build and run VM interactively
+# This builds inside Docker and runs QEMU with port forwarding
+./scripts/run-vm-docker.sh
 
-# Terminal 2: Build and test
-nix build .#nixosConfigurations.server-vm.config.system.build.vm
+# Build only (can run in background)
+./scripts/run-vm-docker.sh --build
 ```
+
+**Port forwarding:**
+- Homepage: http://localhost:3000
+- SSH: ssh -p 2222 root@localhost
+
+**How it works:**
+- Uses `nixos/nix:latest` Docker image
+- Persistent `homelab-nix-store` volume caches packages for fast rebuilds
+- First build takes ~25 min (kernel modules compilation)
+- Subsequent builds are much faster
+
+**Exit QEMU:** Press `Ctrl+A, X`
 
 ## AI Workflow
 
 1. Make config change
-2. Run `nix eval` to validate syntax (fast, no builder needed)
-3. Run `nix build` with linux-builder running to build VM
-4. Boot VM and verify services work
+2. Run `nix eval` to validate syntax (fast, no Docker needed)
+3. Run `./scripts/run-vm-docker.sh --build` to build VM (can run in background)
+4. Run `./scripts/run-vm-docker.sh` to boot VM and verify services work
 5. Iterate
 
 ## Ticket Workflow
