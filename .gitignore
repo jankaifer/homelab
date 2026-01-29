@@ -14,3 +14,9 @@ result-*
 secrets/*.txt
 secrets/*.key
 !secrets/*.age
+
+# Local keys (SSH keys for agenix)
+keys/
+
+# VM disk images
+*.qcow2
