@@ -27,10 +27,10 @@ NixOS-based homelab configuration with flakes. Optimized for AI-assisted develop
 ├── modules/
 │   └── services/             # One module per service, toggleable
 │       ├── caddy.nix
-│       ├── prometheus.nix
-│       ├── loki.nix
-│       ├── grafana.nix
-│       └── homepage.nix
+│       ├── homepage.nix
+│       ├── prometheus.nix    # TODO
+│       ├── loki.nix          # TODO
+│       └── grafana.nix       # TODO
 ├── secrets/
 │   ├── secrets.nix           # agenix secret declarations
 │   └── *.age                  # Encrypted secret files
@@ -45,41 +45,48 @@ NixOS-based homelab configuration with flakes. Optimized for AI-assisted develop
 2. **Modules are self-contained** - Service module includes its NixOS config, not machine-specific details
 3. **Secrets reference by path** - Modules expect secrets at known paths, agenix provides them
 
+## Machine Configurations
+
+| Name | System | Purpose |
+|------|--------|---------|
+| `server` | x86_64-linux | Production server deployment |
+| `server-vm` | aarch64-linux | Local VM testing on Apple Silicon |
+
 ## AI Development Workflow
 
-### Testing Changes (macOS with QEMU)
+### Quick Validation (no builder needed)
 
 ```bash
-# Build a VM for the server config
-nix build .#nixosConfigurations.server.config.system.build.vm
-
-# Run the VM (QEMU)
-./result/bin/run-server-vm
+# Check config evaluates correctly - fast syntax/type checking
+nix eval .#nixosConfigurations.server-vm.config.system.build.toplevel --apply 'x: x.drvPath'
 ```
 
-The VM boots with the full NixOS config. Claude can:
-1. Make a config change
-2. Build the VM
-3. Boot and verify services work
-4. Iterate
-
-### Quick Validation (no VM)
+### Full VM Testing (requires linux-builder)
 
 ```bash
-# Just check it builds (fast, no runtime test)
-nix build .#nixosConfigurations.server.config.system.build.toplevel --dry-run
+# Terminal 1: Start linux-builder (keep running)
+nix run nixpkgs#darwin.linux-builder
+
+# Terminal 2: Build and run VM
+nix build .#nixosConfigurations.server-vm.config.system.build.vm
+QEMU_NET_OPTS="hostfwd=tcp::3000-:3000,hostfwd=tcp::2222-:22" ./result/bin/run-server-vm
 ```
+
+The VM boots with the full NixOS config. Access:
+- Homepage dashboard: http://localhost:3000
+- SSH: `ssh -p 2222 admin@localhost` (password: `nixos`)
 
 ## Initial Scope
 
-### Phase 1: Foundation
-- [ ] Basic flake.nix with NixOS configuration
-- [ ] Server machine definition (placeholder hardware.nix for VM)
-- [ ] Working `nix build` and VM boot
+### Phase 1: Foundation ✓
+- [x] Basic flake.nix with NixOS configuration
+- [x] Server machine definition
+- [x] VM configuration for Apple Silicon testing
+- [ ] Working VM build (linux-builder setup in progress)
 
-### Phase 2: Core Services
-- [ ] Caddy module (reverse proxy)
-- [ ] Homepage module (dashboard at root)
+### Phase 2: Core Services (in progress)
+- [x] Homepage module (dashboard)
+- [ ] Caddy module (reverse proxy) - defined but not enabled
 
 ### Phase 3: Observability
 - [ ] Prometheus module (metrics collection)
@@ -88,7 +95,8 @@ nix build .#nixosConfigurations.server.config.system.build.toplevel --dry-run
 - [ ] Wire up: Caddy routes, service discovery
 
 ### Phase 4: Secrets
-- [ ] agenix setup (keys, secret structure)
+- [x] agenix structure ready
+- [ ] Add SSH keys for secret encryption
 - [ ] Migrate any hardcoded secrets
 
 ## Module Pattern
@@ -134,26 +142,32 @@ Machine config then just enables what it needs:
 }
 ```
 
-## VM Testing Notes
+## macOS Linux Builder Setup
 
-**On macOS:** NixOS VMs use QEMU. Ensure QEMU is installed:
+Building NixOS on macOS requires a Linux builder. The nixpkgs `darwin.linux-builder` provides a free QEMU-based solution.
+
+### One-time setup
+
 ```bash
-# Via nix
-nix-shell -p qemu
+# 1. Start the linux-builder (will prompt for sudo to install SSH keys)
+nix run nixpkgs#darwin.linux-builder
 
-# Or via homebrew
-brew install qemu
+# 2. In another terminal, add builder to nix config
+sudo tee -a /etc/nix/nix.custom.conf << 'EOF'
+builders = ssh-ng://linux-builder aarch64-linux /etc/nix/builder_ed25519 4 - - - c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSU9BMWZHWVRYZ1B0SG9OMkVVSTlVTjAyRUhIVU5Fd2oyWXV3aG5NOUVVTmkgcm9vdEBuaXhvcwo=
+builders-use-substitutes = true
+EOF
+
+# 3. Restart nix daemon
+sudo launchctl kickstart -k system/systems.determinate.nix-daemon
 ```
 
-**VM Limitations:**
-- No real hardware access (fine for service testing)
-- Network is NAT'd - use port forwarding to access services
-- Slower than native - use for verification, not development
+### Each development session
 
-**Port Forwarding Example:**
+Keep the linux-builder running in a terminal while building:
+
 ```bash
-# Forward host 8080 to VM 80
-QEMU_NET_OPTS="hostfwd=tcp::8080-:80" ./result/bin/run-server-vm
+nix run nixpkgs#darwin.linux-builder
 ```
 
 ## Questions Resolved
@@ -164,4 +178,5 @@ QEMU_NET_OPTS="hostfwd=tcp::8080-:80" ./result/bin/run-server-vm
 | Workstation config | Skip for now, server only |
 | Service complexity | Basic configs first, enhance later |
 | Secrets | agenix structure ready, populate later |
-| Testing approach | NixOS VM via QEMU on macOS |
+| Testing approach | NixOS VM via nixpkgs linux-builder on macOS |
+| VM architecture | aarch64-linux for Apple Silicon native speed |
