@@ -70,8 +70,14 @@ Building NixOS requires a Linux environment. We use Docker for simplicity.
 **How it works:**
 - Uses `nixos/nix:latest` Docker image
 - Persistent `homelab-nix-store` volume caches packages for fast rebuilds
+- VM uses virtfs to mount nix store from Docker volume at runtime
+- QEMU runs inside Docker with TCG emulation (slower than native, but works)
 - First build takes ~25 min (kernel modules compilation)
 - Subsequent builds are much faster
+
+**Why not native QEMU on macOS?**
+Building a standalone disk image requires KVM (not available in Docker on macOS).
+The VM needs the Linux nix store at runtime via virtfs, which only exists in Docker.
 
 **Exit QEMU:** Press `Ctrl+A, X`
 

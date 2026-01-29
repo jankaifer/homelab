@@ -22,6 +22,12 @@ Used Docker-based nix build approach instead of linux-builder:
 - Persistent `homelab-nix-store` volume for fast rebuilds
 - Scripts created: `scripts/run-vm-docker.sh` (build + run), `scripts/nix-build-docker.sh` (build only)
 
+### Why Docker for both build AND run?
+
+The VM uses virtfs to mount `/nix/store` at runtime. This nix store only exists inside the Docker volume (Linux packages can't be in macOS's nix store). Building a standalone qcow2 image that doesn't need virtfs requires KVM, which isn't available in Docker on macOS.
+
+**Tradeoff:** QEMU runs with TCG (software emulation) inside Docker, which is slower than native HVF. This is acceptable for development/testing.
+
 ## Usage
 
 ```bash

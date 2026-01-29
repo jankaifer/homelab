@@ -1,6 +1,14 @@
 #!/bin/bash
-# Build and run NixOS VM entirely in Docker
-# This handles the fact that nix store paths aren't accessible from macOS
+# Build and run NixOS VM using Docker
+#
+# Why Docker?
+# - Building NixOS requires Linux (nix derivations are for aarch64-linux)
+# - The VM uses virtfs to mount /nix/store at runtime, which only exists in Docker
+# - Building standalone disk images requires KVM (not available in Docker on macOS)
+#
+# Performance note:
+# QEMU runs with TCG (software emulation) inside Docker, which is slower than
+# native HVF acceleration. This is a tradeoff for development convenience.
 #
 # Usage:
 #   ./run-vm-docker.sh          # Build and run VM interactively
