@@ -90,6 +90,9 @@ else
             echo ""
 
             # Run VM with network forwarding to container ports
-            QEMU_NET_OPTS="hostfwd=tcp::3000-:3000,hostfwd=tcp::22-:22" ./result/bin/run-server-vm
+            # -nographic: No GUI, use serial console (required in Docker)
+            QEMU_OPTS="-nographic" \
+            QEMU_NET_OPTS="hostfwd=tcp::3000-:3000,hostfwd=tcp::22-:22" \
+            ./result/bin/run-server-vm
         '
 fi
