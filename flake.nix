@@ -31,7 +31,16 @@
     {
       # NixOS configurations for each machine
       nixosConfigurations = {
+        # Production server (x86_64) - for actual deployment
         server = mkSystem {
+          system = "x86_64-linux";
+          modules = [ ./machines/server ];
+        };
+
+        # VM for testing on Apple Silicon Macs (aarch64)
+        # Use this for local development: nix build .#nixosConfigurations.server-vm.config.system.build.vm
+        server-vm = mkSystem {
+          system = "aarch64-linux";
           modules = [ ./machines/server ];
         };
       };

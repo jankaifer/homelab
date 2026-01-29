@@ -15,21 +15,26 @@ See `docs/PROJECT_PLAN.md` for full architecture details.
 ## Commands
 
 ```bash
-# Validate config builds (fast, no VM)
-nix build .#nixosConfigurations.server.config.system.build.toplevel --dry-run
+# Quick validation - check config evaluates correctly (fast, works on macOS)
+nix eval .#nixosConfigurations.server-vm.config.system.build.toplevel --apply 'x: x.drvPath'
 
-# Build VM for testing
-nix build .#nixosConfigurations.server.config.system.build.vm
+# Build VM for testing (requires Linux builder - see notes below)
+nix build .#nixosConfigurations.server-vm.config.system.build.vm
 
 # Run VM (requires QEMU)
 ./result/bin/run-server-vm
 
 # Run VM with port forwarding (access services from host)
-QEMU_NET_OPTS="hostfwd=tcp::8080-:80" ./result/bin/run-server-vm
+QEMU_NET_OPTS="hostfwd=tcp::3000-:3000,hostfwd=tcp::2222-:22" ./result/bin/run-server-vm
 
 # Format nix files
 nix fmt
 ```
+
+## Machine Configurations
+
+- `server` - Production config (x86_64-linux)
+- `server-vm` - VM testing config (aarch64-linux, for Apple Silicon Macs)
 
 ## Directory Structure
 
@@ -45,8 +50,16 @@ Services use `homelab.services.<name>.enable` pattern. Machines import modules a
 ## AI Workflow
 
 1. Make config change
-2. Run `nix build .#nixosConfigurations.server.config.system.build.vm`
-3. Boot VM and verify
+2. Run `nix eval` to validate (fast)
+3. If Linux builder available: build and boot VM to verify
 4. Iterate
 
-For quick syntax/build validation without VM: use `--dry-run` flag.
+## Building on macOS
+
+Building NixOS (Linux) on macOS requires a Linux builder. Options:
+- Determinate Nix Linux Builder (subscription required)
+- Remote Linux machine as builder
+- GitHub Actions for CI builds
+- nixbuild.net
+
+For local development, use `nix eval` for quick validation.
