@@ -75,6 +75,7 @@
     enable = true;
     port = 3000;
     openFirewall = false; # Access through Caddy only
+    allowedHosts = [ "lan.kaifer.dev" "lan.kaifer.dev:8443" ];
   };
 
   # Caddy reverse proxy - entry point for all web services
@@ -91,7 +92,6 @@
     };
 
     virtualHosts = {
-      # Homepage on local.jivina.eu
       "lan.kaifer.dev" = "reverse_proxy localhost:3000";
     };
   };

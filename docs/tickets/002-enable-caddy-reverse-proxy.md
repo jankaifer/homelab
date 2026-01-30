@@ -24,6 +24,7 @@ Goals:
    - Enable Caddy with Cloudflare DNS challenge
    - Configure `lan.kaifer.dev` virtual host to proxy to Homepage
    - Set Homepage's `openFirewall = false` to only allow access through Caddy
+   - Set Homepage's `allowedHosts` for reverse proxy host validation
 
 3. **Set up DNS**: Create A record `lan.kaifer.dev` → `127.0.0.1` in Cloudflare
 
@@ -64,7 +65,10 @@ Goals:
   - `docs/OVERVIEW.md` - updated access URLs
   - `docs/PROJECT_PLAN.md` - replaced linux-builder with Docker workflow, marked Phase 2 complete
 - VM build successful with custom Caddy package
+- Added `allowedHosts` option to Homepage module for reverse proxy host validation
+- Fixed host validation error: browsers send `Host: lan.kaifer.dev:8443` (with port), so both `lan.kaifer.dev` and `lan.kaifer.dev:8443` needed in allowedHosts
+- Verified all endpoints working (main page, CSS API, widgets API)
 
 ## Summary
 
-Caddy is now enabled as the reverse proxy with real Let's Encrypt certificates via Cloudflare DNS challenge. Access Homepage at https://lan.kaifer.dev:8443 when running the VM.
+Caddy is now enabled as the reverse proxy with real Let's Encrypt certificates via Cloudflare DNS challenge. Homepage is accessible at https://lan.kaifer.dev:8443 when running the VM. All static files and API endpoints load correctly.

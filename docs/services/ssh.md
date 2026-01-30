@@ -63,7 +63,7 @@ When running the VM via Docker, SSH is forwarded:
 
 This is configured in `scripts/run-vm-docker.sh`:
 ```bash
-QEMU_NET_OPTS="hostfwd=tcp::3000-:3000,hostfwd=tcp::22-:22"
+QEMU_NET_OPTS="hostfwd=tcp::80-:80,hostfwd=tcp::443-:443,hostfwd=tcp::22-:22"
 ```
 
 And Docker port mapping:

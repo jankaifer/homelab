@@ -16,13 +16,15 @@ Homepage is a modern, fully static, fast, secure, fully proxied dashboard with i
 | `homelab.services.homepage.enable` | bool | false | Enable Homepage |
 | `homelab.services.homepage.port` | int | 3000 | Port to listen on |
 | `homelab.services.homepage.openFirewall` | bool | false | Open firewall port |
+| `homelab.services.homepage.allowedHosts` | list | [] | Allowed hostnames for reverse proxy |
 
 **Current settings (server):**
 ```nix
 homelab.services.homepage = {
   enable = true;
   port = 3000;
-  openFirewall = true;
+  openFirewall = false;  # Behind Caddy
+  allowedHosts = [ "lan.kaifer.dev" "lan.kaifer.dev:8443" ];
 };
 ```
 
@@ -30,8 +32,8 @@ homelab.services.homepage = {
 
 | Environment | URL |
 |-------------|-----|
-| VM (local) | http://localhost:3000 |
-| Production | TBD (will be behind Caddy) |
+| VM (local) | https://lan.kaifer.dev:8443 (via Caddy) |
+| Production | https://lan.kaifer.dev (via Caddy) |
 
 ## Features
 
@@ -47,8 +49,7 @@ homelab.services.homepage = {
 
 ## Dependencies
 
-None currently. Will integrate with:
-- Caddy (reverse proxy) when enabled
+- Caddy (reverse proxy) - Homepage is accessed through Caddy
 - Other services as they're added (for status widgets)
 
 ## Customization

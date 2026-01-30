@@ -89,8 +89,13 @@ Building NixOS requires a Linux environment. We use Docker for simplicity.
 ```
 
 **Port forwarding:**
-- Homepage: http://localhost:3000
+- Caddy HTTP: http://localhost:8080 → VM:80
+- Caddy HTTPS: https://lan.kaifer.dev:8443 → VM:443
 - SSH: ssh -p 2222 root@localhost
+
+**Access services:**
+- Homepage (via Caddy): https://lan.kaifer.dev:8443
+- SSH: `ssh -p 2222 root@localhost` (password: `nixos`)
 
 **How it works:**
 - Uses `nixos/nix:latest` Docker image

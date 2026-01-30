@@ -68,7 +68,7 @@ Uses Cloudflare DNS challenge for Let's Encrypt certificates:
 | VM (local) | https://lan.kaifer.dev:8443 |
 | Production | https://lan.kaifer.dev |
 
-Note: VM uses port 8443 on host (mapped to 443 in VM) to avoid requiring root privileges.
+Note: VM uses port 8443 on host (mapped to 443 in VM) to avoid requiring root privileges. Backend services need to allow both `lan.kaifer.dev` and `lan.kaifer.dev:8443` in their host validation.
 
 ## Files
 

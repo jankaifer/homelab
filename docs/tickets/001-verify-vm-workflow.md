@@ -41,8 +41,8 @@ The VM uses virtfs to mount `/nix/store` at runtime. This nix store only exists 
 ./scripts/run-vm-docker.sh
 ```
 
-Ports forwarded:
-- Homepage: http://localhost:3000
+Ports forwarded (updated in ticket 002):
+- Caddy HTTPS: https://lan.kaifer.dev:8443
 - SSH: localhost:2222
 
 ## Work Log

@@ -22,6 +22,13 @@ in
       default = false;
       description = "Open firewall port (usually not needed if behind Caddy)";
     };
+
+    allowedHosts = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [ "lan.kaifer.dev" "homepage.local" ];
+      description = "Allowed hostnames for Homepage (for reverse proxy setups)";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -75,5 +82,10 @@ in
 
     # Optionally open firewall
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
+
+    # Set allowed hosts for reverse proxy setups (merge with NixOS defaults)
+    systemd.services.homepage-dashboard.environment.HOMEPAGE_ALLOWED_HOSTS = lib.mkIf (cfg.allowedHosts != [ ]) (
+      lib.mkForce (lib.concatStringsSep "," cfg.allowedHosts)
+    );
   };
 }
