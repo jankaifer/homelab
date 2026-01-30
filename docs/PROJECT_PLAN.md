@@ -54,27 +54,41 @@ NixOS-based homelab configuration with flakes. Optimized for AI-assisted develop
 
 ## AI Development Workflow
 
-### Quick Validation (no builder needed)
+### Quick Validation (no Docker needed)
 
 ```bash
 # Check config evaluates correctly - fast syntax/type checking
 nix eval .#nixosConfigurations.server-vm.config.system.build.toplevel --apply 'x: x.drvPath'
 ```
 
-### Full VM Testing (requires linux-builder)
+### Full VM Testing (Docker-based)
+
+Building NixOS requires Linux. We use Docker for simplicity on macOS.
 
 ```bash
-# Terminal 1: Start linux-builder (keep running)
-nix run nixpkgs#darwin.linux-builder
+# Build only (can run in background)
+./scripts/run-vm-docker.sh --build
 
-# Terminal 2: Build and run VM
-nix build .#nixosConfigurations.server-vm.config.system.build.vm
-QEMU_NET_OPTS="hostfwd=tcp::3000-:3000,hostfwd=tcp::2222-:22" ./result/bin/run-server-vm
+# Build and run VM interactively
+./scripts/run-vm-docker.sh
 ```
 
-The VM boots with the full NixOS config. Access:
-- Homepage dashboard: http://localhost:3000
-- SSH: `ssh -p 2222 admin@localhost` (password: `nixos`)
+**How it works:**
+- Uses `nixos/nix:latest` Docker image for building
+- Persistent `homelab-nix-store` volume caches packages
+- QEMU runs inside Docker with TCG emulation
+- First build takes ~25 min, subsequent builds are fast
+
+**Port forwarding:**
+- HTTP: localhost:8080 → VM:80
+- HTTPS: localhost:8443 → VM:443
+- SSH: localhost:2222 → VM:22
+
+**Access services:**
+- Homepage (via Caddy): https://lan.kaifer.dev:8443
+- SSH: `ssh -p 2222 root@localhost` (password: `nixos`)
+
+**Exit QEMU:** Press `Ctrl+A, X`
 
 ## Initial Scope
 
@@ -82,11 +96,11 @@ The VM boots with the full NixOS config. Access:
 - [x] Basic flake.nix with NixOS configuration
 - [x] Server machine definition
 - [x] VM configuration for Apple Silicon testing
-- [ ] Working VM build (linux-builder setup in progress)
+- [x] Working VM build (Docker-based workflow)
 
-### Phase 2: Core Services (in progress)
+### Phase 2: Core Services ✓
 - [x] Homepage module (dashboard)
-- [ ] Caddy module (reverse proxy) - defined but not enabled
+- [x] Caddy module (reverse proxy with Let's Encrypt via Cloudflare DNS)
 
 ### Phase 3: Observability
 - [ ] Prometheus module (metrics collection)
@@ -142,34 +156,6 @@ Machine config then just enables what it needs:
 }
 ```
 
-## macOS Linux Builder Setup
-
-Building NixOS on macOS requires a Linux builder. The nixpkgs `darwin.linux-builder` provides a free QEMU-based solution.
-
-### One-time setup
-
-```bash
-# 1. Start the linux-builder (will prompt for sudo to install SSH keys)
-nix run nixpkgs#darwin.linux-builder
-
-# 2. In another terminal, add builder to nix config
-sudo tee -a /etc/nix/nix.custom.conf << 'EOF'
-builders = ssh-ng://linux-builder aarch64-linux /etc/nix/builder_ed25519 4 - - - c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSU9BMWZHWVRYZ1B0SG9OMkVVSTlVTjAyRUhIVU5Fd2oyWXV3aG5NOUVVTmkgcm9vdEBuaXhvcwo=
-builders-use-substitutes = true
-EOF
-
-# 3. Restart nix daemon
-sudo launchctl kickstart -k system/systems.determinate.nix-daemon
-```
-
-### Each development session
-
-Keep the linux-builder running in a terminal while building:
-
-```bash
-nix run nixpkgs#darwin.linux-builder
-```
-
 ## Questions Resolved
 
 | Question | Decision |
@@ -177,6 +163,8 @@ nix run nixpkgs#darwin.linux-builder
 | Machine naming | Descriptive (`server`, `workstation`) |
 | Workstation config | Skip for now, server only |
 | Service complexity | Basic configs first, enhance later |
-| Secrets | agenix structure ready, populate later |
-| Testing approach | NixOS VM via nixpkgs linux-builder on macOS |
-| VM architecture | aarch64-linux for Apple Silicon native speed |
+| Secrets | agenix for production, direct config for VM testing |
+| Testing approach | Docker-based VM build and run on macOS |
+| VM architecture | aarch64-linux for Apple Silicon |
+| TLS certificates | Let's Encrypt via Cloudflare DNS challenge |
+| Local domain | `lan.kaifer.dev` → 127.0.0.1 |

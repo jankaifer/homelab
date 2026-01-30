@@ -70,18 +70,29 @@
   # Services
   # ===================
 
-  # Homepage dashboard - accessible at http://localhost:3000
+  # Homepage dashboard - only accessible through Caddy reverse proxy
   homelab.services.homepage = {
     enable = true;
     port = 3000;
-    openFirewall = true; # Direct access for VM testing
+    openFirewall = false; # Access through Caddy only
   };
 
-  # Caddy reverse proxy - will be configured when we have multiple services
-  # homelab.services.caddy = {
-  #   enable = true;
-  #   virtualHosts = {
-  #     ":80" = "reverse_proxy localhost:3000";
-  #   };
-  # };
+  # Caddy reverse proxy - entry point for all web services
+  homelab.services.caddy = {
+    enable = true;
+    acmeEmail = "jan@kaifer.cz"; # For Let's Encrypt registration
+
+    # Use Cloudflare DNS challenge for real certificates
+    cloudflareDns = {
+      enable = true;
+      # For VM testing: set apiToken directly (will prompt for value)
+      # For production: use apiTokenFile with agenix secret
+      apiToken = "ai7v1yyM-RN0nVJ96vJfEy8NHk7HJlmWv70W1N62";
+    };
+
+    virtualHosts = {
+      # Homepage on local.jivina.eu
+      "lan.kaifer.dev" = "reverse_proxy localhost:3000";
+    };
+  };
 }

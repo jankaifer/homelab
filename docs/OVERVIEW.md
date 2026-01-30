@@ -8,16 +8,16 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                      NixOS Server                        │
-│  ┌─────────────────┐  ┌─────────────────┐               │
-│  │    Homepage     │  │      SSH        │               │
-│  │   (port 3000)   │  │   (port 22)     │               │
-│  └─────────────────┘  └─────────────────┘               │
-│                                                          │
+│                      NixOS Server                       │
+│                                                         │
 │  ┌─────────────────┐                                    │
-│  │     Caddy       │  (defined, not enabled)            │
-│  │  (reverse proxy)│                                    │
-│  └─────────────────┘                                    │
+│  │     Caddy       │  (reverse proxy, ports 80/443)     │
+│  └────────┬────────┘                                    │
+│           │                                             │
+│  ┌────────▼────────┐  ┌─────────────────┐               │
+│  │    Homepage     │  │      SSH        │               │
+│  │  (internal:3000)│  │   (port 22)     │               │
+│  └─────────────────┘  └─────────────────┘               │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -32,9 +32,9 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 
 | Service | Port | Status | Documentation |
 |---------|------|--------|---------------|
-| Homepage | 3000 | Enabled | [docs/services/homepage.md](services/homepage.md) |
+| Caddy | 80/443 | Enabled | [docs/services/caddy.md](services/caddy.md) |
+| Homepage | 3000 (internal) | Enabled, behind Caddy | [docs/services/homepage.md](services/homepage.md) |
 | SSH | 22 | Enabled | [docs/services/ssh.md](services/ssh.md) |
-| Caddy | 80/443 | Defined, not enabled | [docs/services/caddy.md](services/caddy.md) |
 
 ## Users
 
@@ -55,7 +55,7 @@ nix eval .#nixosConfigurations.server-vm.config.system.build.toplevel --apply 'x
 ./scripts/run-vm-docker.sh
 
 # Access services
-# Homepage: http://localhost:3000
+# Homepage (via Caddy): https://lan.kaifer.dev:8443
 # SSH: ssh -p 2222 root@localhost
 ```
 

@@ -59,19 +59,22 @@ else
     echo "Building and running NixOS VM in Docker..."
     echo ""
     echo "Ports forwarded:"
-    echo "  - Homepage: http://localhost:3000"
-    echo "  - SSH: localhost:2222"
+    echo "  - Caddy HTTP:  http://localhost:8080 -> :80"
+    echo "  - Caddy HTTPS: https://localhost:8443 -> :443 (self-signed cert)"
+    echo "  - SSH:         localhost:2222 -> :22"
     echo ""
 
     # Run Docker with:
     # - Named volume for nix store (persists between runs for faster rebuilds)
-    # - Port forwarding for Homepage (3000) and SSH (2222)
+    # - Port forwarding for Caddy (80/443) and SSH (2222)
     # - Interactive mode for QEMU console
+    # Note: Using 8080/8443 on host since 80/443 may require root
     docker run -it --rm \
         -v "$PROJECT_DIR:/workspace" \
         -v homelab-nix-store:/nix \
         -w /workspace \
-        -p 3000:3000 \
+        -p 8080:80 \
+        -p 8443:443 \
         -p 2222:22 \
         nixos/nix:latest \
         sh -c '
@@ -92,7 +95,7 @@ else
             # Run VM with network forwarding to container ports
             # -nographic: No GUI, use serial console (required in Docker)
             QEMU_OPTS="-nographic" \
-            QEMU_NET_OPTS="hostfwd=tcp::3000-:3000,hostfwd=tcp::22-:22" \
+            QEMU_NET_OPTS="hostfwd=tcp::80-:80,hostfwd=tcp::443-:443,hostfwd=tcp::22-:22" \
             ./result/bin/run-server-vm
         '
 fi

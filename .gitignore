@@ -13,6 +13,7 @@ result-*
 # Secrets (encrypted files are OK, but don't commit decrypted)
 secrets/*.txt
 secrets/*.key
+secrets/*.env
 !secrets/*.age
 
 # Local keys (SSH keys for agenix)
