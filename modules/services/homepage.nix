@@ -2,10 +2,27 @@
 #
 # Homepage is a simple, customizable dashboard for your homelab services.
 # https://gethomepage.dev/
+#
+# Services register themselves via homelab.homepage.services option.
 { config, lib, pkgs, ... }:
 
 let
   cfg = config.homelab.services.homepage;
+  homepageCfg = config.homelab.homepage;
+
+  # Group services by category
+  groupedServices = lib.foldl' (acc: svc:
+    acc // {
+      ${svc.category} = (acc.${svc.category} or [ ]) ++ [{
+        ${svc.name} = {
+          inherit (svc) description href icon;
+        } // (lib.optionalAttrs (svc.widget != null) { widget = svc.widget; });
+      }];
+    }
+  ) {} homepageCfg.services;
+
+  # Convert to Homepage format
+  servicesConfig = lib.mapAttrsToList (category: svcs: { ${category} = svcs; }) groupedServices;
 in
 {
   options.homelab.services.homepage = {
@@ -31,6 +48,42 @@ in
     };
   };
 
+  # Shared option for services to register themselves on the dashboard
+  options.homelab.homepage.services = lib.mkOption {
+    type = lib.types.listOf (lib.types.submodule {
+      options = {
+        name = lib.mkOption {
+          type = lib.types.str;
+          description = "Service name displayed on dashboard";
+        };
+        category = lib.mkOption {
+          type = lib.types.str;
+          default = "Services";
+          description = "Category to group this service under";
+        };
+        description = lib.mkOption {
+          type = lib.types.str;
+          description = "Short description of the service";
+        };
+        href = lib.mkOption {
+          type = lib.types.str;
+          description = "URL to the service";
+        };
+        icon = lib.mkOption {
+          type = lib.types.str;
+          description = "Icon name (from dashboard-icons or URL)";
+        };
+        widget = lib.mkOption {
+          type = lib.types.nullOr lib.types.attrs;
+          default = null;
+          description = "Optional widget configuration";
+        };
+      };
+    });
+    default = [ ];
+    description = "Services to display on the Homepage dashboard. Each service module can add to this list.";
+  };
+
   config = lib.mkIf cfg.enable {
     services.homepage-dashboard = {
       enable = true;
@@ -46,28 +99,8 @@ in
         };
       };
 
-      # Services shown on the dashboard
-      # This will be expanded as we add more services
-      services = [
-        {
-          "Monitoring" = [
-            {
-              "VictoriaMetrics" = {
-                description = "Metrics Collection";
-                href = "https://metrics.lan.kaifer.dev";
-                icon = "victoriametrics";
-              };
-            }
-            {
-              "Grafana" = {
-                description = "Dashboards & Visualization";
-                href = "https://grafana.lan.kaifer.dev";
-                icon = "grafana";
-              };
-            }
-          ];
-        }
-      ];
+      # Services are registered by individual service modules via homelab.homepage.services
+      services = servicesConfig;
 
       # Widgets at the top of the page
       widgets = [

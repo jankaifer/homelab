@@ -61,6 +61,7 @@ VictoriaMetrics is fully compatible with:
 ## Dependencies
 
 - Caddy (reverse proxy)
+- Homepage (dashboard entry auto-registered)
 
 ## Upstream Documentation
 

@@ -52,13 +52,25 @@ homelab.services.homepage = {
 - Caddy (reverse proxy) - Homepage is accessed through Caddy
 - Other services as they're added (for status widgets)
 
+## Decentralized Service Registration
+
+Services register themselves on the dashboard via `homelab.homepage.services`. This allows each service module to manage its own dashboard entry without modifying the homepage module.
+
+```nix
+# Example: in your service module
+homelab.homepage.services = [{
+  name = "MyService";
+  category = "Monitoring";  # Groups services together
+  description = "Short description";
+  href = "https://myservice.lan.kaifer.dev:8443";
+  icon = "myservice-icon";
+  # widget = { ... };  # Optional widget config
+}];
+```
+
 ## Customization
 
-The Homepage module generates configuration files from nix. To customize:
-
-1. Edit the module at `modules/services/homepage.nix`
-2. Add widgets, bookmarks, or service integrations
-3. Rebuild VM to test changes
+The Homepage module generates configuration files from nix. To customize widgets or settings, edit `modules/services/homepage.nix`. Service entries are managed by individual service modules.
 
 ## Links
 
