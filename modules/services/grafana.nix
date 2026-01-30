@@ -28,9 +28,15 @@ in
     };
 
     adminPassword = lib.mkOption {
-      type = lib.types.str;
+      type = lib.types.nullOr lib.types.str;
       default = "admin";
-      description = "Admin password (use agenix for production)";
+      description = "Admin password (INSECURE - for VM testing only!)";
+    };
+
+    adminPasswordFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to file containing admin password (for production with agenix)";
     };
   };
 
@@ -48,7 +54,10 @@ in
 
         security = {
           admin_user = "admin";
-          admin_password = cfg.adminPassword;
+          admin_password =
+            if cfg.adminPasswordFile != null
+            then "$__file{${cfg.adminPasswordFile}}"
+            else cfg.adminPassword;
         };
 
         # Disable analytics

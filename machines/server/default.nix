@@ -71,6 +71,24 @@
   ];
 
   # ===================
+  # Secrets (agenix)
+  # ===================
+
+  age.secrets = {
+    cloudflare-api-token = {
+      file = ../../secrets/cloudflare-api-token.age;
+      # Caddy needs to read this file
+      owner = "caddy";
+      group = "caddy";
+    };
+    grafana-admin-password = {
+      file = ../../secrets/grafana-admin-password.age;
+      owner = "grafana";
+      group = "grafana";
+    };
+  };
+
+  # ===================
   # Services
   # ===================
 
@@ -90,9 +108,7 @@
     # Use Cloudflare DNS challenge for real certificates
     cloudflareDns = {
       enable = true;
-      # For VM testing: set apiToken directly (will prompt for value)
-      # For production: use apiTokenFile with agenix secret
-      apiToken = "ai7v1yyM-RN0nVJ96vJfEy8NHk7HJlmWv70W1N62";
+      apiTokenFile = config.age.secrets.cloudflare-api-token.path;
     };
 
     virtualHosts = {
@@ -126,6 +142,7 @@
     enable = true;
     # port = 3001; # Default
     # domain = "grafana.lan.kaifer.dev"; # Default
-    # adminPassword = "admin"; # Default, use agenix for production
+    adminPassword = null; # Don't use hardcoded password
+    adminPasswordFile = config.age.secrets.grafana-admin-password.path;
   };
 }

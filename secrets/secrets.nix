@@ -4,31 +4,25 @@
 # Secrets are age-encrypted files (*.age) in this directory.
 #
 # Usage:
-# 1. Add your SSH public key(s) below
-# 2. Declare secrets with which keys can access them
-# 3. Create secrets: agenix -e secret-name.age
-# 4. Reference in NixOS: age.secrets.secret-name.file = ./secret-name.age;
+# 1. Create/edit secrets: cd secrets && agenix -e secret-name.age
+# 2. Reference in NixOS: age.secrets.secret-name.file = ./secrets/secret-name.age;
 #
 # See: https://github.com/ryantm/agenix
 let
-  # SSH public keys that can decrypt secrets
-  # Add your keys here (from ~/.ssh/id_*.pub)
+  # SSH public keys from GitHub accounts (can decrypt secrets)
+  # jankaifer
+  jankaifer-1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJe9IWxd3nIG9qm86UMTZeVHHeHN5eh6nHu7KwU+x/fz";
+  jankaifer-2 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFQZcA7EKUH91Sp4s2aRNJ6sOgZCUx9CqDuaEiPvWjWC";
+  # jk-cf
+  jk-cf = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG6x4L/uYrM/KmYBTvvl3FaO2T3T5Vf+uAnEKKA43BwU";
 
-  # Machine keys - each server has its own key for decrypting its secrets
-  # Generate with: ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key
-  # server = "ssh-ed25519 AAAA... root@server";
-
-  # User keys - for encrypting secrets from your workstation
-  # admin = "ssh-ed25519 AAAA... user@workstation";
-
-  # Placeholder until real keys are added
-  # allKeys = [ server admin ];
-  allKeys = [ ];
+  # All user keys that can encrypt/decrypt secrets
+  allKeys = [ jankaifer-1 jankaifer-2 jk-cf ];
 in
 {
-  # Example secret declarations (uncomment and adjust when ready):
+  # Cloudflare API token for Caddy DNS challenge
+  "cloudflare-api-token.age".publicKeys = allKeys;
 
-  # "db-password.age".publicKeys = allKeys;
-  # "grafana-admin-password.age".publicKeys = allKeys;
-  # "caddy-api-token.age".publicKeys = allKeys;
+  # Grafana admin password
+  "grafana-admin-password.age".publicKeys = allKeys;
 }

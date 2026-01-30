@@ -1,40 +1,42 @@
 # Ticket 006: Setup Agenix Secrets
 
-**Status**: PLANNING
+**Status**: DONE
 **Created**: 2026-01-29
-**Updated**: 2026-01-29
+**Updated**: 2026-01-30
 
 ## Task
 
 Configure agenix for proper secrets management:
 - Add SSH public keys for encryption
-- Create initial secrets (Grafana admin password, etc.)
+- Create initial secrets (Grafana admin password, Cloudflare API token)
 - Update modules to use secrets instead of hardcoded values
-
-Currently `secrets/secrets.nix` has the structure but no actual keys configured.
 
 ## Implementation Plan
 
-[To be discussed]
-
-## Open Questions
-
-- Which SSH key(s) to use for encryption? (user key, machine key, both?)
-- What secrets are needed initially?
-  - Grafana admin password
-  - Any API tokens for services
-- How to handle the chicken-egg problem for new machine deployments?
-- Should VM testing continue to use hardcoded passwords, or use agenix too?
-
-## Dependencies
-
-- Should be done after observability stack (Tickets 003-005) to know what secrets are needed
-- Or can be done in parallel if we define a clear list of needed secrets
+1. Add SSH public keys from GitHub accounts (jankaifer, jk-cf)
+2. Create encrypted secrets for Cloudflare token and Grafana password
+3. Update Grafana module to support `adminPasswordFile`
+4. Update server config to use agenix secrets
 
 ## Work Log
 
-### 2026-01-29
+### 2026-01-30
 
-- Ticket created
-- secrets/secrets.nix exists with placeholder structure
-- Awaiting planning discussion with user
+- Added SSH keys from GitHub accounts: jankaifer (2 keys), jk-cf (1 key)
+- Created encrypted secrets:
+  - `cloudflare-api-token.age` - Cloudflare API token for DNS challenge
+  - `grafana-admin-password.age` - Random 32-char password
+- Updated `modules/services/grafana.nix`:
+  - Added `adminPasswordFile` option for agenix
+  - Uses `$__file{path}` syntax for Grafana's file-based password
+- Updated `machines/server/default.nix`:
+  - Added `age.secrets` declarations with proper ownership
+  - Caddy now uses `apiTokenFile` instead of hardcoded `apiToken`
+  - Grafana now uses `adminPasswordFile`
+- **IMPORTANT**: Old Cloudflare token was exposed in git history - user created new token
+
+### Notes
+
+- VM testing: Can still use hardcoded `apiToken` and `adminPassword` if needed
+- Production: Uses agenix-encrypted secrets decrypted at runtime to `/run/agenix/`
+- Grafana password: `tzCRhjhumJLWZ1Si6uk1ru98xHCSLN93`
