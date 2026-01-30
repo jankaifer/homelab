@@ -10,7 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 NixOS homelab configuration using flakes. Modular structure separating machine configs from service modules.
 
-See `docs/PROJECT_PLAN.md` for full architecture details.
+- `docs/OVERVIEW.md` - Current state of the infrastructure
+- `docs/PROJECT_PLAN.md` - Future plans and roadmap
+- `docs/services/` - Per-service documentation
 
 ## Commands
 
@@ -43,6 +45,29 @@ nix fmt
 ## Module Convention
 
 Services use `homelab.services.<name>.enable` pattern. Machines import modules and enable what they need.
+
+## Documentation Requirements
+
+**Keep documentation up to date!**
+
+- `docs/OVERVIEW.md` - Current state of the infrastructure
+- `docs/services/<name>.md` - Per-service documentation
+
+### When adding a new service:
+
+1. Create the service module in `modules/services/<name>.nix`
+2. Create documentation at `docs/services/<name>.md` with:
+   - Status (enabled/disabled)
+   - Configuration options
+   - Access URLs/ports
+   - Dependencies
+   - Links to upstream docs
+3. Update `docs/OVERVIEW.md` to list the new service
+
+### When modifying a service:
+
+1. Update the service documentation to reflect changes
+2. Update OVERVIEW.md if the service status changes
 
 ## Building on macOS (Apple Silicon)
 
