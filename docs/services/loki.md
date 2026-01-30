@@ -15,9 +15,9 @@ homelab.services.loki = {
   # retentionPeriod = "360h"; # 15 days
   # domain = "logs.lan.kaifer.dev";
 
-  # promtail = {
-  #   enable = true;          # Ship systemd journal logs
-  #   port = 9080;            # Promtail metrics port
+  # alloy = {
+  #   enable = true;          # Ship systemd journal logs (default)
+  #   port = 12345;           # Alloy metrics port
   # };
 };
 ```
@@ -37,13 +37,15 @@ Note: Loki has no built-in web UI. Use Grafana to explore logs.
 - Provides LogQL query API
 - Uses local filesystem storage (TSDB)
 
-### Promtail
+### Grafana Alloy
+- Grafana's newer log collector (replaces Promtail)
 - Collects logs from systemd journal
 - Ships to Loki with labels:
   - `job`: systemd-journal
   - `host`: hostname
   - `unit`: systemd unit name
-  - `level`: log priority (debug, info, warning, error, etc.)
+  - `hostname`: hostname
+  - `level`: log priority (info, warning, err, etc.)
 
 ## Storage
 
@@ -56,12 +58,12 @@ Note: Loki has no built-in web UI. Use Grafana to explore logs.
 ### Homepage Dashboard
 Automatically registered in the Monitoring category.
 
-### Grafana (future)
-Will be configured as a data source in the Grafana module.
+### Grafana
+Automatically configured as a data source when both services are enabled.
 
 ## Querying Logs
 
-Example LogQL queries:
+Example LogQL queries (use in Grafana Explore):
 
 ```logql
 # All logs from a specific unit
@@ -70,17 +72,21 @@ Example LogQL queries:
 # Error logs only
 {job="systemd-journal"} |= "error"
 
+# Filter by log level
+{level="err"}
+
 # Logs from last hour with rate
-rate({unit="nginx.service"}[1h])
+rate({unit="grafana.service"}[1h])
 ```
 
 ## Dependencies
 
 - Caddy reverse proxy (for HTTPS access)
 - Homepage (for dashboard registration)
+- Grafana (for log exploration UI)
 
 ## Upstream Documentation
 
 - [Grafana Loki](https://grafana.com/docs/loki/latest/)
-- [Promtail](https://grafana.com/docs/loki/latest/send-data/promtail/)
+- [Grafana Alloy](https://grafana.com/docs/alloy/latest/)
 - [LogQL](https://grafana.com/docs/loki/latest/query/)

@@ -4,13 +4,51 @@
 # Designed to be cost effective and easy to operate. Uses labels instead of
 # full-text indexing.
 #
-# Promtail ships systemd journal logs to Loki.
+# Grafana Alloy ships systemd journal logs to Loki.
 #
 # Access: logs.lan.kaifer.dev (via Caddy reverse proxy)
 { config, lib, pkgs, ... }:
 
 let
   cfg = config.homelab.services.loki;
+
+  # Alloy configuration file for shipping journal logs to Loki
+  alloyConfig = pkgs.writeText "alloy-config.alloy" ''
+    // Collect systemd journal logs
+    loki.source.journal "journal" {
+      forward_to = [loki.write.local.receiver]
+      labels = {
+        job = "systemd-journal",
+        host = "${config.networking.hostName}",
+      }
+      relabel_rules = loki.relabel.journal.rules
+    }
+
+    // Relabel rules for journal logs
+    loki.relabel "journal" {
+      forward_to = []
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        target_label  = "unit"
+      }
+      rule {
+        source_labels = ["__journal__hostname"]
+        target_label  = "hostname"
+      }
+      rule {
+        source_labels = ["__journal_priority_keyword"]
+        target_label  = "level"
+      }
+    }
+
+    // Write logs to Loki
+    loki.write "local" {
+      endpoint {
+        url = "http://127.0.0.1:${toString cfg.port}/loki/api/v1/push"
+      }
+    }
+  '';
 in
 {
   options.homelab.services.loki = {
@@ -28,17 +66,17 @@ in
       description = "How long to retain logs (in hours, e.g., 360h for 15 days)";
     };
 
-    promtail = {
+    alloy = {
       enable = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Enable Promtail to ship systemd journal logs to Loki";
+        description = "Enable Grafana Alloy to ship systemd journal logs to Loki";
       };
 
       port = lib.mkOption {
         type = lib.types.port;
-        default = 9080;
-        description = "Port for Promtail HTTP server (metrics/health)";
+        default = 12345;
+        description = "Port for Alloy HTTP server (metrics/health)";
       };
     };
 
@@ -118,49 +156,32 @@ in
       };
     };
 
-    # Promtail - ships logs to Loki
-    services.promtail = lib.mkIf cfg.promtail.enable {
+    # Grafana Alloy - ships logs to Loki (replaces Promtail)
+    services.alloy = lib.mkIf cfg.alloy.enable {
       enable = true;
-      configuration = {
-        server = {
-          http_listen_port = cfg.promtail.port;
-          grpc_listen_port = 0;
-        };
-
-        positions = {
-          filename = "/var/lib/promtail/positions.yaml";
-        };
-
-        clients = [{
-          url = "http://127.0.0.1:${toString cfg.port}/loki/api/v1/push";
-        }];
-
-        scrape_configs = [{
-          job_name = "journal";
-          journal = {
-            max_age = "12h";
-            labels = {
-              job = "systemd-journal";
-              host = config.networking.hostName;
-            };
-          };
-          relabel_configs = [
-            {
-              source_labels = [ "__journal__systemd_unit" ];
-              target_label = "unit";
-            }
-            {
-              source_labels = [ "__journal__hostname" ];
-              target_label = "hostname";
-            }
-            {
-              source_labels = [ "__journal_priority_keyword" ];
-              target_label = "level";
-            }
-          ];
-        }];
-      };
+      extraFlags = [
+        "--server.http.listen-addr=0.0.0.0:${toString cfg.alloy.port}"
+      ];
+      configPath = alloyConfig;
     };
+
+    # Alloy needs access to systemd journal
+    systemd.services.alloy = lib.mkIf cfg.alloy.enable {
+      serviceConfig.SupplementaryGroups = [ "systemd-journal" ];
+      after = [ "loki.service" ];
+      wants = [ "loki.service" ];
+    };
+
+    # Register Alloy scrape target for monitoring
+    homelab.prometheus.scrapeConfigs = lib.mkIf cfg.alloy.enable [{
+      job_name = "alloy";
+      static_configs = [{
+        targets = [ "localhost:${toString cfg.alloy.port}" ];
+        labels = {
+          instance = config.networking.hostName;
+        };
+      }];
+    }];
 
     # Register with Caddy reverse proxy
     homelab.services.caddy.virtualHosts.${cfg.domain} = "reverse_proxy localhost:${toString cfg.port}";

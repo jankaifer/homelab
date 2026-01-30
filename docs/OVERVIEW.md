@@ -16,15 +16,21 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 │  └────────┬─────────┘                                                       │
 │           │                                                                 │
 │  ┌────────▼────────┐  ┌─────────────────┐  ┌─────────────────┐              │
-│  │    Homepage     │  │ VictoriaMetrics │  │      Loki       │              │
-│  │lan.kaifer.dev   │  │metrics.lan...   │  │ logs.lan...     │              │
-│  │ (internal:3000) │  │ (internal:8428) │  │ (internal:3100) │              │
-│  └─────────────────┘  └────────┬────────┘  └────────▲────────┘              │
-│                                │ scrapes            │ pushes                │
-│                       ┌────────▼────────┐  ┌───────┴────────┐               │
-│                       │  node_exporter  │  │    Promtail    │               │
-│                       │   (port 9100)   │  │ (journal logs) │               │
-│                       └─────────────────┘  └────────────────┘               │
+│  │    Homepage     │  │     Grafana     │  │ VictoriaMetrics │              │
+│  │lan.kaifer.dev   │  │grafana.lan...   │  │metrics.lan...   │              │
+│  │ (internal:3000) │  │ (internal:3001) │  │ (internal:8428) │              │
+│  └─────────────────┘  └────────┬────────┘  └────────┬────────┘              │
+│                                │ queries            │ scrapes               │
+│                       ┌────────▼────────┐  ┌────────▼────────┐              │
+│                       │      Loki       │  │  node_exporter  │              │
+│                       │ logs.lan...     │  │   (port 9100)   │              │
+│                       │ (internal:3100) │  └─────────────────┘              │
+│                       └────────▲────────┘                                   │
+│                                │ pushes                                     │
+│                       ┌────────┴────────┐                                   │
+│                       │     Alloy       │                                   │
+│                       │ (journal logs)  │                                   │
+│                       └─────────────────┘                                   │
 │                                                                             │
 │  ┌─────────────────┐                                                        │
 │  │      SSH        │  (port 22)                                             │
@@ -45,6 +51,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 |---------|------|-----|---------------|
 | Caddy | 80/443 | (reverse proxy) | [docs/services/caddy.md](services/caddy.md) |
 | Homepage | 3000 (internal) | https://lan.kaifer.dev | [docs/services/homepage.md](services/homepage.md) |
+| Grafana | 3001 (internal) | https://grafana.lan.kaifer.dev | [docs/services/grafana.md](services/grafana.md) |
 | VictoriaMetrics | 8428 (internal) | https://metrics.lan.kaifer.dev | [docs/services/victoriametrics.md](services/victoriametrics.md) |
 | Loki | 3100 (internal) | https://logs.lan.kaifer.dev | [docs/services/loki.md](services/loki.md) |
 | SSH | 22 | `ssh -p 2222 root@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
@@ -69,6 +76,7 @@ nix eval .#nixosConfigurations.server-vm.config.system.build.toplevel --apply 'x
 
 # Access services (VM testing with port 8443)
 # Homepage: https://lan.kaifer.dev:8443
+# Grafana: https://grafana.lan.kaifer.dev:8443
 # VictoriaMetrics: https://metrics.lan.kaifer.dev:8443
 # Loki: https://logs.lan.kaifer.dev:8443
 # SSH: ssh -p 2222 root@localhost
@@ -86,6 +94,7 @@ homelab/
 ├── modules/
 │   └── services/          # Reusable service modules
 │       ├── caddy.nix
+│       ├── grafana.nix
 │       ├── homepage.nix
 │       ├── loki.nix
 │       └── victoriametrics.nix

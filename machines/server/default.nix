@@ -10,6 +10,7 @@
     ../../modules/services/homepage.nix
     ../../modules/services/victoriametrics.nix
     ../../modules/services/loki.nix
+    ../../modules/services/grafana.nix
   ];
 
   # Basic system settings
@@ -112,5 +113,13 @@
     # promtail.enable = true; # Default, ships systemd journal logs
     # retentionPeriod = "360h"; # Default, 15 days
     # domain = "logs.lan.kaifer.dev"; # Default
+  };
+
+  # Grafana - dashboards and visualization
+  homelab.services.grafana = {
+    enable = true;
+    # port = 3001; # Default
+    # domain = "grafana.lan.kaifer.dev"; # Default
+    # adminPassword = "admin"; # Default, use agenix for production
   };
 }
