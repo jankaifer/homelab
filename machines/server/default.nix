@@ -73,22 +73,22 @@
   # ===================
   # Secrets (agenix)
   # ===================
-  # NOTE: For production, uncomment age.secrets and use apiTokenFile/adminPasswordFile
-  # For VM testing, we use hardcoded values below since the VM doesn't have the
-  # SSH private keys needed to decrypt agenix secrets.
+  # Secrets are age-encrypted and decrypted at boot time.
+  # VM: Uses host's SSH key mounted via virtfs (see vm.nix)
+  # Production: Uses server's SSH host key (add to secrets.nix first)
 
-  # age.secrets = {
-  #   cloudflare-api-token = {
-  #     file = ../../secrets/cloudflare-api-token.age;
-  #     owner = "caddy";
-  #     group = "caddy";
-  #   };
-  #   grafana-admin-password = {
-  #     file = ../../secrets/grafana-admin-password.age;
-  #     owner = "grafana";
-  #     group = "grafana";
-  #   };
-  # };
+  age.secrets = {
+    cloudflare-api-token = {
+      file = ../../secrets/cloudflare-api-token.age;
+      owner = "caddy";
+      group = "caddy";
+    };
+    grafana-admin-password = {
+      file = ../../secrets/grafana-admin-password.age;
+      owner = "grafana";
+      group = "grafana";
+    };
+  };
 
   # ===================
   # Services
@@ -110,8 +110,7 @@
     # Use Cloudflare DNS challenge for real certificates
     cloudflareDns = {
       enable = true;
-      # For production: apiTokenFile = config.age.secrets.cloudflare-api-token.path;
-      apiToken = "vm-testing-placeholder-rotate-if-exposed"; # VM testing only - NOT a real token
+      apiTokenFile = config.age.secrets.cloudflare-api-token.path;
     };
 
     virtualHosts = {
@@ -145,7 +144,6 @@
     enable = true;
     # port = 3001; # Default
     # domain = "grafana.lan.kaifer.dev"; # Default
-    # For production: adminPasswordFile = config.age.secrets.grafana-admin-password.path;
-    adminPassword = "admin"; # VM testing only
+    adminPasswordFile = config.age.secrets.grafana-admin-password.path;
   };
 }

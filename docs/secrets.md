@@ -26,15 +26,18 @@ Keys are defined in `secrets/secrets.nix`.
 
 ## VM Testing vs Production
 
-**VM Testing:** Uses hardcoded values in `machines/server/default.nix`:
-- Caddy: `apiToken = "..."`
-- Grafana: `adminPassword = "admin"`
+Both VM and production now use agenix secrets. The difference is which SSH key is used for decryption:
 
-**Production:** Uncomment `age.secrets` block and use:
-- Caddy: `apiTokenFile = config.age.secrets.cloudflare-api-token.path`
-- Grafana: `adminPasswordFile = config.age.secrets.grafana-admin-password.path`
+**VM Testing:**
+- Your Mac's `~/.ssh` is mounted into the VM via Docker → QEMU virtfs chain
+- agenix decrypts secrets using your host SSH key (`~/.ssh/id_ed25519`)
+- No hardcoded secrets needed
 
-Note: VM can't decrypt agenix secrets because it doesn't have the SSH private keys.
+**Production:**
+- Server uses its own SSH host key for decryption
+- Add server's SSH public key to `secrets/secrets.nix` and re-encrypt: `agenix -r`
+
+The VM setup is configured in `machines/server/vm.nix` which is only included in the `server-vm` configuration.
 
 ## Managing Secrets
 

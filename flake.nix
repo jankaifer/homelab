@@ -41,7 +41,10 @@
         # Use this for local development: nix build .#nixosConfigurations.server-vm.config.system.build.vm
         server-vm = mkSystem {
           system = "aarch64-linux";
-          modules = [ ./machines/server ];
+          modules = [
+            ./machines/server
+            ./machines/server/vm.nix  # VM-specific: mounts host SSH for agenix
+          ];
         };
       };
 

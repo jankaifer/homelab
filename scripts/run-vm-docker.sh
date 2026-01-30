@@ -32,10 +32,12 @@ if [[ "$BUILD_ONLY" == "true" ]]; then
     echo ""
 
     # Use --network host to avoid DNS issues in Docker
+    # Mount ~/.ssh as read-only for agenix secret decryption in VM
     docker run --rm \
         --network host \
         -v "$PROJECT_DIR:/workspace" \
         -v homelab-nix-store:/nix \
+        -v "$HOME/.ssh:/host-ssh:ro" \
         -w /workspace \
         nixos/nix:latest \
         sh -c '
@@ -66,12 +68,14 @@ else
 
     # Run Docker with:
     # - Named volume for nix store (persists between runs for faster rebuilds)
+    # - Host SSH keys mounted for agenix secret decryption
     # - Port forwarding for Caddy (80/443) and SSH (2222)
     # - Interactive mode for QEMU console
     # Note: Using 8080/8443 on host since 80/443 may require root
     docker run -it --rm \
         -v "$PROJECT_DIR:/workspace" \
         -v homelab-nix-store:/nix \
+        -v "$HOME/.ssh:/host-ssh:ro" \
         -w /workspace \
         -p 8080:80 \
         -p 8443:443 \
