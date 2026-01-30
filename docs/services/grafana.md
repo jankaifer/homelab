@@ -13,7 +13,12 @@ homelab.services.grafana = {
   enable = true;
   # port = 3001;                         # Web UI port
   # domain = "grafana.lan.kaifer.dev";   # Access domain
-  # adminPassword = "admin";             # Use agenix for production
+
+  # For VM testing:
+  adminPassword = "admin";
+
+  # For production (with agenix):
+  # adminPasswordFile = config.age.secrets.grafana-admin-password.path;
 };
 ```
 

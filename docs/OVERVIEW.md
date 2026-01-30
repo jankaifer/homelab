@@ -107,6 +107,7 @@ homelab/
 └── docs/
     ├── OVERVIEW.md        # This file
     ├── PROJECT_PLAN.md    # Future plans
+    ├── secrets.md         # Secrets management guide
     ├── services/          # Per-service documentation
     └── tickets/           # Task tracking
 ```
