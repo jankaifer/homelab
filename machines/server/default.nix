@@ -111,7 +111,7 @@
     cloudflareDns = {
       enable = true;
       # For production: apiTokenFile = config.age.secrets.cloudflare-api-token.path;
-      apiToken = "_jVU5M46C9zD9BbtrJtUVirtrzFolCzQj1DLlhbN"; # VM testing only
+      apiToken = "vm-testing-placeholder-rotate-if-exposed"; # VM testing only - NOT a real token
     };
 
     virtualHosts = {

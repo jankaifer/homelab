@@ -71,23 +71,23 @@ in
       provision = {
         enable = true;
 
-        datasources.settings.datasources = [
+        datasources.settings.datasources =
           # VictoriaMetrics (Prometheus-compatible)
-          (lib.mkIf victoriametricsCfg.enable {
+          lib.optional victoriametricsCfg.enable {
             name = "VictoriaMetrics";
             type = "prometheus";
             url = "http://127.0.0.1:${toString victoriametricsCfg.port}";
             isDefault = true;
             editable = false;
-          })
+          }
+          ++
           # Loki for logs
-          (lib.mkIf lokiCfg.enable {
+          lib.optional lokiCfg.enable {
             name = "Loki";
             type = "loki";
             url = "http://127.0.0.1:${toString lokiCfg.port}";
             editable = false;
-          })
-        ];
+          };
       };
     };
 
