@@ -54,6 +54,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Grafana | 3001 (internal) | https://grafana.lan.kaifer.dev | [docs/services/grafana.md](services/grafana.md) |
 | VictoriaMetrics | 8428 (internal) | https://metrics.lan.kaifer.dev | [docs/services/victoriametrics.md](services/victoriametrics.md) |
 | Loki | 3100 (internal) | https://logs.lan.kaifer.dev | [docs/services/loki.md](services/loki.md) |
+| Alloy | 12345 (internal) | (telemetry collector) | [docs/services/alloy.md](services/alloy.md) |
 | SSH | 22 | `ssh -p 2222 root@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
 
 ## Users
@@ -93,6 +94,7 @@ homelab/
 │       └── hardware.nix   # Hardware-specific settings
 ├── modules/
 │   └── services/          # Reusable service modules
+│       ├── alloy.nix
 │       ├── caddy.nix
 │       ├── grafana.nix
 │       ├── homepage.nix

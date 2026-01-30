@@ -10,6 +10,7 @@
     ../../modules/services/homepage.nix
     ../../modules/services/victoriametrics.nix
     ../../modules/services/loki.nix
+    ../../modules/services/alloy.nix
     ../../modules/services/grafana.nix
   ];
 
@@ -107,12 +108,17 @@
     # domain = "metrics.lan.kaifer.dev"; # Default
   };
 
-  # Loki - log aggregation
+  # Loki - log storage
   homelab.services.loki = {
     enable = true;
-    # promtail.enable = true; # Default, ships systemd journal logs
     # retentionPeriod = "360h"; # Default, 15 days
     # domain = "logs.lan.kaifer.dev"; # Default
+  };
+
+  # Alloy - telemetry collector (logs, metrics, traces)
+  homelab.services.alloy = {
+    enable = true;
+    # logs.enable = true; # Default, ships systemd journal to Loki
   };
 
   # Grafana - dashboards and visualization
