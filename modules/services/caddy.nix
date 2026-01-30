@@ -6,6 +6,7 @@
 # Supports:
 # - Self-signed certs for quick local testing (localTls)
 # - Let's Encrypt with Cloudflare DNS challenge (cloudflareDns)
+# - Metrics endpoint for Prometheus scraping
 { config, lib, pkgs, ... }:
 
 let
@@ -14,10 +15,11 @@ let
   # Build Caddy with Cloudflare DNS plugin if needed
   caddyPackage =
     if cfg.cloudflareDns.enable then
-      pkgs.caddy.withPlugins {
-        plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
-        hash = "sha256-dnhEjopeA0UiI+XVYHYpsjcEI6Y1Hacbi28hVKYQURg=";
-      }
+      pkgs.caddy.withPlugins
+        {
+          plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
+          hash = "sha256-dnhEjopeA0UiI+XVYHYpsjcEI6Y1Hacbi28hVKYQURg=";
+        }
     else
       pkgs.caddy;
 in
@@ -82,6 +84,21 @@ in
       };
       description = "Caddy virtual host configurations";
     };
+
+    # Metrics for Prometheus
+    metrics = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Enable Caddy metrics endpoint for Prometheus scraping";
+      };
+
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 2019;
+        description = "Port for Caddy admin/metrics API";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -101,23 +118,26 @@ in
       package = caddyPackage;
 
       # Global settings
-      globalConfig = lib.mkIf (cfg.acmeEmail != null) ''
-        email ${cfg.acmeEmail}
-      '';
+      globalConfig = lib.concatStringsSep "\n" (lib.filter (x: x != "") [
+        (lib.optionalString (cfg.acmeEmail != null) "email ${cfg.acmeEmail}")
+        (lib.optionalString cfg.metrics.enable "servers { metrics }")
+      ]);
 
       # Build the Caddyfile from virtualHosts
       extraConfig = lib.concatStringsSep "\n\n" (
-        lib.mapAttrsToList (domain: domainConfig: ''
-          ${domain} {
-            ${lib.optionalString cfg.localTls "tls internal"}
-            ${lib.optionalString cfg.cloudflareDns.enable ''
-              tls {
-                dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-              }
-            ''}
-            ${domainConfig}
-          }
-        '') cfg.virtualHosts
+        lib.mapAttrsToList
+          (domain: domainConfig: ''
+            ${domain} {
+              ${lib.optionalString cfg.localTls "tls internal"}
+              ${lib.optionalString cfg.cloudflareDns.enable ''
+                tls {
+                  dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+                }
+              ''}
+              ${domainConfig}
+            }
+          '')
+          cfg.virtualHosts
       );
     };
 
@@ -133,5 +153,18 @@ in
 
     # Open firewall ports
     networking.firewall.allowedTCPPorts = [ cfg.httpPort cfg.httpsPort ];
+
+    # Register Caddy metrics with Prometheus (if metrics enabled)
+    homelab.prometheus.scrapeConfigs = lib.mkIf cfg.metrics.enable [
+      {
+        job_name = "caddy";
+        static_configs = [{
+          targets = [ "localhost:${toString cfg.metrics.port}" ];
+          labels = {
+            instance = config.networking.hostName;
+          };
+        }];
+      }
+    ];
   };
 }

@@ -50,11 +50,18 @@ in
       # This will be expanded as we add more services
       services = [
         {
-          "Infrastructure" = [
+          "Monitoring" = [
+            {
+              "VictoriaMetrics" = {
+                description = "Metrics Collection";
+                href = "https://metrics.lan.kaifer.dev";
+                icon = "victoriametrics";
+              };
+            }
             {
               "Grafana" = {
-                description = "Metrics & Dashboards";
-                href = "http://localhost:3001"; # Will be updated when Grafana is added
+                description = "Dashboards & Visualization";
+                href = "https://grafana.lan.kaifer.dev";
                 icon = "grafana";
               };
             }

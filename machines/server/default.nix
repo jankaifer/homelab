@@ -8,6 +8,7 @@
     # Service modules - import all, enable selectively below
     ../../modules/services/caddy.nix
     ../../modules/services/homepage.nix
+    ../../modules/services/victoriametrics.nix
   ];
 
   # Basic system settings
@@ -94,5 +95,13 @@
     virtualHosts = {
       "lan.kaifer.dev" = "reverse_proxy localhost:3000";
     };
+  };
+
+  # VictoriaMetrics - metrics collection (Prometheus-compatible, more efficient)
+  homelab.services.victoriametrics = {
+    enable = true;
+    # nodeExporter.enable = true; # Default, collects system metrics
+    # retentionPeriod = "15d"; # Default
+    # domain = "metrics.lan.kaifer.dev"; # Default
   };
 }

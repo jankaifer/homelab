@@ -16,7 +16,7 @@
     let
       # Helper to create a NixOS system configuration
       # lib.nixosSystem is the standard way to define a NixOS machine in flakes
-      mkSystem = { system ? "x86_64-linux", modules ? [] }:
+      mkSystem = { system ? "x86_64-linux", modules ? [ ] }:
         nixpkgs.lib.nixosSystem {
           inherit system;
           modules = [

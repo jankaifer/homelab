@@ -119,6 +119,19 @@ The VM needs the Linux nix store at runtime via virtfs, which only exists in Doc
 4. Run `./scripts/run-vm-docker.sh` to boot VM and verify services work
 5. Iterate
 
+**IMPORTANT:** After making any testable changes, run the VM in detached Docker mode:
+```bash
+docker rm -f homelab-vm 2>/dev/null; docker run -d --rm \
+    --name homelab-vm \
+    -v "$PWD:/workspace" \
+    -v homelab-nix-store:/nix \
+    -w /workspace \
+    -p 8080:80 -p 8443:443 -p 2222:22 \
+    nixos/nix:latest \
+    sh -c 'mkdir -p /etc/nix && echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf && nix build .#nixosConfigurations.server-vm.config.system.build.vm && QEMU_OPTS="-nographic" QEMU_NET_OPTS="hostfwd=tcp::80-:80,hostfwd=tcp::443-:443,hostfwd=tcp::22-:22" ./result/bin/run-server-vm'
+```
+Wait ~60s for boot, then verify services with curl. Stop with `docker rm -f homelab-vm`.
+
 ## Ticket Workflow
 
 All work is tracked via ticket files in `docs/tickets/`. This provides context persistence across sessions.

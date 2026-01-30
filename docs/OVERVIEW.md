@@ -7,18 +7,25 @@ This document describes the current state of the homelab infrastructure.
 NixOS-based homelab using flakes for reproducible, declarative configuration.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      NixOS Server                       │
-│                                                         │
-│  ┌─────────────────┐                                    │
-│  │     Caddy       │  (reverse proxy, ports 80/443)     │
-│  └────────┬────────┘                                    │
-│           │                                             │
-│  ┌────────▼────────┐  ┌─────────────────┐               │
-│  │    Homepage     │  │      SSH        │               │
-│  │  (internal:3000)│  │   (port 22)     │               │
-│  └─────────────────┘  └─────────────────┘               │
-└─────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────┐
+│                            NixOS Server                               │
+│                                                                       │
+│  ┌──────────────────┐                                                 │
+│  │      Caddy       │  (reverse proxy, ports 80/443)                  │
+│  │  *.lan.kaifer.dev│  (TLS via Cloudflare DNS challenge)             │
+│  └────────┬─────────┘                                                 │
+│           │                                                           │
+│  ┌────────▼────────┐  ┌─────────────────┐  ┌─────────────────┐        │
+│  │    Homepage     │  │ VictoriaMetrics │  │      SSH        │        │
+│  │lan.kaifer.dev   │  │metrics.lan...   │  │   (port 22)     │        │
+│  │ (internal:3000) │  │ (internal:8428) │  └─────────────────┘        │
+│  └─────────────────┘  └────────┬────────┘                             │
+│                                │ scrapes                              │
+│                       ┌────────▼────────┐                             │
+│                       │  node_exporter  │                             │
+│                       │   (port 9100)   │                             │
+│                       └─────────────────┘                             │
+└───────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Machine Configurations
@@ -30,11 +37,12 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 
 ## Enabled Services
 
-| Service | Port | Status | Documentation |
-|---------|------|--------|---------------|
-| Caddy | 80/443 | Enabled | [docs/services/caddy.md](services/caddy.md) |
-| Homepage | 3000 (internal) | Enabled, behind Caddy | [docs/services/homepage.md](services/homepage.md) |
-| SSH | 22 | Enabled | [docs/services/ssh.md](services/ssh.md) |
+| Service | Port | URL | Documentation |
+|---------|------|-----|---------------|
+| Caddy | 80/443 | (reverse proxy) | [docs/services/caddy.md](services/caddy.md) |
+| Homepage | 3000 (internal) | https://lan.kaifer.dev | [docs/services/homepage.md](services/homepage.md) |
+| VictoriaMetrics | 8428 (internal) | https://metrics.lan.kaifer.dev | [docs/services/victoriametrics.md](services/victoriametrics.md) |
+| SSH | 22 | `ssh -p 2222 root@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
 
 ## Users
 
@@ -54,8 +62,9 @@ nix eval .#nixosConfigurations.server-vm.config.system.build.toplevel --apply 'x
 # Build and run VM
 ./scripts/run-vm-docker.sh
 
-# Access services
-# Homepage (via Caddy): https://lan.kaifer.dev:8443
+# Access services (VM testing with port 8443)
+# Homepage: https://lan.kaifer.dev:8443
+# VictoriaMetrics: https://metrics.lan.kaifer.dev:8443
 # SSH: ssh -p 2222 root@localhost
 ```
 
@@ -70,8 +79,9 @@ homelab/
 │       └── hardware.nix   # Hardware-specific settings
 ├── modules/
 │   └── services/          # Reusable service modules
+│       ├── caddy.nix
 │       ├── homepage.nix
-│       └── caddy.nix
+│       └── victoriametrics.nix
 ├── secrets/               # agenix encrypted secrets
 ├── scripts/               # Development scripts
 │   ├── run-vm-docker.sh   # Build and run VM
