@@ -7,25 +7,29 @@ This document describes the current state of the homelab infrastructure.
 NixOS-based homelab using flakes for reproducible, declarative configuration.
 
 ```
-┌───────────────────────────────────────────────────────────────────────┐
-│                            NixOS Server                               │
-│                                                                       │
-│  ┌──────────────────┐                                                 │
-│  │      Caddy       │  (reverse proxy, ports 80/443)                  │
-│  │  *.lan.kaifer.dev│  (TLS via Cloudflare DNS challenge)             │
-│  └────────┬─────────┘                                                 │
-│           │                                                           │
-│  ┌────────▼────────┐  ┌─────────────────┐  ┌─────────────────┐        │
-│  │    Homepage     │  │ VictoriaMetrics │  │      SSH        │        │
-│  │lan.kaifer.dev   │  │metrics.lan...   │  │   (port 22)     │        │
-│  │ (internal:3000) │  │ (internal:8428) │  └─────────────────┘        │
-│  └─────────────────┘  └────────┬────────┘                             │
-│                                │ scrapes                              │
-│                       ┌────────▼────────┐                             │
-│                       │  node_exporter  │                             │
-│                       │   (port 9100)   │                             │
-│                       └─────────────────┘                             │
-└───────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              NixOS Server                                   │
+│                                                                             │
+│  ┌──────────────────┐                                                       │
+│  │      Caddy       │  (reverse proxy, ports 80/443)                        │
+│  │  *.lan.kaifer.dev│  (TLS via Cloudflare DNS challenge)                   │
+│  └────────┬─────────┘                                                       │
+│           │                                                                 │
+│  ┌────────▼────────┐  ┌─────────────────┐  ┌─────────────────┐              │
+│  │    Homepage     │  │ VictoriaMetrics │  │      Loki       │              │
+│  │lan.kaifer.dev   │  │metrics.lan...   │  │ logs.lan...     │              │
+│  │ (internal:3000) │  │ (internal:8428) │  │ (internal:3100) │              │
+│  └─────────────────┘  └────────┬────────┘  └────────▲────────┘              │
+│                                │ scrapes            │ pushes                │
+│                       ┌────────▼────────┐  ┌───────┴────────┐               │
+│                       │  node_exporter  │  │    Promtail    │               │
+│                       │   (port 9100)   │  │ (journal logs) │               │
+│                       └─────────────────┘  └────────────────┘               │
+│                                                                             │
+│  ┌─────────────────┐                                                        │
+│  │      SSH        │  (port 22)                                             │
+│  └─────────────────┘                                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Machine Configurations
@@ -42,6 +46,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Caddy | 80/443 | (reverse proxy) | [docs/services/caddy.md](services/caddy.md) |
 | Homepage | 3000 (internal) | https://lan.kaifer.dev | [docs/services/homepage.md](services/homepage.md) |
 | VictoriaMetrics | 8428 (internal) | https://metrics.lan.kaifer.dev | [docs/services/victoriametrics.md](services/victoriametrics.md) |
+| Loki | 3100 (internal) | https://logs.lan.kaifer.dev | [docs/services/loki.md](services/loki.md) |
 | SSH | 22 | `ssh -p 2222 root@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
 
 ## Users
@@ -65,6 +70,7 @@ nix eval .#nixosConfigurations.server-vm.config.system.build.toplevel --apply 'x
 # Access services (VM testing with port 8443)
 # Homepage: https://lan.kaifer.dev:8443
 # VictoriaMetrics: https://metrics.lan.kaifer.dev:8443
+# Loki: https://logs.lan.kaifer.dev:8443
 # SSH: ssh -p 2222 root@localhost
 ```
 
@@ -81,6 +87,7 @@ homelab/
 │   └── services/          # Reusable service modules
 │       ├── caddy.nix
 │       ├── homepage.nix
+│       ├── loki.nix
 │       └── victoriametrics.nix
 ├── secrets/               # agenix encrypted secrets
 ├── scripts/               # Development scripts

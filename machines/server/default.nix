@@ -9,6 +9,7 @@
     ../../modules/services/caddy.nix
     ../../modules/services/homepage.nix
     ../../modules/services/victoriametrics.nix
+    ../../modules/services/loki.nix
   ];
 
   # Basic system settings
@@ -103,5 +104,13 @@
     # nodeExporter.enable = true; # Default, collects system metrics
     # retentionPeriod = "15d"; # Default
     # domain = "metrics.lan.kaifer.dev"; # Default
+  };
+
+  # Loki - log aggregation
+  homelab.services.loki = {
+    enable = true;
+    # promtail.enable = true; # Default, ships systemd journal logs
+    # retentionPeriod = "360h"; # Default, 15 days
+    # domain = "logs.lan.kaifer.dev"; # Default
   };
 }
