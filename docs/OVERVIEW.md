@@ -91,7 +91,8 @@ homelab/
 ├── machines/
 │   └── server/
 │       ├── default.nix    # Server config (services, users, etc.)
-│       └── hardware.nix   # Hardware-specific settings
+│       ├── hardware.nix   # Hardware-specific settings
+│       └── vm.nix         # VM-specific config (agenix via host SSH)
 ├── modules/
 │   └── services/          # Reusable service modules
 │       ├── alloy.nix
