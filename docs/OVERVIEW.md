@@ -44,6 +44,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 |---------|--------------|---------|
 | `server` | x86_64-linux | Production deployment |
 | `server-vm` | aarch64-linux | Local testing on Apple Silicon |
+| `installer-iso` | x86_64-linux | Bootable ISO for server installation |
 
 ## Enabled Services
 
@@ -88,7 +89,11 @@ nix eval .#nixosConfigurations.server-vm.config.system.build.toplevel --apply 'x
 ```
 homelab/
 ├── flake.nix              # Main entry point, defines machines
+├── lib/
+│   └── ssh-keys.nix       # SSH public keys (shared by agenix and ISO)
 ├── machines/
+│   ├── installer-iso/     # Bootable installer ISO
+│   │   └── default.nix
 │   └── server/
 │       ├── default.nix    # Server config (services, users, etc.)
 │       ├── disko.nix      # Declarative disk partitioning
@@ -104,8 +109,9 @@ homelab/
 │       └── victoriametrics.nix
 ├── secrets/               # agenix encrypted secrets
 ├── scripts/               # Development scripts
-│   ├── install-server.sh  # Install NixOS on new hardware
-│   ├── run-vm-docker.sh   # Build and run VM
+│   ├── build-installer-iso.sh  # Build bootable installer ISO
+│   ├── install-server.sh       # Install NixOS on new hardware
+│   ├── run-vm-docker.sh        # Build and run VM
 │   └── nix-build-docker.sh
 └── docs/
     ├── OVERVIEW.md        # This file
@@ -120,13 +126,18 @@ homelab/
 To install on new server hardware:
 
 ```bash
+# Option 1: Custom installer ISO (headless, no keyboard needed)
+./scripts/build-installer-iso.sh    # Build ISO with WiFi pre-configured
+# Flash to USB, boot server, SSH in, then run nixos-anywhere
+
+# Option 2: Standard NixOS ISO
 # 1. Boot target from NixOS minimal ISO
 # 2. Get target IP and set root password on installer
 # 3. Run from your local machine:
 ./scripts/install-server.sh <target-ip>
 ```
 
-See [Installation Guide](services/installation.md) for detailed instructions.
+See [Installation Guide](services/installation.md) and [Installer ISO](services/installer-iso.md) for details.
 
 ## Next Steps
 

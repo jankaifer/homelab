@@ -55,6 +55,13 @@
             ./machines/server/vm.nix  # VM-specific: mounts host SSH for agenix
           ];
         };
+
+        # Installer ISO for bootstrapping new servers
+        # Build with: ./scripts/build-installer-iso.sh
+        installer-iso = mkSystem {
+          system = "x86_64-linux";
+          modules = [ ./machines/installer-iso ];
+        };
       };
 
       # 'nix fmt' uses nixpkgs-fmt to format all .nix files

@@ -9,12 +9,8 @@
 #
 # See: https://github.com/ryantm/agenix
 let
-  # SSH public keys from GitHub accounts (can decrypt secrets)
-  # jankaifer
-  jankaifer-1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJe9IWxd3nIG9qm86UMTZeVHHeHN5eh6nHu7KwU+x/fz";
-  jankaifer-2 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFQZcA7EKUH91Sp4s2aRNJ6sOgZCUx9CqDuaEiPvWjWC";
-  # jk-cf
-  jk-cf = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG6x4L/uYrM/KmYBTvvl3FaO2T3T5Vf+uAnEKKA43BwU";
+  # SSH public keys from lib/ssh-keys.nix
+  keys = import ../lib/ssh-keys.nix;
 
   # Server SSH host key (for decrypting secrets on the machine)
   # This key is generated during installation by scripts/install-server.sh
@@ -22,7 +18,7 @@ let
   server = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholderKeyWillBeReplacedDuringInstall000";
 
   # All user keys that can encrypt/decrypt secrets (for editing)
-  userKeys = [ jankaifer-1 jankaifer-2 jk-cf ];
+  userKeys = builtins.attrValues keys;
 
   # All keys including servers (for secrets that servers need to decrypt)
   allKeys = userKeys ++ [ server ];
@@ -33,4 +29,7 @@ in
 
   # Grafana admin password
   "grafana-admin-password.age".publicKeys = allKeys;
+
+  # WiFi password for installer ISO (user keys only - server doesn't need this)
+  "wifi-password.age".publicKeys = userKeys;
 }
