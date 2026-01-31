@@ -5,6 +5,7 @@
 {
   imports = [
     ./hardware.nix
+    ./disko.nix
     # Service modules - import all, enable selectively below
     ../../modules/services/caddy.nix
     ../../modules/services/homepage.nix

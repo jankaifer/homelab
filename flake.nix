@@ -10,9 +10,16 @@
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # disko for declarative disk partitioning
+    # Used by nixos-anywhere for automated installations
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, agenix, ... }:
+  outputs = { self, nixpkgs, agenix, disko, ... }:
     let
       # Helper to create a NixOS system configuration
       # lib.nixosSystem is the standard way to define a NixOS machine in flakes
@@ -22,6 +29,8 @@
           modules = [
             # Include agenix NixOS module for secrets support
             agenix.nixosModules.default
+            # Include disko for declarative disk partitioning
+            disko.nixosModules.disko
           ] ++ modules;
           # Pass flake inputs to all modules via specialArgs
           # This lets modules access 'inputs' if needed

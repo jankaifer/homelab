@@ -16,8 +16,16 @@ let
   # jk-cf
   jk-cf = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG6x4L/uYrM/KmYBTvvl3FaO2T3T5Vf+uAnEKKA43BwU";
 
-  # All user keys that can encrypt/decrypt secrets
-  allKeys = [ jankaifer-1 jankaifer-2 jk-cf ];
+  # Server SSH host key (for decrypting secrets on the machine)
+  # This key is generated during installation by scripts/install-server.sh
+  # INSTALL_SERVER_KEY_PLACEHOLDER
+  server = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPlaceholderKeyWillBeReplacedDuringInstall000";
+
+  # All user keys that can encrypt/decrypt secrets (for editing)
+  userKeys = [ jankaifer-1 jankaifer-2 jk-cf ];
+
+  # All keys including servers (for secrets that servers need to decrypt)
+  allKeys = userKeys ++ [ server ];
 in
 {
   # Cloudflare API token for Caddy DNS challenge

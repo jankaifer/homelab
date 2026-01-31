@@ -91,6 +91,7 @@ homelab/
 ├── machines/
 │   └── server/
 │       ├── default.nix    # Server config (services, users, etc.)
+│       ├── disko.nix      # Declarative disk partitioning
 │       ├── hardware.nix   # Hardware-specific settings
 │       └── vm.nix         # VM-specific config (agenix via host SSH)
 ├── modules/
@@ -103,6 +104,7 @@ homelab/
 │       └── victoriametrics.nix
 ├── secrets/               # agenix encrypted secrets
 ├── scripts/               # Development scripts
+│   ├── install-server.sh  # Install NixOS on new hardware
 │   ├── run-vm-docker.sh   # Build and run VM
 │   └── nix-build-docker.sh
 └── docs/
@@ -112,6 +114,19 @@ homelab/
     ├── services/          # Per-service documentation
     └── tickets/           # Task tracking
 ```
+
+## Production Installation
+
+To install on new server hardware:
+
+```bash
+# 1. Boot target from NixOS minimal ISO
+# 2. Get target IP and set root password on installer
+# 3. Run from your local machine:
+./scripts/install-server.sh <target-ip>
+```
+
+See [Installation Guide](services/installation.md) for detailed instructions.
 
 ## Next Steps
 
