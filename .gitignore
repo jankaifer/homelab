@@ -21,3 +21,6 @@ keys/
 
 # VM disk images
 *.qcow2
+
+# ISO images
+*.iso

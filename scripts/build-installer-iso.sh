@@ -28,17 +28,20 @@ echo "Building ISO in Docker (x86_64-linux)..."
 echo ""
 
 docker run --rm \
+    --platform linux/amd64 \
     --network host \
     -v "$PROJECT_DIR:/workspace" \
-    -v homelab-nix-store:/nix \
+    -v homelab-nix-store-x86:/nix \
     -w /workspace \
     -e WIFI_PASSWORD="$WIFI_PASSWORD" \
     nixos/nix:latest \
     sh -c '
         set -e
-        echo "Enabling flakes..."
+        echo "Enabling flakes and disabling sandbox for emulation..."
         mkdir -p /etc/nix
         echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf
+        echo "sandbox = false" >> /etc/nix/nix.conf
+        echo "filter-syscalls = false" >> /etc/nix/nix.conf
 
         echo ""
         echo "Building installer ISO (this may take a while on first run)..."
