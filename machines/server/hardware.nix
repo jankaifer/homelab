@@ -17,19 +17,10 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # Filesystem configuration
-  # For VM: nixos-rebuild build-vm creates its own disk, so this is mostly placeholder
-  # For real hardware: configure your actual partitions here
-  fileSystems."/" = {
-    device = "/dev/disk/by-label/nixos";
-    fsType = "ext4";
-  };
+  # Filesystem configuration is managed by disko.nix for production installs.
+  # For VM testing, the VM build system creates its own disk automatically.
 
-  # VM-specific: don't require the disk to exist during build
-  # This lets 'nix build' succeed even though the disk doesn't exist yet
-  fileSystems."/".options = [ "defaults" ];
-
-  # No swap for VM testing (keeps things simple)
+  # No swap (keeps things simple)
   swapDevices = [ ];
 
   # Hardware settings
