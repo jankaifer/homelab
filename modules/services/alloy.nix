@@ -108,14 +108,5 @@ in
         };
       }];
     }];
-
-    # Register with Homepage dashboard
-    homelab.homepage.services = [{
-      name = "Alloy";
-      category = "Monitoring";
-      description = "Telemetry Collector";
-      href = "https://grafana.lan.kaifer.dev:8443"; # Link to Grafana since Alloy has no UI
-      icon = "grafana";
-    }];
   };
 }

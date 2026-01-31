@@ -106,14 +106,5 @@ in
 
     # Register with Caddy reverse proxy
     homelab.services.caddy.virtualHosts.${cfg.domain} = "reverse_proxy localhost:${toString cfg.port}";
-
-    # Register with Homepage dashboard
-    homelab.homepage.services = [{
-      name = "Loki";
-      category = "Monitoring";
-      description = "Log Storage";
-      href = "https://${cfg.domain}:8443/metrics";
-      icon = "loki";
-    }];
   };
 }
