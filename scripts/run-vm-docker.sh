@@ -48,7 +48,7 @@ if [[ "$BUILD_ONLY" == "true" ]]; then
 
             echo ""
             echo "Building VM (this may take a while on first run)..."
-            nix build .#nixosConfigurations.server-vm.config.system.build.vm
+            nix build .#nixosConfigurations.frame1-vm.config.system.build.vm
 
             echo ""
             echo "Build complete!"
@@ -89,7 +89,7 @@ else
 
             echo ""
             echo "Building VM (this may take a while on first run)..."
-            nix build .#nixosConfigurations.server-vm.config.system.build.vm
+            nix build .#nixosConfigurations.frame1-vm.config.system.build.vm
 
             echo ""
             echo "Starting VM..."
@@ -100,6 +100,6 @@ else
             # -nographic: No GUI, use serial console (required in Docker)
             QEMU_OPTS="-nographic" \
             QEMU_NET_OPTS="hostfwd=tcp::80-:80,hostfwd=tcp::443-:443,hostfwd=tcp::22-:22" \
-            ./result/bin/run-server-vm
+            ./result/bin/run-frame1-vm
         '
 fi

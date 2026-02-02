@@ -106,7 +106,7 @@ echo "║       NixOS Server Installation           ║"
 echo "╚═══════════════════════════════════════════╝"
 echo -e "${NC}"
 echo "Target:     root@$TARGET_IP"
-echo "Flake:      $REPO_DIR#server"
+echo "Flake:      $REPO_DIR#frame1"
 if [[ -n "$DISK_DEVICE" ]]; then
     echo "Disk:       $DISK_DEVICE (override)"
 else
@@ -131,28 +131,28 @@ SSH_KEY="$TEMP_DIR/ssh_host_ed25519_key"
 SSH_KEY_PUB="$TEMP_DIR/ssh_host_ed25519_key.pub"
 
 # Step 1: Generate SSH host key
-log "Generating SSH host key for server..."
-ssh-keygen -t ed25519 -f "$SSH_KEY" -N "" -C "server-host-key" -q
+log "Generating SSH host key for frame1..."
+ssh-keygen -t ed25519 -f "$SSH_KEY" -N "" -C "frame1-host-key" -q
 SERVER_PUBKEY=$(cat "$SSH_KEY_PUB" | awk '{print $1 " " $2}')
 echo "  Public key: ${SERVER_PUBKEY:0:50}..."
 
 # Step 2: Update secrets.nix with the new public key
-log "Updating secrets.nix with server public key..."
+log "Updating secrets.nix with frame1 public key..."
 
 # Check if placeholder exists
 if ! grep -q "INSTALL_SERVER_KEY_PLACEHOLDER" "$SECRETS_NIX"; then
     error "Could not find INSTALL_SERVER_KEY_PLACEHOLDER in secrets.nix"
 fi
 
-# Replace the server key line (the line after the placeholder comment)
-# We look for the pattern: server = "ssh-ed25519 ...";
-sed -i.bak -E "s|server = \"ssh-ed25519 [^\"]+\";|server = \"$SERVER_PUBKEY\";|" "$SECRETS_NIX"
+# Replace the frame1 key line (the line after the placeholder comment)
+# We look for the pattern: frame1 = "ssh-ed25519 ...";
+sed -i.bak -E "s|frame1 = \"ssh-ed25519 [^\"]+\";|frame1 = \"$SERVER_PUBKEY\";|" "$SECRETS_NIX"
 rm -f "$SECRETS_NIX.bak"
 
 echo "  Updated: $SECRETS_NIX"
 
 # Step 3: Re-encrypt secrets
-log "Re-encrypting secrets with new server key..."
+log "Re-encrypting secrets with new frame1 key..."
 cd "$SECRETS_DIR"
 $AGENIX_CMD -r
 cd "$REPO_DIR"
@@ -169,14 +169,14 @@ chmod 644 "$EXTRA_FILES_DIR/etc/ssh/ssh_host_ed25519_key.pub"
 
 # Step 5: Build nixos-anywhere command
 NIXOS_ANYWHERE_ARGS=(
-    "--flake" "$REPO_DIR#server"
+    "--flake" "$REPO_DIR#frame1"
     "--target-host" "root@$TARGET_IP"
     "--extra-files" "$EXTRA_FILES_DIR"
 )
 
 # Note about disk override
 if [[ -n "$DISK_DEVICE" ]]; then
-    warn "Disk override requires modifying machines/server/disko.nix"
+    warn "Disk override requires modifying machines/frame1/disko.nix"
     echo "  Set: disko.devices.disk.main.device = \"$DISK_DEVICE\";"
     echo ""
     read -p "Have you updated disko.nix? [y/N] " -n 1 -r
@@ -210,4 +210,4 @@ echo "  admin password: nixos"
 echo ""
 echo -e "${YELLOW}Don't forget to commit the updated secrets.nix!${NC}"
 echo "  git add secrets/"
-echo "  git commit -m 'Update server SSH key after installation'"
+echo "  git commit -m 'Update frame1 SSH key after installation'"

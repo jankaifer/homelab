@@ -18,7 +18,7 @@ NixOS homelab configuration using flakes. Modular structure separating machine c
 
 ```bash
 # Quick validation - check config evaluates correctly (fast, works on macOS)
-nix eval .#nixosConfigurations.server-vm.config.system.build.toplevel --apply 'x: x.drvPath'
+nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x: x.drvPath'
 
 # Build and run VM using Docker (recommended for macOS)
 ./scripts/run-vm-docker.sh
@@ -32,8 +32,8 @@ nix fmt
 
 ## Machine Configurations
 
-- `server` - Production config (x86_64-linux)
-- `server-vm` - VM testing config (aarch64-linux, for Apple Silicon Macs)
+- `frame1` - Production config (x86_64-linux)
+- `frame1-vm` - VM testing config (aarch64-linux, for Apple Silicon Macs)
 
 ## Directory Structure
 
@@ -128,9 +128,36 @@ docker rm -f homelab-vm 2>/dev/null; docker run -d --rm \
     -w /workspace \
     -p 8080:80 -p 8443:443 -p 2222:22 \
     nixos/nix:latest \
-    sh -c 'mkdir -p /etc/nix && echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf && nix build .#nixosConfigurations.server-vm.config.system.build.vm && QEMU_OPTS="-nographic" QEMU_NET_OPTS="hostfwd=tcp::80-:80,hostfwd=tcp::443-:443,hostfwd=tcp::22-:22" ./result/bin/run-server-vm'
+    sh -c 'mkdir -p /etc/nix && echo "experimental-features = nix-command flakes" >> /etc/nix/nix.conf && nix build .#nixosConfigurations.frame1-vm.config.system.build.vm && QEMU_OPTS="-nographic" QEMU_NET_OPTS="hostfwd=tcp::80-:80,hostfwd=tcp::443-:443,hostfwd=tcp::22-:22" ./result/bin/run-frame1-vm'
 ```
 Wait ~60s for boot, then verify services with curl. Stop with `docker rm -f homelab-vm`.
+
+## Deployment Workflow
+
+Deploy configuration changes to production using deploy-rs:
+
+```bash
+# Deploy to frame1
+nix run github:serokell/deploy-rs -- .#frame1
+
+# Dry run (test without activating)
+nix run github:serokell/deploy-rs -- .#frame1 --dry-activate
+
+# Deploy with extra SSH options
+nix run github:serokell/deploy-rs -- .#frame1 -- --ssh-opts="-p 2222"
+```
+
+**How it works:**
+1. Builds the configuration (uses remote builder if configured)
+2. Copies closure to target machine
+3. Activates new configuration with 30s timeout
+4. Target must confirm activation succeeded
+5. **If activation fails or SSH breaks → auto-rollback**
+
+**First deployment setup:**
+1. Ensure frame1 is accessible via SSH: `ssh root@frame1.local`
+2. Update hostname in `flake.nix` deploy.nodes.frame1.hostname if needed
+3. Run deployment with `nix run github:serokell/deploy-rs -- .#frame1`
 
 ## Ticket Workflow
 

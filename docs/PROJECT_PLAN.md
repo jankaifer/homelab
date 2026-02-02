@@ -23,7 +23,7 @@ NixOS-based homelab configuration with flakes. Optimized for AI-assisted develop
 ├── flake.nix                 # Main flake - defines inputs, outputs, machines
 ├── flake.lock
 ├── machines/
-│   └── server/
+│   └── frame1/
 │       ├── default.nix       # Machine config - imports needed modules
 │       ├── disko.nix         # Declarative disk partitioning
 │       ├── hardware.nix      # Hardware-specific settings
@@ -59,8 +59,8 @@ NixOS-based homelab configuration with flakes. Optimized for AI-assisted develop
 
 | Name | System | Purpose |
 |------|--------|---------|
-| `server` | x86_64-linux | Production server deployment |
-| `server-vm` | aarch64-linux | Local VM testing on Apple Silicon |
+| `frame1` | x86_64-linux | Production server deployment |
+| `frame1-vm` | aarch64-linux | Local VM testing on Apple Silicon |
 
 ## AI Development Workflow
 
@@ -68,7 +68,7 @@ NixOS-based homelab configuration with flakes. Optimized for AI-assisted develop
 
 ```bash
 # Check config evaluates correctly - fast syntax/type checking
-nix eval .#nixosConfigurations.server-vm.config.system.build.toplevel --apply 'x: x.drvPath'
+nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x: x.drvPath'
 ```
 
 ### Full VM Testing (Docker-based)
@@ -168,7 +168,7 @@ in
 Machine config then just enables what it needs:
 
 ```nix
-# machines/server/default.nix
+# machines/frame1/default.nix
 {
   homelab.services.example.enable = true;
   homelab.services.example.port = 9000;  # override default if needed
@@ -179,8 +179,8 @@ Machine config then just enables what it needs:
 
 | Question | Decision |
 |----------|----------|
-| Machine naming | Descriptive (`server`, `workstation`) |
-| Workstation config | Skip for now, server only |
+| Machine naming | Descriptive (`frame1`, `workstation`) |
+| Workstation config | Skip for now, frame1 only |
 | Service complexity | Basic configs first, enhance later |
 | Secrets | agenix for production, direct config for VM testing |
 | Testing approach | Docker-based VM build and run on macOS |

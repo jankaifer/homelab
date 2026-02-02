@@ -1,7 +1,11 @@
-# Server machine configuration
-# This is the main entry point for the server's NixOS config
+# frame1 machine configuration
+# This is the main entry point for frame1's NixOS config
 { config, pkgs, lib, ... }:
 
+let
+  sshKeys = import ../../lib/ssh-keys.nix;
+  allUserKeys = builtins.attrValues sshKeys;
+in
 {
   imports = [
     ./hardware.nix
@@ -17,7 +21,7 @@
 
   # Basic system settings
   system.stateVersion = "24.05";
-  networking.hostName = "server";
+  networking.hostName = "frame1";
 
   # Enable flakes (required since we're using a flake-based config)
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -46,17 +50,18 @@
     allowedTCPPorts = [ 22 ];
   };
 
-  # Root user - empty password for VM testing
-  # WARNING: Change this for production! Use agenix for real passwords/keys
+  # Root user
   users.users.root = {
-    initialPassword = "nixos"; # Simple password for VM testing
+    initialPassword = "nixos"; # Fallback password
+    openssh.authorizedKeys.keys = allUserKeys;
   };
 
   # Create a regular user for daily use
   users.users.admin = {
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" ];
-    initialPassword = "nixos"; # Simple password for VM testing
+    initialPassword = "nixos"; # Fallback password
+    openssh.authorizedKeys.keys = allUserKeys;
   };
 
   # Allow wheel group to sudo without password (convenient for testing)

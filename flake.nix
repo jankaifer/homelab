@@ -17,9 +17,16 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # deploy-rs for safe, atomic NixOS deployments
+    # Automatic rollback on failure
+    deploy-rs = {
+      url = "github:serokell/deploy-rs";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, agenix, disko, ... }:
+  outputs = { self, nixpkgs, agenix, disko, deploy-rs, ... }:
     let
       # Helper to create a NixOS system configuration
       # lib.nixosSystem is the standard way to define a NixOS machine in flakes
@@ -41,18 +48,18 @@
       # NixOS configurations for each machine
       nixosConfigurations = {
         # Production server (x86_64) - for actual deployment
-        server = mkSystem {
+        frame1 = mkSystem {
           system = "x86_64-linux";
-          modules = [ ./machines/server ];
+          modules = [ ./machines/frame1 ];
         };
 
         # VM for testing on Apple Silicon Macs (aarch64)
-        # Use this for local development: nix build .#nixosConfigurations.server-vm.config.system.build.vm
-        server-vm = mkSystem {
+        # Use this for local development: nix build .#nixosConfigurations.frame1-vm.config.system.build.vm
+        frame1-vm = mkSystem {
           system = "aarch64-linux";
           modules = [
-            ./machines/server
-            ./machines/server/vm.nix  # VM-specific: mounts host SSH for agenix
+            ./machines/frame1
+            ./machines/frame1/vm.nix  # VM-specific: mounts host SSH for agenix
           ];
         };
 
@@ -69,5 +76,49 @@
       formatter.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.nixpkgs-fmt;
       formatter.x86_64-darwin = nixpkgs.legacyPackages.x86_64-darwin.nixpkgs-fmt;
       formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixpkgs-fmt;
+
+      # deploy-rs deployment configuration
+      deploy.nodes = {
+        frame1 = {
+          # Connection details
+          hostname = "192.168.2.241";
+
+          # SSH settings
+          sshUser = "root";
+
+          # Profile configuration
+          profiles.system = {
+            # Use the NixOS system configuration
+            user = "root";
+            path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.frame1;
+
+            # Magic rollback settings
+            # If activation fails or SSH breaks, auto-rollback after timeout
+            magicRollback = true;
+            autoRollback = true;
+            confirmTimeout = 30; # seconds - confirm within 30s or rollback
+          };
+        };
+
+        # VM testing target (Docker VM on localhost:2222)
+        frame1-vm = {
+          hostname = "localhost";
+          sshUser = "root";
+          sshOpts = [ "-p" "2222" ]; # VM SSH port
+
+          profiles.system = {
+            user = "root";
+            path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.frame1-vm;
+
+            magicRollback = true;
+            autoRollback = true;
+            confirmTimeout = 30;
+          };
+        };
+      };
+
+      # deploy-rs checks - validates deployment configuration
+      # Run with: nix flake check
+      checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;
     };
 }
