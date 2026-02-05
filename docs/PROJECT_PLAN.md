@@ -2,7 +2,7 @@
 
 ## Overview
 
-NixOS-based homelab configuration with flakes. Optimized for AI-assisted development with a fast feedback loop via VM testing.
+NixOS-based homelab configuration with flakes. Optimized for coding-agent assisted development with a fast feedback loop via VM testing.
 
 ## Tech Stack
 
@@ -46,7 +46,8 @@ NixOS-based homelab configuration with flakes. Optimized for AI-assisted develop
 │   ├── OVERVIEW.md           # Current state
 │   ├── PROJECT_PLAN.md       # This file
 │   └── services/             # Per-service documentation
-└── CLAUDE.md
+├── AGENTS.md               # Canonical coding-agent instructions (Codex-first)
+└── CLAUDE.md               # Compatibility pointer to AGENTS.md
 ```
 
 ### Design Principles
@@ -62,7 +63,7 @@ NixOS-based homelab configuration with flakes. Optimized for AI-assisted develop
 | `frame1` | x86_64-linux | Production server deployment |
 | `frame1-vm` | aarch64-linux | Local VM testing on Apple Silicon |
 
-## AI Development Workflow
+## Agent Development Workflow
 
 ### Quick Validation (no Docker needed)
 
@@ -95,7 +96,7 @@ Building NixOS requires Linux. We use Docker for simplicity on macOS.
 - SSH: localhost:2222 → VM:22
 
 **Access services:**
-- Homepage (via Caddy): https://lan.kaifer.dev:8443
+- Homepage (via Caddy): https://local.kaifer.dev:8443
 - SSH: `ssh -p 2222 root@localhost` (password: `nixos`)
 
 **Exit QEMU:** Press `Ctrl+A, X`
@@ -186,4 +187,4 @@ Machine config then just enables what it needs:
 | Testing approach | Docker-based VM build and run on macOS |
 | VM architecture | aarch64-linux for Apple Silicon |
 | TLS certificates | Let's Encrypt via Cloudflare DNS challenge |
-| Local domain | `lan.kaifer.dev` → 127.0.0.1 |
+| Local domain | `local.kaifer.dev` → 127.0.0.1 |

@@ -12,12 +12,12 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 │                                                                             │
 │  ┌──────────────────┐                                                       │
 │  │      Caddy       │  (reverse proxy, ports 80/443)                        │
-│  │  *.lan.kaifer.dev│  (TLS via Cloudflare DNS challenge)                   │
+│  │  *.local.kaifer.dev│  (TLS via Cloudflare DNS challenge)                   │
 │  └────────┬─────────┘                                                       │
 │           │                                                                 │
 │  ┌────────▼────────┐  ┌─────────────────┐  ┌─────────────────┐              │
 │  │    Homepage     │  │     Grafana     │  │ VictoriaMetrics │              │
-│  │lan.kaifer.dev   │  │grafana.lan...   │  │metrics.lan...   │              │
+│  │local.kaifer.dev   │  │grafana.lan...   │  │metrics.lan...   │              │
 │  │ (internal:3000) │  │ (internal:3001) │  │ (internal:8428) │              │
 │  └─────────────────┘  └────────┬────────┘  └────────┬────────┘              │
 │                                │ queries            │ scrapes               │
@@ -51,11 +51,12 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Service | Port | URL | Documentation |
 |---------|------|-----|---------------|
 | Caddy | 80/443 | (reverse proxy) | [docs/services/caddy.md](services/caddy.md) |
-| Homepage | 3000 (internal) | https://lan.kaifer.dev | [docs/services/homepage.md](services/homepage.md) |
-| Grafana | 3001 (internal) | https://grafana.lan.kaifer.dev | [docs/services/grafana.md](services/grafana.md) |
-| VictoriaMetrics | 8428 (internal) | https://metrics.lan.kaifer.dev | [docs/services/victoriametrics.md](services/victoriametrics.md) |
-| Loki | 3100 (internal) | https://logs.lan.kaifer.dev | [docs/services/loki.md](services/loki.md) |
+| Homepage | 3000 (internal) | https://local.kaifer.dev | [docs/services/homepage.md](services/homepage.md) |
+| Grafana | 3001 (internal) | https://grafana.local.kaifer.dev | [docs/services/grafana.md](services/grafana.md) |
+| VictoriaMetrics | 8428 (internal) | https://metrics.local.kaifer.dev | [docs/services/victoriametrics.md](services/victoriametrics.md) |
+| Loki | 3100 (internal) | https://logs.local.kaifer.dev | [docs/services/loki.md](services/loki.md) |
 | Alloy | 12345 (internal) | (telemetry collector) | [docs/services/alloy.md](services/alloy.md) |
+| Tailscale | 41641 (UDP) | (VPN mesh network) | [docs/services/tailscale.md](services/tailscale.md) |
 | SSH | 22 | `ssh -p 2222 root@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
 
 ## Users
@@ -77,10 +78,10 @@ nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x
 ./scripts/run-vm-docker.sh
 
 # Access services (VM testing with port 8443)
-# Homepage: https://lan.kaifer.dev:8443
-# Grafana: https://grafana.lan.kaifer.dev:8443
-# VictoriaMetrics: https://metrics.lan.kaifer.dev:8443
-# Loki: https://logs.lan.kaifer.dev:8443
+# Homepage: https://local.kaifer.dev:8443
+# Grafana: https://grafana.local.kaifer.dev:8443
+# VictoriaMetrics: https://metrics.local.kaifer.dev:8443
+# Loki: https://logs.local.kaifer.dev:8443
 # SSH: ssh -p 2222 root@localhost
 ```
 
@@ -113,6 +114,8 @@ homelab/
 │   ├── install-server.sh       # Install NixOS on new hardware
 │   ├── run-vm-docker.sh        # Build and run VM
 │   └── nix-build-docker.sh
+├── AGENTS.md              # Canonical coding-agent instructions (Codex-first)
+├── CLAUDE.md              # Compatibility pointer to AGENTS.md
 └── docs/
     ├── OVERVIEW.md        # This file
     ├── PROJECT_PLAN.md    # Future plans
@@ -251,7 +254,7 @@ nix run github:serokell/deploy-rs -- .#frame1 --skip-checks
 
 # 5. Verify services
 ssh root@192.168.2.241 "systemctl status caddy grafana"
-curl -k https://lan.kaifer.dev
+curl -k https://local.kaifer.dev
 ```
 
 ### Secrets Management
