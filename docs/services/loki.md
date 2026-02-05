@@ -13,15 +13,15 @@ homelab.services.loki = {
   enable = true;
   # port = 3100;              # HTTP API port
   # retentionPeriod = "360h"; # 15 days
-  # domain = "logs.lan.kaifer.dev";
+  # domain = "logs.local.kaifer.dev";
 };
 ```
 
 ## Access
 
-- **Metrics**: https://logs.lan.kaifer.dev:8443/metrics (via Caddy)
-- **Health**: https://logs.lan.kaifer.dev:8443/ready
-- **API**: https://logs.lan.kaifer.dev:8443/loki/api/v1/...
+- **Metrics**: https://logs.local.kaifer.dev:8443/metrics (via Caddy)
+- **Health**: https://logs.local.kaifer.dev:8443/ready
+- **API**: https://logs.local.kaifer.dev:8443/loki/api/v1/...
 
 Note: Loki has no built-in web UI. Use Grafana to explore logs.
 

@@ -19,7 +19,7 @@ Pattern: `homelab.services.victoriametrics.enable`
 | `port` | `8428` | Internal port for VictoriaMetrics |
 | `retentionPeriod` | `"15d"` | How long to retain metrics (e.g., 15d, 1w, 1y) |
 | `nodeExporter.enable` | `true` | Enable node_exporter for system metrics |
-| `domain` | `metrics.lan.kaifer.dev` | Domain for web UI (via Caddy) |
+| `domain` | `metrics.local.kaifer.dev` | Domain for web UI (via Caddy) |
 
 ### Decentralized Scrape Config
 
@@ -40,8 +40,8 @@ homelab.prometheus.scrapeConfigs = [
 
 ## Access
 
-- **Web UI**: https://metrics.lan.kaifer.dev (via Caddy reverse proxy)
-- **VM Testing**: https://metrics.lan.kaifer.dev:8443
+- **Web UI**: https://metrics.local.kaifer.dev (via Caddy reverse proxy)
+- **VM Testing**: https://metrics.local.kaifer.dev:8443
 - **vmui**: Web UI at `/vmui` path for exploring metrics
 
 ## Exporters

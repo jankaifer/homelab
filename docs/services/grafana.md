@@ -12,7 +12,7 @@ Dashboards and visualization for metrics and logs.
 homelab.services.grafana = {
   enable = true;
   # port = 3001;                         # Web UI port
-  # domain = "grafana.lan.kaifer.dev";   # Access domain
+  # domain = "grafana.local.kaifer.dev";   # Access domain
 
   # For VM testing:
   adminPassword = "admin";
@@ -24,7 +24,7 @@ homelab.services.grafana = {
 
 ## Access
 
-- **Web UI**: https://grafana.lan.kaifer.dev:8443
+- **Web UI**: https://grafana.local.kaifer.dev:8443
 - **Default login**: admin / admin
 
 ## Data Sources

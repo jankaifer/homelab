@@ -24,7 +24,7 @@ homelab.services.homepage = {
   enable = true;
   port = 3000;
   openFirewall = false;  # Behind Caddy
-  allowedHosts = [ "lan.kaifer.dev" "lan.kaifer.dev:8443" ];
+  allowedHosts = [ "local.kaifer.dev" "local.kaifer.dev:8443" ];
 };
 ```
 
@@ -32,8 +32,8 @@ homelab.services.homepage = {
 
 | Environment | URL |
 |-------------|-----|
-| VM (local) | https://lan.kaifer.dev:8443 (via Caddy) |
-| Production | https://lan.kaifer.dev (via Caddy) |
+| VM (local) | https://local.kaifer.dev:8443 (via Caddy) |
+| Production | https://local.kaifer.dev (via Caddy) |
 
 ## Features
 
@@ -62,7 +62,7 @@ homelab.homepage.services = [{
   name = "MyService";
   category = "Monitoring";  # Groups services together
   description = "Short description";
-  href = "https://myservice.lan.kaifer.dev:8443";
+  href = "https://myservice.local.kaifer.dev:8443";
   icon = "myservice-icon";
   # widget = { ... };  # Optional widget config
 }];

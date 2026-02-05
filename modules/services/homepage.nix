@@ -43,7 +43,7 @@ in
     allowedHosts = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      example = [ "lan.kaifer.dev" "homepage.local" ];
+      example = [ "local.kaifer.dev" "homepage.local" ];
       description = "Allowed hostnames for Homepage (for reverse proxy setups)";
     };
   };

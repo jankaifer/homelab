@@ -17,13 +17,13 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 │           │                                                                 │
 │  ┌────────▼────────┐  ┌─────────────────┐  ┌─────────────────┐              │
 │  │    Homepage     │  │     Grafana     │  │ VictoriaMetrics │              │
-│  │local.kaifer.dev   │  │grafana.lan...   │  │metrics.lan...   │              │
+│  │local.kaifer.dev   │  │grafana.local... │  │metrics.local... │              │
 │  │ (internal:3000) │  │ (internal:3001) │  │ (internal:8428) │              │
 │  └─────────────────┘  └────────┬────────┘  └────────┬────────┘              │
 │                                │ queries            │ scrapes               │
 │                       ┌────────▼────────┐  ┌────────▼────────┐              │
 │                       │      Loki       │  │  node_exporter  │              │
-│                       │ logs.lan...     │  │   (port 9100)   │              │
+│                       │ logs.local...    │  │   (port 9100)   │              │
 │                       │ (internal:3100) │  └─────────────────┘              │
 │                       └────────▲────────┘                                   │
 │                                │ pushes                                     │

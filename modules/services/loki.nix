@@ -6,7 +6,7 @@
 #
 # Log collection is handled by Alloy (see alloy.nix).
 #
-# Access: logs.lan.kaifer.dev (via Caddy reverse proxy)
+# Access: logs.local.kaifer.dev (via Caddy reverse proxy)
 { config, lib, pkgs, ... }:
 
 let
@@ -30,7 +30,7 @@ in
 
     domain = lib.mkOption {
       type = lib.types.str;
-      default = "logs.lan.kaifer.dev";
+      default = "logs.local.kaifer.dev";
       description = "Domain for Loki web UI (via Caddy)";
     };
   };

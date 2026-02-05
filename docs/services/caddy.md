@@ -31,7 +31,7 @@ homelab.services.caddy = {
     apiToken = "..."; # For VM testing; use apiTokenFile with agenix in production
   };
   virtualHosts = {
-    "lan.kaifer.dev" = "reverse_proxy localhost:3000";
+    "local.kaifer.dev" = "reverse_proxy localhost:3000";
   };
 };
 ```
@@ -41,7 +41,7 @@ homelab.services.caddy = {
 Caddy serves as the main reverse proxy for all web services:
 - Automatic HTTPS via Let's Encrypt with Cloudflare DNS challenge
 - Single entry point for all HTTP/HTTPS traffic
-- Real certificates work on local development (via `lan.kaifer.dev` → 127.0.0.1)
+- Real certificates work on local development (via `local.kaifer.dev` → 127.0.0.1)
 
 ## Architecture
 
@@ -59,16 +59,16 @@ Uses Cloudflare DNS challenge for Let's Encrypt certificates:
 3. Caddy uses Cloudflare API to create the record
 4. Certificate issued (works even for 127.0.0.1 addresses)
 
-**DNS record:** `lan.kaifer.dev` → `127.0.0.1` (A record in Cloudflare)
+**DNS record:** `local.kaifer.dev` → `127.0.0.1` (A record in Cloudflare)
 
 ## Access
 
 | Environment | URL |
 |-------------|-----|
-| VM (local) | https://lan.kaifer.dev:8443 |
-| Production | https://lan.kaifer.dev |
+| VM (local) | https://local.kaifer.dev:8443 |
+| Production | https://local.kaifer.dev |
 
-Note: VM uses port 8443 on host (mapped to 443 in VM) to avoid requiring root privileges. Backend services need to allow both `lan.kaifer.dev` and `lan.kaifer.dev:8443` in their host validation.
+Note: VM uses port 8443 on host (mapped to 443 in VM) to avoid requiring root privileges. Backend services need to allow both `local.kaifer.dev` and `local.kaifer.dev:8443` in their host validation.
 
 ## Files
 

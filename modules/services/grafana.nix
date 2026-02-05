@@ -3,7 +3,7 @@
 # Grafana provides dashboards for metrics (VictoriaMetrics) and logs (Loki).
 # Main observability UI for the homelab.
 #
-# Access: grafana.lan.kaifer.dev (via Caddy reverse proxy)
+# Access: grafana.local.kaifer.dev (via Caddy reverse proxy)
 { config, lib, pkgs, ... }:
 
 let
@@ -23,7 +23,7 @@ in
 
     domain = lib.mkOption {
       type = lib.types.str;
-      default = "grafana.lan.kaifer.dev";
+      default = "grafana.local.kaifer.dev";
       description = "Domain for Grafana web UI (via Caddy)";
     };
 
