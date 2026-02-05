@@ -8,18 +8,18 @@ VictoriaMetrics is a fast, cost-effective time-series database. It's a drop-in r
 
 ## Configuration
 
-Module: `modules/services/victoriametrics.nix`
-Pattern: `homelab.services.victoriametrics.enable`
+**Module:** `modules/services/victoriametrics.nix`
+**Pattern:** `homelab.services.victoriametrics.enable`
 
 ### Options
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `enable` | `false` | Enable VictoriaMetrics |
-| `port` | `8428` | Internal port for VictoriaMetrics |
-| `retentionPeriod` | `"15d"` | How long to retain metrics (e.g., 15d, 1w, 1y) |
-| `nodeExporter.enable` | `true` | Enable node_exporter for system metrics |
-| `domain` | `metrics.local.kaifer.dev` | Domain for web UI (via Caddy) |
+| `homelab.services.victoriametrics.enable` | `false` | Enable VictoriaMetrics |
+| `homelab.services.victoriametrics.port` | `8428` | Internal port for VictoriaMetrics |
+| `homelab.services.victoriametrics.retentionPeriod` | `"15d"` | How long to retain metrics (e.g., 15d, 1w, 1y) |
+| `homelab.services.victoriametrics.nodeExporter.enable` | `true` | Enable node_exporter for system metrics |
+| `homelab.services.victoriametrics.domain` | `metrics.local.kaifer.dev` | Domain for web UI (via Caddy) |
 
 ### Decentralized Scrape Config
 
@@ -63,7 +63,7 @@ VictoriaMetrics is fully compatible with:
 - Caddy (reverse proxy)
 - Homepage (dashboard entry auto-registered)
 
-## Upstream Documentation
+## Links
 
 - [VictoriaMetrics Docs](https://docs.victoriametrics.com/)
 - [NixOS VictoriaMetrics Module](https://search.nixos.org/options?channel=unstable&query=services.victoriametrics)

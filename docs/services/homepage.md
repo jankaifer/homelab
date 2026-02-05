@@ -9,6 +9,7 @@ Homepage is a modern, fully static, fast, secure, fully proxied dashboard with i
 ## Configuration
 
 **Module:** `modules/services/homepage.nix`
+**Pattern:** `homelab.services.homepage.enable`
 
 **Options:**
 | Option | Type | Default | Description |

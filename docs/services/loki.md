@@ -4,10 +4,22 @@ Log storage and query engine. Designed to be cost effective and easy to operate.
 
 ## Status
 
-**Enabled** - Active in server configuration
+**Enabled:** Yes
 
 ## Configuration
 
+**Module:** `modules/services/loki.nix`
+**Pattern:** `homelab.services.loki.enable`
+
+**Options:**
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `homelab.services.loki.enable` | bool | false | Enable Loki |
+| `homelab.services.loki.port` | int | 3100 | Loki HTTP API port |
+| `homelab.services.loki.retentionPeriod` | string | `360h` | Log retention window |
+| `homelab.services.loki.domain` | string | `logs.local.kaifer.dev` | External domain via Caddy |
+
+**Current configuration:**
 ```nix
 homelab.services.loki = {
   enable = true;
@@ -19,9 +31,10 @@ homelab.services.loki = {
 
 ## Access
 
-- **Metrics**: https://logs.local.kaifer.dev:8443/metrics (via Caddy)
-- **Health**: https://logs.local.kaifer.dev:8443/ready
-- **API**: https://logs.local.kaifer.dev:8443/loki/api/v1/...
+- **VM (local):** https://logs.local.kaifer.dev:8443/ready
+- **Production:** https://logs.local.kaifer.dev/ready
+- **API:** `https://logs.local.kaifer.dev/loki/api/v1/...`
+- **Metrics:** `https://logs.local.kaifer.dev/metrics`
 
 Note: Loki has no built-in web UI. Use Grafana to explore logs.
 
@@ -64,7 +77,7 @@ rate({unit="grafana.service"}[1h])
 - Alloy (for log collection)
 - Grafana (for log exploration UI)
 
-## Upstream Documentation
+## Links
 
 - [Grafana Loki](https://grafana.com/docs/loki/latest/)
 - [LogQL](https://grafana.com/docs/loki/latest/query/)

@@ -4,10 +4,23 @@ Dashboards and visualization for metrics and logs.
 
 ## Status
 
-**Enabled** - Active in server configuration
+**Enabled:** Yes
 
 ## Configuration
 
+**Module:** `modules/services/grafana.nix`
+**Pattern:** `homelab.services.grafana.enable`
+
+**Options:**
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `homelab.services.grafana.enable` | bool | false | Enable Grafana |
+| `homelab.services.grafana.port` | int | 3001 | Internal Grafana HTTP port |
+| `homelab.services.grafana.domain` | string | `grafana.local.kaifer.dev` | External domain via Caddy |
+| `homelab.services.grafana.adminPassword` | string or null | `admin` | Admin password for local/VM testing |
+| `homelab.services.grafana.adminPasswordFile` | string or null | null | File path for production secret (agenix) |
+
+**Current configuration:**
 ```nix
 homelab.services.grafana = {
   enable = true;
@@ -24,8 +37,12 @@ homelab.services.grafana = {
 
 ## Access
 
-- **Web UI**: https://grafana.local.kaifer.dev:8443
-- **Default login**: admin / admin
+| Environment | URL |
+|-------------|-----|
+| VM (local) | https://grafana.local.kaifer.dev:8443 |
+| Production | https://grafana.local.kaifer.dev |
+
+- **Default login (VM/default):** admin / admin
 
 ## Data Sources
 
@@ -55,7 +72,7 @@ Automatically provisioned when the corresponding services are enabled:
 - VictoriaMetrics (metrics data source)
 - Loki (logs data source)
 
-## Upstream Documentation
+## Links
 
 - [Grafana Documentation](https://grafana.com/docs/grafana/latest/)
 - [PromQL](https://prometheus.io/docs/prometheus/latest/querying/basics/)

@@ -8,7 +8,7 @@ OpenSSH server for remote access and management.
 
 ## Configuration
 
-**Location:** `machines/server/default.nix`
+**Location:** `machines/frame1/default.nix`
 
 **Current settings:**
 ```nix
@@ -74,3 +74,8 @@ And Docker port mapping:
 ## Dependencies
 
 None.
+
+## Links
+
+- [NixOS OpenSSH Options](https://search.nixos.org/options?channel=unstable&query=services.openssh)
+- [OpenSSH Manual](https://man.openbsd.org/sshd_config)

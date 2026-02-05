@@ -107,7 +107,7 @@ systemctl status victoriametrics
 
 ### Different Disk Device
 
-If your server uses SATA instead of NVMe, edit `machines/server/disko.nix`:
+If your server uses SATA instead of NVMe, edit `machines/frame1/disko.nix`:
 
 ```nix
 disko.devices.disk.main.device = "/dev/sda";  # or /dev/vda for VMs
@@ -115,7 +115,7 @@ disko.devices.disk.main.device = "/dev/sda";  # or /dev/vda for VMs
 
 ### Static IP Configuration
 
-For production, you'll want static IP. Add to `machines/server/default.nix`:
+For production, you'll want static IP. Add to `machines/frame1/default.nix`:
 
 ```nix
 networking = {
@@ -171,7 +171,7 @@ Check available disks on the target:
 lsblk
 ```
 
-Update `machines/server/disko.nix` with the correct device path.
+Update `machines/frame1/disko.nix` with the correct device path.
 
 ### Secrets Not Decrypting
 

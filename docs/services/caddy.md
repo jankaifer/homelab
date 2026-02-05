@@ -9,6 +9,7 @@ Caddy is a modern web server with automatic HTTPS.
 ## Configuration
 
 **Module:** `modules/services/caddy.nix`
+**Pattern:** `homelab.services.caddy.enable`
 
 **Options:**
 | Option | Type | Default | Description |

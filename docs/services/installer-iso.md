@@ -52,6 +52,12 @@ sudo dd if=result/iso/nixos-*.iso of=/dev/rdiskN bs=4m
 4. SSH in: `ssh root@<ip>`
 5. Run nixos-anywhere from your workstation to install
 
+## Access
+
+| Service | Endpoint |
+|---------|----------|
+| SSH on booted installer | `ssh root@<installer-ip>` |
+
 ## Configuration
 
 - `machines/installer-iso/default.nix` - ISO configuration
@@ -63,3 +69,9 @@ sudo dd if=result/iso/nixos-*.iso of=/dev/rdiskN bs=4m
 - Docker (for building on macOS)
 - age CLI (for decrypting WiFi password)
 - Your SSH key matching one in `lib/ssh-keys.nix`
+
+## Links
+
+- [NixOS Downloads](https://nixos.org/download/)
+- [nixos-anywhere](https://github.com/nix-community/nixos-anywhere)
+- [disko](https://github.com/nix-community/disko)

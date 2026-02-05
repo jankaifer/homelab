@@ -9,6 +9,7 @@ Tailscale creates a secure mesh VPN using WireGuard. Enables remote access to ho
 ## Configuration
 
 **Module:** `modules/services/tailscale.nix`
+**Pattern:** `homelab.services.tailscale.enable`
 
 **Options:**
 | Option | Type | Default | Description |
@@ -37,7 +38,7 @@ nix run github:serokell/deploy-rs -- .#frame1 --skip-checks
 
 SSH to frame1 and run:
 ```bash
-ssh root@frame1.local
+ssh root@<frame1-ip>
 tailscale up --accept-routes
 ```
 
@@ -90,7 +91,7 @@ Then access services:
 **Option B: Use Tailscale MagicDNS**
 
 Access via Tailscale's built-in DNS:
-- http://frame1 or http://frame1.tail-scale.ts.net
+- `http://frame1` or `http://frame1.<tailnet>.ts.net`
 - Uses Tailscale IP automatically
 - No Cloudflare changes needed
 
@@ -99,7 +100,7 @@ Access via Tailscale's built-in DNS:
 Access via IP:
 - https://100.x.x.x (if Caddy accepts IP connections)
 
-## Access Services
+## Access
 
 Once Tailscale is running:
 
