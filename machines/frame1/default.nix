@@ -17,6 +17,7 @@ in
     ../../modules/services/loki.nix
     ../../modules/services/alloy.nix
     ../../modules/services/grafana.nix
+    ../../modules/services/tailscale.nix
   ];
 
   # Basic system settings
@@ -151,5 +152,12 @@ in
     # port = 3001; # Default
     # domain = "grafana.local.kaifer.dev"; # Default
     adminPasswordFile = config.age.secrets.grafana-admin-password.path;
+  };
+
+  # Tailscale - VPN for remote access
+  homelab.services.tailscale = {
+    enable = true;
+    # acceptRoutes = false; # Default
+    # exitNode = false; # Default
   };
 }
