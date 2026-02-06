@@ -57,7 +57,15 @@ in
     openssh.authorizedKeys.keys = allUserKeys;
   };
 
-  # Create a regular user for daily use
+  # Main operator account
+  users.users.jankaifer = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" "networkmanager" ];
+    initialPassword = "nixos"; # Fallback password
+    openssh.authorizedKeys.keys = allUserKeys;
+  };
+
+  # Legacy admin user kept temporarily for transition
   users.users.admin = {
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" ];
