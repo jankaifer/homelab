@@ -4,6 +4,86 @@
 
 NixOS-based homelab configuration with flakes. Optimized for coding-agent assisted development with a fast feedback loop via VM testing.
 
+## Long-Term North Star
+
+A practical, family-usable, private-first homelab on a small bare-metal fleet, operated by one person with low operational overhead.
+
+The system prioritizes reproducibility, backup/recovery, and stable day-to-day use over high-complexity orchestration.
+
+## End-Game Shape
+
+1. Small fleet, typically 2-4 nodes.
+2. Three core roles:
+   - Main server (majority of services)
+   - Dedicated Home Assistant/MQTT node
+   - Dedicated NAS/storage node
+3. Option to add specialized nodes later when justified by a concrete workload.
+4. No Kubernetes platform.
+5. No Proxmox VM-hosting platform.
+6. No strict HA target; best-effort reliability with fast recovery.
+
+## Operating Principles
+
+1. Infrastructure as code with NixOS flakes remains the control plane.
+2. Scheduled, predictable deployments with rollback safety.
+3. Private-by-default access; public exposure only by explicit exception.
+4. Data-first practical security:
+   - Strong protection for important data and secrets
+   - Avoid enterprise-heavy hardening overhead where it does not add proportional value
+5. Progressive network segmentation is in scope, especially for IoT and smart-home isolation.
+
+## Data and Backup Strategy
+
+1. Backup by default for almost all data.
+2. Tier-1 (default): 3-2-1 backups with encrypted cloud offsite copy.
+3. Tier-2 (explicit exceptions): no-backup, easy-rebuild data only.
+4. Current disposable examples:
+   - Movies and media libraries
+   - Linux ISO collections
+   - Build artifacts and similar reproducible outputs
+5. Restore capability is a first-class requirement, not just backup existence.
+
+## Access and Identity Direction
+
+1. Mixed exposure model with public-by-exception policy.
+2. Household/family usage is a primary audience.
+3. Centralized SSO/auth is a long-term target as service count grows.
+4. Alerting primary channel: email.
+
+## Long-Term Service Portfolio
+
+In scope:
+1. Personal cloud services (files/photos/documents)
+2. Smart-home platform (Home Assistant + MQTT direction)
+3. Password vault service
+4. Camera/NVR stack
+
+Maybe later:
+1. Media stack
+2. DNS filtering/ad-blocking
+3. Dev platform services
+4. Local authoritative DNS/service discovery
+
+Out of scope for now:
+1. General workflow automation platform (n8n/Node-RED class)
+2. Wiki/knowledge-base platform as a roadmap objective
+
+## Capability Horizons
+
+Now:
+1. Harden backup/restore implementation and policy enforcement.
+2. Stabilize core 3-role architecture foundations.
+3. Keep deployment/update process predictable and reversible.
+
+Next:
+1. Expand family-grade service reliability and operations hygiene.
+2. Introduce segmentation where it reduces risk.
+3. Add identity/SSO and mature access patterns.
+
+Later:
+1. Broaden self-hosted app portfolio as operational capacity allows.
+2. Add specialized nodes only when workload-specific value is clear.
+
 ## Tech Stack
 
 | Component | Choice | Rationale |
@@ -101,7 +181,7 @@ Building NixOS requires Linux. We use Docker for simplicity on macOS.
 
 **Exit QEMU:** Press `Ctrl+A, X`
 
-## Initial Scope
+## Execution History (Completed Foundations)
 
 ### Phase 1: Foundation ✓
 - [x] Basic flake.nix with NixOS configuration
