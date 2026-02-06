@@ -111,16 +111,21 @@ Or check devices at: https://login.tailscale.com/admin/machines
 
 **Option A: Update Cloudflare DNS**
 
-Point `home.kaifer.dev` to frame1's Tailscale IP (100.x.x.x):
+Point `frame1.kaifer.dev` to frame1's Tailscale IP (100.x.x.x):
 - Login to Cloudflare
-- DNS → A record: `home.kaifer.dev` → `100.x.x.x`
-- DNS → A record: `*.home.kaifer.dev` → `100.x.x.x`
+- DNS → A record: `frame1.kaifer.dev` → `100.x.x.x`
+- DNS → CNAME record: `*.frame1.kaifer.dev` → `frame1.kaifer.dev`
 
 Then access services:
-- https://home.kaifer.dev
-- https://grafana.home.kaifer.dev
-- https://metrics.home.kaifer.dev
-- https://logs.home.kaifer.dev
+- https://frame1.kaifer.dev
+
+LAN split-horizon override (UniFi/local DNS, optional but recommended):
+- `frame1.kaifer.dev` → frame1 LAN IP
+- Lets local clients reach services without running Tailscale
+
+Phase-1 wildcard behavior:
+- `*.frame1.kaifer.dev` resolves in DNS
+- Wildcard hostnames are not yet routed by Caddy
 
 **Option B: Use Tailscale MagicDNS**
 
@@ -139,12 +144,13 @@ Access via IP:
 Once Tailscale is running:
 
 1. **Connect to Tailscale VPN** on your device.
-2. **Phase 1 (current): SSH access**
+2. **SSH access**
    - `ssh jankaifer@frame1.<tailnet>.ts.net` (MagicDNS)
    - `ssh jankaifer@100.x.x.x` (direct Tailscale IP)
-3. **Phase 2 (later): Web access**
-   - Add Tailscale-oriented hostname strategy for Caddy/web services.
-   - Then use MagicDNS or your own DNS names for HTTPS.
+3. **Web access (current):**
+   - `https://frame1.kaifer.dev`
+4. **Wildcard namespace reserved:**
+   - `*.frame1.kaifer.dev` resolves, but wildcard routing is deferred
 
 Services will be accessible as if you're on the local network.
 

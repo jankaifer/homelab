@@ -25,7 +25,7 @@ homelab.services.homepage = {
   enable = true;
   port = 3000;
   openFirewall = false;  # Behind Caddy
-  allowedHosts = [ "local.kaifer.dev" "local.kaifer.dev:8443" ];
+  allowedHosts = [ "local.kaifer.dev" "local.kaifer.dev:8443" "frame1.kaifer.dev" ];
 };
 ```
 
@@ -34,7 +34,8 @@ homelab.services.homepage = {
 | Environment | URL |
 |-------------|-----|
 | VM (local) | https://local.kaifer.dev:8443 (via Caddy) |
-| Production | https://local.kaifer.dev (via Caddy) |
+| Production (primary) | https://frame1.kaifer.dev (via Caddy) |
+| Production (compatibility) | https://local.kaifer.dev (via Caddy) |
 
 ## Features
 

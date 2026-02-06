@@ -12,12 +12,13 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 │                                                                             │
 │  ┌──────────────────┐                                                       │
 │  │      Caddy       │  (reverse proxy, ports 80/443)                        │
-│  │  *.local.kaifer.dev│  (TLS via Cloudflare DNS challenge)                   │
+│  │ frame1.kaifer.dev│  (primary production hostname)                         │
+│  │ *.frame1.kaifer.dev│ (DNS wildcard reserved, routing deferred)             │
 │  └────────┬─────────┘                                                       │
 │           │                                                                 │
 │  ┌────────▼────────┐  ┌─────────────────┐  ┌─────────────────┐              │
 │  │    Homepage     │  │     Grafana     │  │ VictoriaMetrics │              │
-│  │local.kaifer.dev   │  │grafana.local... │  │metrics.local... │              │
+│  │frame1.kaifer.dev │  │grafana.local... │  │metrics.local... │              │
 │  │ (internal:3000) │  │ (internal:3001) │  │ (internal:8428) │              │
 │  └─────────────────┘  └────────┬────────┘  └────────┬────────┘              │
 │                                │ queries            │ scrapes               │
@@ -51,7 +52,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Service | Port | URL | Documentation |
 |---------|------|-----|---------------|
 | Caddy | 80/443 | (reverse proxy) | [docs/services/caddy.md](services/caddy.md) |
-| Homepage | 3000 (internal) | https://local.kaifer.dev | [docs/services/homepage.md](services/homepage.md) |
+| Homepage | 3000 (internal) | https://frame1.kaifer.dev (primary), https://local.kaifer.dev (compat) | [docs/services/homepage.md](services/homepage.md) |
 | Grafana | 3001 (internal) | https://grafana.local.kaifer.dev | [docs/services/grafana.md](services/grafana.md) |
 | VictoriaMetrics | 8428 (internal) | https://metrics.local.kaifer.dev | [docs/services/victoriametrics.md](services/victoriametrics.md) |
 | Loki | 3100 (internal) | https://logs.local.kaifer.dev | [docs/services/loki.md](services/loki.md) |
@@ -254,7 +255,7 @@ nix run .#deploy -- .#frame1 --skip-checks
 
 # 5. Verify services
 ssh jankaifer@192.168.2.241 "systemctl status caddy grafana"
-curl -k https://local.kaifer.dev
+curl -k https://frame1.kaifer.dev
 ```
 
 ### Secrets Management

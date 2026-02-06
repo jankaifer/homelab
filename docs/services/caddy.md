@@ -29,10 +29,11 @@ homelab.services.caddy = {
   acmeEmail = "jan@kaifer.cz";
   cloudflareDns = {
     enable = true;
-    apiToken = "..."; # For VM testing; use apiTokenFile with agenix in production
+    apiTokenFile = config.age.secrets.cloudflare-api-token.path;
   };
   virtualHosts = {
     "local.kaifer.dev" = "reverse_proxy localhost:3000";
+    "frame1.kaifer.dev" = "reverse_proxy localhost:3000";
   };
 };
 ```
@@ -42,7 +43,8 @@ homelab.services.caddy = {
 Caddy serves as the main reverse proxy for all web services:
 - Automatic HTTPS via Let's Encrypt with Cloudflare DNS challenge
 - Single entry point for all HTTP/HTTPS traffic
-- Real certificates work on local development (via `local.kaifer.dev` → 127.0.0.1)
+- Split-horizon hostname strategy for production (`frame1.kaifer.dev`)
+- Real certificates also work on local development (via `local.kaifer.dev` → 127.0.0.1)
 
 ## Architecture
 
@@ -60,16 +62,23 @@ Uses Cloudflare DNS challenge for Let's Encrypt certificates:
 3. Caddy uses Cloudflare API to create the record
 4. Certificate issued (works even for 127.0.0.1 addresses)
 
-**DNS record:** `local.kaifer.dev` → `127.0.0.1` (A record in Cloudflare)
+Production DNS strategy (Cloudflare):
+- `frame1.kaifer.dev` → frame1 Tailscale IPv4 (`100.x.y.z`)
+- `*.frame1.kaifer.dev` CNAME → `frame1.kaifer.dev` (DNS-only wildcard reservation)
+
+LAN split-horizon override (managed on router):
+- `frame1.kaifer.dev` → frame1 LAN IPv4 (for local clients without Tailscale)
 
 ## Access
 
 | Environment | URL |
 |-------------|-----|
 | VM (local) | https://local.kaifer.dev:8443 |
-| Production | https://local.kaifer.dev |
+| Production (primary) | https://frame1.kaifer.dev |
+| Production (compatibility) | https://local.kaifer.dev |
 
 Note: VM uses port 8443 on host (mapped to 443 in VM) to avoid requiring root privileges. Backend services need to allow both `local.kaifer.dev` and `local.kaifer.dev:8443` in their host validation.
+Wildcard note: `*.frame1.kaifer.dev` currently resolves in DNS but is not routed by Caddy in phase 1.
 
 ## Files
 
