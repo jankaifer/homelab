@@ -43,6 +43,23 @@ Create an **Auth key** for server bootstrap:
 - Scope: one device (`frame1`) or tagged device
 - Reusable: optional (recommended for reprovisioning)
 - Preauthorized: enabled (recommended for unattended setup)
+- Current policy: key expires after **90 days**
+
+### Auth Key Rotation (90-day expiry)
+
+When the key expires, generate a new auth key in Tailscale UI and rotate the secret:
+```bash
+cd /Users/jankaifer/dev/jankaifer/homelab/secrets
+agenix -e tailscale-auth-key.age
+```
+
+Paste the new `tskey-...` value and deploy:
+```bash
+cd /Users/jankaifer/dev/jankaifer/homelab
+nix run .#deploy -- .#frame1 --skip-checks
+```
+
+Note: existing logged-in nodes usually stay connected. Rotation is required for reprovisioning or re-auth events.
 
 ### 2. Encrypt Auth Key into agenix Secret
 
