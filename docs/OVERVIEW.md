@@ -187,13 +187,13 @@ The homelab uses **deploy-rs** for safe, automated deployments with automatic ro
 export PATH="/nix/var/nix/profiles/default/bin:$PATH"
 
 # Deploy to frame1 (production)
-nix run github:serokell/deploy-rs -- .#frame1 --skip-checks
+nix run .#deploy -- .#frame1 --skip-checks
 
 # Test without activating (dry run)
-nix run github:serokell/deploy-rs -- .#frame1 --dry-activate
+nix run .#deploy -- .#frame1 --dry-activate
 
 # Deploy to VM for testing (localhost:2222)
-nix run github:serokell/deploy-rs -- .#frame1-vm --skip-checks
+nix run .#deploy -- .#frame1-vm --skip-checks
 ```
 
 **Note:** `--skip-checks` is needed because deploy-rs checks require aarch64-linux builders (for frame1-vm config), which aren't available on Mac.
@@ -213,7 +213,7 @@ builders = @/etc/nix/machines
 
 **Builder configuration (`/etc/nix/machines`):**
 ```
-ssh://root@192.168.2.241 x86_64-linux - 4 1 big-parallel,benchmark
+ssh://admin@192.168.2.241 x86_64-linux - 4 1 big-parallel,benchmark
 ```
 
 This allows your Mac to seamlessly build x86_64-linux packages by delegating to frame1.
@@ -250,10 +250,10 @@ nix build .#nixosConfigurations.frame1.config.system.build.toplevel
 
 # 4. Deploy to production
 export PATH="/nix/var/nix/profiles/default/bin:$PATH"
-nix run github:serokell/deploy-rs -- .#frame1 --skip-checks
+nix run .#deploy -- .#frame1 --skip-checks
 
 # 5. Verify services
-ssh root@192.168.2.241 "systemctl status caddy grafana"
+ssh admin@192.168.2.241 "systemctl status caddy grafana"
 curl -k https://local.kaifer.dev
 ```
 
@@ -276,8 +276,8 @@ If a deployment causes issues:
 # Automatic rollback already happened if activation failed
 # But you can manually rollback if needed:
 
-ssh root@192.168.2.241
-nixos-rebuild switch --rollback
+ssh admin@192.168.2.241
+sudo nixos-rebuild switch --rollback
 
 # Or reboot to previous generation (grub menu)
 reboot
@@ -289,10 +289,10 @@ The deployment setup supports multiple machines:
 
 ```nix
 # Future: Deploy to all machines
-nix run github:serokell/deploy-rs
+nix run .#deploy
 
 # Future: Deploy to specific machines
-nix run github:serokell/deploy-rs -- .#frame1 .#frame2 .#raspberry-pi
+nix run .#deploy -- .#frame1 .#frame2 .#raspberry-pi
 ```
 
 Weak devices (Raspberry Pi, etc.) will receive pre-built closures from frame1, avoiding slow local builds.

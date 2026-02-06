@@ -31,15 +31,15 @@ homelab.services.tailscale = {
 
 Deploy the config to frame1:
 ```bash
-nix run github:serokell/deploy-rs -- .#frame1 --skip-checks
+nix run .#deploy -- .#frame1 --skip-checks
 ```
 
 ### 2. Authenticate Server
 
 SSH to frame1 and run:
 ```bash
-ssh root@<frame1-ip>
-tailscale up --accept-routes
+ssh admin@192.168.2.241
+sudo tailscale up --accept-routes=false
 ```
 
 Open the URL shown to authenticate via web browser.
@@ -104,11 +104,13 @@ Access via IP:
 
 Once Tailscale is running:
 
-1. **Connect to Tailscale VPN** on your device
-2. **Access services** via one of:
-   - `https://home.kaifer.dev` (if DNS updated)
-   - `https://frame1` (MagicDNS)
-   - `https://100.x.x.x` (direct IP)
+1. **Connect to Tailscale VPN** on your device.
+2. **Phase 1 (current): SSH access**
+   - `ssh admin@frame1.<tailnet>.ts.net` (MagicDNS)
+   - `ssh admin@100.x.x.x` (direct Tailscale IP)
+3. **Phase 2 (later): Web access**
+   - Add Tailscale-oriented hostname strategy for Caddy/web services.
+   - Then use MagicDNS or your own DNS names for HTTPS.
 
 Services will be accessible as if you're on the local network.
 

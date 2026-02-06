@@ -15,8 +15,8 @@ OpenSSH server for remote access and management.
 services.openssh = {
   enable = true;
   settings = {
-    PermitRootLogin = "yes";      # For VM testing; tighten for production
-    PasswordAuthentication = true; # For VM testing; use keys in production
+    PermitRootLogin = "no";       # Disable direct root SSH login
+    PasswordAuthentication = false; # Enforce SSH key-only auth
   };
 };
 
@@ -27,33 +27,27 @@ networking.firewall.allowedTCPPorts = [ 22 ];
 
 | Environment | Command |
 |-------------|---------|
-| VM (local) | `ssh -p 2222 root@localhost` |
 | VM (local) | `ssh -p 2222 admin@localhost` |
-| Production | `ssh root@<server-ip>` |
-
-**Credentials (VM only):**
-- Password: `nixos`
+| Production (LAN bootstrap) | `ssh admin@192.168.2.241` |
+| Production (Tailscale) | `ssh admin@<frame1>.<tailnet>.ts.net` |
+| Production (Tailscale IP) | `ssh admin@100.x.x.x` |
 
 ## Security Notes
 
-Current configuration is for VM testing only:
+Current production configuration is hardened:
 
-- Root login enabled - disable for production
-- Password authentication enabled - use SSH keys for production
-- Simple password - use agenix-encrypted secrets for production
+- Root SSH login is disabled
+- Password authentication is disabled
+- Access is SSH key only via `admin` user
+- `admin` has passwordless sudo for maintenance and deploy workflows
 
-### Production Hardening (TODO)
+### Effective Hardening
 
 ```nix
 services.openssh.settings = {
-  PermitRootLogin = "prohibit-password"; # or "no"
+  PermitRootLogin = "no";
   PasswordAuthentication = false;
 };
-
-# Add SSH keys via agenix
-users.users.admin.openssh.authorizedKeys.keys = [
-  "ssh-ed25519 AAAA... user@machine"
-];
 ```
 
 ## Port Forwarding (VM)
