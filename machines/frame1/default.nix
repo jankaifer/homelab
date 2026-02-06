@@ -24,8 +24,11 @@ in
   system.stateVersion = "24.05";
   networking.hostName = "frame1";
 
-  # Enable flakes (required since we're using a flake-based config)
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  # Nix settings for flake workflows and remote builds
+  nix.settings = {
+    experimental-features = [ "nix-command" "flakes" ];
+    trusted-users = [ "root" "jankaifer" ];
+  };
 
   # Allow unfree packages if needed (for things like nvidia drivers, etc)
   nixpkgs.config.allowUnfree = true;
@@ -42,6 +45,7 @@ in
     settings = {
       PermitRootLogin = "no"; # Disable direct root SSH login
       PasswordAuthentication = false; # Enforce SSH key-only auth
+      AllowUsers = [ "jankaifer" ]; # Restrict SSH access to main operator
     };
   };
 
@@ -59,14 +63,6 @@ in
 
   # Main operator account
   users.users.jankaifer = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" ];
-    initialPassword = "nixos"; # Fallback password
-    openssh.authorizedKeys.keys = allUserKeys;
-  };
-
-  # Legacy admin user kept temporarily for transition
-  users.users.admin = {
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" ];
     initialPassword = "nixos"; # Fallback password

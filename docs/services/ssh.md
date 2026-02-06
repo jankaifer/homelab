@@ -17,6 +17,7 @@ services.openssh = {
   settings = {
     PermitRootLogin = "no";       # Disable direct root SSH login
     PasswordAuthentication = false; # Enforce SSH key-only auth
+    AllowUsers = [ "jankaifer" ]; # Restrict SSH to main operator account
   };
 };
 
@@ -27,10 +28,10 @@ networking.firewall.allowedTCPPorts = [ 22 ];
 
 | Environment | Command |
 |-------------|---------|
-| VM (local) | `ssh -p 2222 admin@localhost` |
-| Production (LAN bootstrap) | `ssh admin@192.168.2.241` |
-| Production (Tailscale) | `ssh admin@<frame1>.<tailnet>.ts.net` |
-| Production (Tailscale IP) | `ssh admin@100.x.x.x` |
+| VM (local) | `ssh -p 2222 jankaifer@localhost` |
+| Production (LAN bootstrap) | `ssh jankaifer@192.168.2.241` |
+| Production (Tailscale) | `ssh jankaifer@<frame1>.<tailnet>.ts.net` |
+| Production (Tailscale IP) | `ssh jankaifer@100.x.x.x` |
 
 ## Security Notes
 
@@ -38,8 +39,8 @@ Current production configuration is hardened:
 
 - Root SSH login is disabled
 - Password authentication is disabled
-- Access is SSH key only via `admin` user
-- `admin` has passwordless sudo for maintenance and deploy workflows
+- Access is SSH key only via `jankaifer` user
+- `jankaifer` has passwordless sudo for maintenance and deploy workflows
 
 ### Effective Hardening
 
@@ -47,6 +48,7 @@ Current production configuration is hardened:
 services.openssh.settings = {
   PermitRootLogin = "no";
   PasswordAuthentication = false;
+  AllowUsers = [ "jankaifer" ];
 };
 ```
 

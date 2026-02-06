@@ -38,7 +38,7 @@ nix run .#deploy -- .#frame1 --skip-checks
 
 SSH to frame1 and run:
 ```bash
-ssh admin@192.168.2.241
+ssh jankaifer@192.168.2.241
 sudo tailscale up --accept-routes=false
 ```
 
@@ -106,8 +106,8 @@ Once Tailscale is running:
 
 1. **Connect to Tailscale VPN** on your device.
 2. **Phase 1 (current): SSH access**
-   - `ssh admin@frame1.<tailnet>.ts.net` (MagicDNS)
-   - `ssh admin@100.x.x.x` (direct Tailscale IP)
+   - `ssh jankaifer@frame1.<tailnet>.ts.net` (MagicDNS)
+   - `ssh jankaifer@100.x.x.x` (direct Tailscale IP)
 3. **Phase 2 (later): Web access**
    - Add Tailscale-oriented hostname strategy for Caddy/web services.
    - Then use MagicDNS or your own DNS names for HTTPS.

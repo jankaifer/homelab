@@ -111,7 +111,7 @@
           hostname = "192.168.2.241";
 
           # SSH settings
-          sshUser = "admin";
+          sshUser = "jankaifer";
 
           # Profile configuration
           profiles.system = {
@@ -130,7 +130,7 @@
         # VM testing target (Docker VM on localhost:2222)
         frame1-vm = {
           hostname = "localhost";
-          sshUser = "admin";
+          sshUser = "jankaifer";
           sshOpts = [ "-p" "2222" ]; # VM SSH port
 
           profiles.system = {
