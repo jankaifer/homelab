@@ -4,7 +4,7 @@
 # Drop-in replacement for Prometheus with better resource efficiency.
 # Services can register their scrape targets via homelab.prometheus.scrapeConfigs.
 #
-# Access: metrics.local.kaifer.dev (via Caddy reverse proxy)
+# Access: metrics.local.hobitin.eu (via Caddy reverse proxy)
 { config, lib, pkgs, ... }:
 
 let
@@ -40,7 +40,7 @@ in
 
     domain = lib.mkOption {
       type = lib.types.str;
-      default = "metrics.local.kaifer.dev";
+      default = "metrics.local.hobitin.eu";
       description = "Domain for VictoriaMetrics web UI (via Caddy)";
     };
   };

@@ -116,7 +116,7 @@ in
     enable = true;
     port = 3000;
     openFirewall = false; # Access through Caddy only
-    allowedHosts = [ "local.kaifer.dev" "local.kaifer.dev:8443" "frame1.kaifer.dev" ];
+    allowedHosts = [ "local.hobitin.eu" "local.hobitin.eu:8443" "frame1.hobitin.eu" ];
   };
 
   # Caddy reverse proxy - entry point for all web services
@@ -131,8 +131,8 @@ in
     };
 
     virtualHosts = {
-      "local.kaifer.dev" = "reverse_proxy localhost:3000";
-      "frame1.kaifer.dev" = "reverse_proxy localhost:3000";
+      "local.hobitin.eu" = "reverse_proxy localhost:3000";
+      "frame1.hobitin.eu" = "reverse_proxy localhost:3000";
     };
   };
 
@@ -141,14 +141,14 @@ in
     enable = true;
     # nodeExporter.enable = true; # Default, collects system metrics
     # retentionPeriod = "15d"; # Default
-    # domain = "metrics.local.kaifer.dev"; # Default
+    # domain = "metrics.local.hobitin.eu"; # Default
   };
 
   # Loki - log storage
   homelab.services.loki = {
     enable = true;
     # retentionPeriod = "360h"; # Default, 15 days
-    # domain = "logs.local.kaifer.dev"; # Default
+    # domain = "logs.local.hobitin.eu"; # Default
   };
 
   # Alloy - telemetry collector (logs, metrics, traces)
@@ -161,7 +161,7 @@ in
   homelab.services.grafana = {
     enable = true;
     # port = 3001; # Default
-    # domain = "grafana.local.kaifer.dev"; # Default
+    # domain = "grafana.local.hobitin.eu"; # Default
     adminPasswordFile = config.age.secrets.grafana-admin-password.path;
   };
 
