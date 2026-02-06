@@ -40,8 +40,8 @@ in
   services.openssh = {
     enable = true;
     settings = {
-      PermitRootLogin = "yes"; # For VM testing; tighten for production
-      PasswordAuthentication = true; # For VM testing; use keys in production
+      PermitRootLogin = "no"; # Disable direct root SSH login
+      PasswordAuthentication = false; # Enforce SSH key-only auth
     };
   };
 
