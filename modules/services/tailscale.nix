@@ -5,11 +5,10 @@
 #
 # Setup:
 # 1. Enable this module
-# 2. Deploy to server
-# 3. Run: tailscale up --accept-routes
-# 4. Authenticate via URL shown in logs
-# 5. Install Tailscale on laptop/phone and authenticate
-# 6. Access services via Tailscale IP or MagicDNS name
+# 2. Optionally provide authKeyFile for unattended login
+# 3. Deploy to server
+# 4. Install Tailscale on laptop/phone and authenticate
+# 5. Access services via Tailscale IP or MagicDNS name
 { config, lib, pkgs, ... }:
 
 let
@@ -25,6 +24,12 @@ in
       description = "Accept subnet routes advertised by other Tailscale nodes";
     };
 
+    authKeyFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Path to a Tailscale auth key file for unattended login";
+    };
+
     exitNode = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -37,6 +42,10 @@ in
     services.tailscale = {
       enable = true;
       useRoutingFeatures = lib.mkIf cfg.exitNode "server";
+      authKeyFile = lib.mkIf (cfg.authKeyFile != null) cfg.authKeyFile;
+      extraUpFlags = lib.mkIf (cfg.authKeyFile != null) [
+        "--accept-routes=${lib.boolToString cfg.acceptRoutes}"
+      ];
     };
 
     # Open firewall for Tailscale

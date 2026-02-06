@@ -15,6 +15,7 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 |--------|------|---------|
 | Cloudflare API Token | `secrets/cloudflare-api-token.age` | Caddy (DNS challenge) |
 | Grafana Admin Password | `secrets/grafana-admin-password.age` | Grafana |
+| Tailscale Auth Key | `secrets/tailscale-auth-key.age` | Tailscale unattended login |
 
 ## Encryption Keys
 

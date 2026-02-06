@@ -16,35 +16,52 @@ Tailscale creates a secure mesh VPN using WireGuard. Enables remote access to ho
 |--------|------|---------|-------------|
 | `homelab.services.tailscale.enable` | bool | false | Enable Tailscale |
 | `homelab.services.tailscale.acceptRoutes` | bool | false | Accept subnet routes from other nodes |
+| `homelab.services.tailscale.authKeyFile` | nullOr path | null | Auth key file for unattended login |
 | `homelab.services.tailscale.exitNode` | bool | false | Advertise as exit node |
 
 **Current configuration:**
 ```nix
+age.secrets.tailscale-auth-key = {
+  file = ../../secrets/tailscale-auth-key.age;
+};
+
 homelab.services.tailscale = {
   enable = true;
+  authKeyFile = config.age.secrets.tailscale-auth-key.path;
 };
 ```
 
 ## Setup
 
-### 1. Deploy Configuration
+### 1. Create Tailscale Auth Key (UI)
+
+Open Tailscale admin console:
+- Dashboard: `https://login.tailscale.com/admin`
+- Keys page: `https://login.tailscale.com/admin/settings/keys`
+
+Create an **Auth key** for server bootstrap:
+- Scope: one device (`frame1`) or tagged device
+- Reusable: optional (recommended for reprovisioning)
+- Preauthorized: enabled (recommended for unattended setup)
+
+### 2. Encrypt Auth Key into agenix Secret
+
+Replace the placeholder secret value in `secrets/tailscale-auth-key.age`:
+```bash
+cd secrets
+agenix -e tailscale-auth-key.age
+```
+
+Paste the raw key value (starts with `tskey-...`) and save.
+
+### 3. Deploy Configuration
 
 Deploy the config to frame1:
 ```bash
 nix run .#deploy -- .#frame1 --skip-checks
 ```
 
-### 2. Authenticate Server
-
-SSH to frame1 and run:
-```bash
-ssh jankaifer@192.168.2.241
-sudo tailscale up --accept-routes=false
-```
-
-Open the URL shown to authenticate via web browser.
-
-### 3. Install Clients
+### 4. Install Clients
 
 **macOS:**
 ```bash
@@ -63,7 +80,7 @@ sudo tailscale up
 - Sign in with same account
 - Enable VPN
 
-### 4. Find Tailscale IP
+### 5. Find Tailscale IP
 
 On frame1:
 ```bash
@@ -73,7 +90,7 @@ tailscale ip -4
 
 Or check devices at: https://login.tailscale.com/admin/machines
 
-### 5. Update DNS (Optional)
+### 6. Update DNS (Optional)
 
 **Option A: Update Cloudflare DNS**
 
@@ -162,6 +179,13 @@ journalctl -u tailscaled -f
 ```bash
 systemctl restart tailscaled
 ```
+
+**Auth key login failures:**
+```bash
+journalctl -u tailscaled -n 100 --no-pager
+```
+
+If you see auth-key errors, re-edit `secrets/tailscale-auth-key.age` with a fresh key and redeploy.
 
 ## Files
 

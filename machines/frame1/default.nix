@@ -164,16 +164,11 @@ in
     adminPasswordFile = config.age.secrets.grafana-admin-password.path;
   };
 
-  # Tailscale - VPN for remote access
-  services.tailscale = {
-    authKeyFile = config.age.secrets.tailscale-auth-key.path;
-    extraUpFlags = [ "--accept-routes=false" ];
-  };
-
-  # Tailscale module defaults and firewall integration
+  # Tailscale - VPN for remote access (autologin via auth key secret)
   homelab.services.tailscale = {
     enable = true;
-    # acceptRoutes = false; # Default
+    authKeyFile = config.age.secrets.tailscale-auth-key.path;
+    # acceptRoutes = false; # Default, reflected in auto up flags
     # exitNode = false; # Default
   };
 }
