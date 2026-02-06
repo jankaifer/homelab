@@ -29,4 +29,7 @@ in
 
   # Grafana admin password
   "grafana-admin-password.age".publicKeys = allKeys;
+
+  # Tailscale auth key for unattended server login
+  "tailscale-auth-key.age".publicKeys = allKeys;
 }

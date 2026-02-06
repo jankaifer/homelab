@@ -99,6 +99,12 @@ in
       owner = "grafana";
       group = "grafana";
     };
+    tailscale-auth-key = {
+      file = ../../secrets/tailscale-auth-key.age;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
   };
 
   # ===================
@@ -159,6 +165,12 @@ in
   };
 
   # Tailscale - VPN for remote access
+  services.tailscale = {
+    authKeyFile = config.age.secrets.tailscale-auth-key.path;
+    extraUpFlags = [ "--accept-routes=false" ];
+  };
+
+  # Tailscale module defaults and firewall integration
   homelab.services.tailscale = {
     enable = true;
     # acceptRoutes = false; # Default
