@@ -116,7 +116,7 @@ in
     enable = true;
     port = 3000;
     openFirewall = false; # Access through Caddy only
-    allowedHosts = [ "local.kaifer.dev" "local.kaifer.dev:8443" ];
+    allowedHosts = [ "local.kaifer.dev" "local.kaifer.dev:8443" "frame1.kaifer.dev" ];
   };
 
   # Caddy reverse proxy - entry point for all web services
@@ -132,6 +132,7 @@ in
 
     virtualHosts = {
       "local.kaifer.dev" = "reverse_proxy localhost:3000";
+      "frame1.kaifer.dev" = "reverse_proxy localhost:3000";
     };
   };
 
