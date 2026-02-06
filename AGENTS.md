@@ -112,14 +112,24 @@ See `docs/vm-testing-dns.md` for details.
 
 ## Deployment Workflow
 
-Use deploy-rs for safe production deployment:
+Use deploy-rs for safe production deployment.
+
+### Deployment Policy (Mandatory)
+
+1. Deploy **only** with `deploy-rs` (via `nix run .#deploy -- ...`).
+2. Always keep **both** rollback protections enabled:
+   - `magicRollback = true`
+   - `autoRollback = true`
+3. Do not deploy production with `nixos-rebuild switch` directly.
+
+Use these commands:
 
 ```bash
 # Deploy to frame1
-nix run github:serokell/deploy-rs -- .#frame1
+nix run .#deploy -- .#frame1 --skip-checks
 
 # Dry run (test activation only)
-nix run github:serokell/deploy-rs -- .#frame1 --dry-activate
+nix run .#deploy -- .#frame1 --dry-activate --skip-checks
 ```
 
 Deployment behavior:
@@ -151,4 +161,3 @@ Ticket format:
 ### YYYY-MM-DD
 [Discoveries, decisions, progress]
 ```
-
