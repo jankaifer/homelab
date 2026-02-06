@@ -176,7 +176,7 @@ Building NixOS requires Linux. We use Docker for simplicity on macOS.
 - SSH: localhost:2222 → VM:22
 
 **Access services:**
-- Homepage (via Caddy): https://local.kaifer.dev:8443
+- Homepage (via Caddy): https://local.hobitin.eu:8443
 - SSH: `ssh -p 2222 root@localhost` (password: `nixos`)
 
 **Exit QEMU:** Press `Ctrl+A, X`
@@ -267,4 +267,4 @@ Machine config then just enables what it needs:
 | Testing approach | Docker-based VM build and run on macOS |
 | VM architecture | aarch64-linux for Apple Silicon |
 | TLS certificates | Let's Encrypt via Cloudflare DNS challenge |
-| Local domain | `local.kaifer.dev` → 127.0.0.1 |
+| Local domain | `local.hobitin.eu` → 127.0.0.1 |

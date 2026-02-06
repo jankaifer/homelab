@@ -25,7 +25,7 @@ homelab.services.homepage = {
   enable = true;
   port = 3000;
   openFirewall = false;  # Behind Caddy
-  allowedHosts = [ "local.kaifer.dev" "local.kaifer.dev:8443" "frame1.kaifer.dev" ];
+  allowedHosts = [ "local.hobitin.eu" "local.hobitin.eu:8443" "frame1.hobitin.eu" ];
 };
 ```
 
@@ -33,9 +33,9 @@ homelab.services.homepage = {
 
 | Environment | URL |
 |-------------|-----|
-| VM (local) | https://local.kaifer.dev:8443 (via Caddy) |
-| Production (primary) | https://frame1.kaifer.dev (via Caddy) |
-| Production (compatibility) | https://local.kaifer.dev (via Caddy) |
+| VM (local) | https://local.hobitin.eu:8443 (via Caddy) |
+| Production (primary) | https://frame1.hobitin.eu (via Caddy) |
+| Production (compatibility) | https://local.hobitin.eu (via Caddy) |
 
 ## Features
 
@@ -64,7 +64,7 @@ homelab.homepage.services = [{
   name = "MyService";
   category = "Monitoring";  # Groups services together
   description = "Short description";
-  href = "https://myservice.local.kaifer.dev:8443";
+  href = "https://myservice.local.hobitin.eu:8443";
   icon = "myservice-icon";
   # widget = { ... };  # Optional widget config
 }];
