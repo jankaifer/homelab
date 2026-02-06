@@ -79,7 +79,6 @@ in
     htop
     curl
     wget
-    google-chrome
   ];
 
   # ===================
