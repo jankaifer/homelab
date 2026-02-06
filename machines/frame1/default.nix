@@ -45,7 +45,7 @@ in
     settings = {
       PermitRootLogin = "no"; # Disable direct root SSH login
       PasswordAuthentication = false; # Enforce SSH key-only auth
-      AllowUsers = [ "disabled-for-rollback-test" ]; # Intentionally deny all real users
+      AllowUsers = [ "jankaifer" ]; # Restrict SSH access to main operator
     };
   };
 
