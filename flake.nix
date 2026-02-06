@@ -45,6 +45,33 @@
         };
     in
     {
+      # Expose a pinned, project-local deploy command.
+      # Usage: nix run .#deploy -- .#frame1 --skip-checks
+      apps = builtins.mapAttrs (system: _:
+        let
+          deployPkg = deploy-rs.packages.${system}.deploy-rs;
+        in
+        {
+          deploy = {
+            type = "app";
+            program = "${deployPkg}/bin/deploy";
+          };
+        }) deploy-rs.packages;
+
+      # Dev shell with deploy-rs available as `deploy`.
+      # Usage: nix develop, then run: deploy .#frame1 --skip-checks
+      devShells = builtins.mapAttrs (system: _:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          default = pkgs.mkShell {
+            packages = [
+              deploy-rs.packages.${system}.deploy-rs
+            ];
+          };
+        }) deploy-rs.packages;
+
       # NixOS configurations for each machine
       nixosConfigurations = {
         # Production server (x86_64) - for actual deployment
