@@ -32,4 +32,10 @@ in
 
   # Tailscale auth key for unattended server login
   "tailscale-auth-key.age".publicKeys = allKeys;
+
+  # MQTT password for Home Assistant MQTT client
+  "mqtt-homeassistant-password.age".publicKeys = allKeys;
+
+  # MQTT password for Zigbee2MQTT MQTT client
+  "mqtt-zigbee2mqtt-password.age".publicKeys = allKeys;
 }

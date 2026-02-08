@@ -57,6 +57,9 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | VictoriaMetrics | 8428 (internal) | https://metrics.local.hobitin.eu | [docs/services/victoriametrics.md](services/victoriametrics.md) |
 | Loki | 3100 (internal) | https://logs.local.hobitin.eu | [docs/services/loki.md](services/loki.md) |
 | Alloy | 12345 (internal) | (telemetry collector) | [docs/services/alloy.md](services/alloy.md) |
+| MQTT (Mosquitto) | 8883 | `mqtt.frame1.hobitin.eu:8883` | [docs/services/mqtt.md](services/mqtt.md) |
+| Zigbee2MQTT | 8080 (internal) | https://zigbee.frame1.hobitin.eu | [docs/services/zigbee2mqtt.md](services/zigbee2mqtt.md) |
+| Home Assistant | 8123 (internal) | https://home.frame1.hobitin.eu | [docs/services/homeassistant.md](services/homeassistant.md) |
 | Tailscale | 41641 (UDP) | (VPN mesh network) | [docs/services/tailscale.md](services/tailscale.md) |
 | SSH | 22 | `ssh -p 2222 root@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
 
@@ -83,6 +86,8 @@ nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x
 # Grafana: https://grafana.local.hobitin.eu:8443
 # VictoriaMetrics: https://metrics.local.hobitin.eu:8443
 # Loki: https://logs.local.hobitin.eu:8443
+# Zigbee2MQTT: https://zigbee.frame1.hobitin.eu:8443
+# Home Assistant: https://home.frame1.hobitin.eu:8443
 # SSH: ssh -p 2222 root@localhost
 ```
 
@@ -106,9 +111,12 @@ homelab/
 │       ├── alloy.nix
 │       ├── caddy.nix
 │       ├── grafana.nix
+│       ├── homeassistant.nix
 │       ├── homepage.nix
 │       ├── loki.nix
-│       └── victoriametrics.nix
+│       ├── mosquitto.nix
+│       ├── victoriametrics.nix
+│       └── zigbee2mqtt.nix
 ├── secrets/               # agenix encrypted secrets
 ├── scripts/               # Development scripts
 │   ├── build-installer-iso.sh  # Build bootable installer ISO

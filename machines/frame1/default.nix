@@ -18,6 +18,9 @@ in
     ../../modules/services/alloy.nix
     ../../modules/services/grafana.nix
     ../../modules/services/tailscale.nix
+    ../../modules/services/mosquitto.nix
+    ../../modules/services/zigbee2mqtt.nix
+    ../../modules/services/homeassistant.nix
   ];
 
   # Basic system settings
@@ -38,6 +41,16 @@ in
 
   # Basic networking
   networking.networkmanager.enable = true;
+
+  # Podman runtime for OCI containers (Home Assistant and Zigbee2MQTT)
+  virtualisation = {
+    podman = {
+      enable = true;
+      dockerCompat = true;
+      defaultNetwork.settings.dns_enabled = true;
+    };
+    oci-containers.backend = "podman";
+  };
 
   # SSH server - essential for remote management
   services.openssh = {
@@ -101,6 +114,18 @@ in
     };
     tailscale-auth-key = {
       file = ../../secrets/tailscale-auth-key.age;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+    mqtt-homeassistant-password = {
+      file = ../../secrets/mqtt-homeassistant-password.age;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+    mqtt-zigbee2mqtt-password = {
+      file = ../../secrets/mqtt-zigbee2mqtt-password.age;
       owner = "root";
       group = "root";
       mode = "0400";
@@ -171,5 +196,30 @@ in
     authKeyFile = config.age.secrets.tailscale-auth-key.path;
     # acceptRoutes = false; # Default, reflected in auto up flags
     # exitNode = false; # Default
+  };
+
+  # Mosquitto - TLS broker for Home Assistant and Zigbee2MQTT
+  homelab.services.mosquitto = {
+    enable = true;
+    acmeEmail = "jan@kaifer.cz";
+    cloudflareDnsTokenFile = config.age.secrets.cloudflare-api-token.path;
+    homeAssistantPasswordFile = config.age.secrets.mqtt-homeassistant-password.path;
+    zigbee2mqttPasswordFile = config.age.secrets.mqtt-zigbee2mqtt-password.path;
+    allowLAN = true;
+    allowTailscale = true;
+  };
+
+  # Zigbee2MQTT - Sonoff coordinator bridge (containerized)
+  homelab.services.zigbee2mqtt = {
+    enable = true;
+    # Replace with your real Sonoff USB path from /dev/serial/by-id/
+    serialPort = "/dev/serial/by-id/usb-CHANGEME";
+    adapter = "ember"; # Sonoff ZBDongle-E default
+    mqtt.passwordFile = config.age.secrets.mqtt-zigbee2mqtt-password.path;
+  };
+
+  # Home Assistant Core (containerized, host networking for discovery)
+  homelab.services.homeassistant = {
+    enable = true;
   };
 }
