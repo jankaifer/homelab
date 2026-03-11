@@ -46,11 +46,6 @@ in
   # Frame1 should stay wired-only in production. Leaving both Wi-Fi and
   # ethernet active on the same LAN caused asymmetric routing and broke SSH
   # over the wired address.
-  system.activationScripts.disableFrame1Wifi.text = ''
-    ${pkgs.networkmanager}/bin/nmcli radio wifi off || true
-    ${pkgs.networkmanager}/bin/nmcli connection down "Hobitín" || true
-  '';
-
   systemd.services.disable-frame1-wifi = {
     description = "Disable Wi-Fi on frame1";
     after = [ "NetworkManager.service" ];
