@@ -222,7 +222,7 @@ builders = @/etc/nix/machines
 
 **Builder configuration (`/etc/nix/machines`):**
 ```
-ssh://jankaifer@192.168.2.241 x86_64-linux - 4 1 big-parallel,benchmark
+ssh://jankaifer@192.168.2.22 x86_64-linux - 4 1 big-parallel,benchmark
 ```
 
 This allows your Mac to seamlessly build x86_64-linux packages by delegating to frame1.
@@ -262,7 +262,7 @@ export PATH="/nix/var/nix/profiles/default/bin:$PATH"
 nix run .#deploy -- .#frame1 --skip-checks
 
 # 5. Verify services
-ssh jankaifer@192.168.2.241 "systemctl status caddy grafana"
+ssh jankaifer@192.168.2.22 "systemctl status caddy grafana"
 curl -k https://frame1.hobitin.eu
 ```
 
@@ -285,7 +285,7 @@ If a deployment causes issues:
 # Automatic rollback already happened if activation failed
 # But you can manually rollback if needed:
 
-ssh jankaifer@192.168.2.241
+ssh jankaifer@192.168.2.22
 sudo nixos-rebuild switch --rollback
 
 # Or reboot to previous generation (grub menu)

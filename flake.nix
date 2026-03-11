@@ -108,7 +108,7 @@
       deploy.nodes = {
         frame1 = {
           # Connection details
-          hostname = "192.168.2.241";
+          hostname = "192.168.2.22";
 
           # SSH settings
           sshUser = "jankaifer";

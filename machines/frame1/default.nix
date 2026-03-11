@@ -41,6 +41,27 @@ in
 
   # Basic networking
   networking.networkmanager.enable = true;
+  networking.networkmanager.unmanaged = [ "type:wifi" ];
+
+  # Frame1 should stay wired-only in production. Leaving both Wi-Fi and
+  # ethernet active on the same LAN caused asymmetric routing and broke SSH
+  # over the wired address.
+  system.activationScripts.disableFrame1Wifi.text = ''
+    ${pkgs.networkmanager}/bin/nmcli radio wifi off || true
+    ${pkgs.networkmanager}/bin/nmcli connection down "Hobitín" || true
+  '';
+
+  systemd.services.disable-frame1-wifi = {
+    description = "Disable Wi-Fi on frame1";
+    after = [ "NetworkManager.service" ];
+    wants = [ "NetworkManager.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${pkgs.networkmanager}/bin/nmcli radio wifi off";
+    };
+  };
 
   # Podman runtime for OCI containers (Home Assistant and Zigbee2MQTT)
   virtualisation = {

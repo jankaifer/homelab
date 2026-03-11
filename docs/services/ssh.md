@@ -29,7 +29,7 @@ networking.firewall.allowedTCPPorts = [ 22 ];
 | Environment | Command |
 |-------------|---------|
 | VM (local) | `ssh -p 2222 jankaifer@localhost` |
-| Production (LAN bootstrap) | `ssh jankaifer@192.168.2.241` |
+| Production (LAN bootstrap) | `ssh jankaifer@192.168.2.22` |
 | Production (Tailscale) | `ssh jankaifer@<frame1>.<tailnet>.ts.net` |
 | Production (Tailscale IP) | `ssh jankaifer@100.x.x.x` |
 
