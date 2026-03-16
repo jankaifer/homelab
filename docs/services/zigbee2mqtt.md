@@ -55,6 +55,7 @@ Zigbee2MQTT is configured to connect with:
 - User: `zigbee2mqtt`
 - Password from agenix secret
 - CA file: `/var/lib/acme/mqtt.frame1.hobitin.eu/fullchain.pem`
+- On `frame1`, the broker hostname resolves to loopback so the container does not depend on external DNS or hairpin routing.
 
 ## Troubleshooting
 

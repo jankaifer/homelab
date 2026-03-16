@@ -104,8 +104,6 @@ in
       description = "Generate Zigbee2MQTT configuration";
       wantedBy = [ "podman-zigbee2mqtt.service" ];
       before = [ "podman-zigbee2mqtt.service" ];
-      requires = [ "agenix.service" ];
-      after = [ "agenix.service" ];
       serviceConfig = {
         Type = "oneshot";
       };

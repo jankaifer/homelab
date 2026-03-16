@@ -53,6 +53,7 @@ Use these values in Home Assistant MQTT integration:
 - CA certificate: `/var/lib/acme/mqtt.frame1.hobitin.eu/fullchain.pem`
 - Username: `homeassistant`
 - Password: value from `/run/agenix/mqtt-homeassistant-password`
+- On `frame1`, the broker hostname resolves locally to `127.0.0.1`, so the same TLS hostname works without external DNS.
 
 ## Troubleshooting
 

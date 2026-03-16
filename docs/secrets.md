@@ -13,7 +13,7 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 
 | Secret | File | Used By |
 |--------|------|---------|
-| Cloudflare API Token | `secrets/cloudflare-api-token.age` | Caddy (DNS challenge) |
+| Cloudflare API Token | `secrets/cloudflare-api-token.age` | Caddy DNS challenge and Mosquitto ACME |
 | Grafana Admin Password | `secrets/grafana-admin-password.age` | Grafana |
 | Tailscale Auth Key | `secrets/tailscale-auth-key.age` | Tailscale unattended login |
 
@@ -38,7 +38,7 @@ Both VM and production now use agenix secrets. The difference is which SSH key i
 - Server uses its own SSH host key for decryption
 - Add server's SSH public key to `secrets/secrets.nix` and re-encrypt: `agenix -r`
 
-The VM setup is configured in `machines/server/vm.nix` which is only included in the `server-vm` configuration.
+The VM setup is configured in `machines/frame1/vm.nix` which is only included in the `frame1-vm` configuration.
 
 ## Managing Secrets
 
@@ -89,6 +89,12 @@ For production, you need to:
 2. Re-encrypt secrets: `agenix -r`
 3. Uncomment `age.secrets` in server config
 4. Switch to `apiTokenFile`/`adminPasswordFile`
+
+## Cloudflare Secret Format
+
+The shared Cloudflare secret can continue to expose `CLOUDFLARE_API_TOKEN=...` for Caddy.
+
+Mosquitto's ACME flow derives the lego-specific `CLOUDFLARE_DNS_API_TOKEN` value from that same secret at runtime, so you do not need a second Cloudflare secret just for MQTT.
 
 ## Links
 
