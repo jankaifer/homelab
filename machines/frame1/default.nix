@@ -228,8 +228,7 @@ in
   # Zigbee2MQTT - Sonoff coordinator bridge (containerized)
   homelab.services.zigbee2mqtt = {
     enable = true;
-    # Replace with your real Sonoff USB path from /dev/serial/by-id/
-    serialPort = "/dev/serial/by-id/usb-CHANGEME";
+    serialPort = "/dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231101183952-if00";
     adapter = "ember"; # Sonoff ZBDongle-E default
     mqtt.passwordFile = config.age.secrets.mqtt-zigbee2mqtt-password.path;
   };

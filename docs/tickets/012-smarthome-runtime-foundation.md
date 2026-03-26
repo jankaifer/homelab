@@ -2,7 +2,7 @@
 
 **Status**: IN_PROGRESS
 **Created**: 2026-02-08
-**Updated**: 2026-02-08
+**Updated**: 2026-03-16
 
 ## Task
 
@@ -31,5 +31,7 @@ Enable Podman + OCI runtime baseline for smart-home services on `frame1` and def
 
 ## Validation Notes
 
-- Pending: `nix eval` and VM build checks
+- Passed on 2026-03-16:
+  - `nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x: x.drvPath'`
+  - `./scripts/run-vm-docker.sh --build`
 - Pending: verify existing services unaffected after deployment

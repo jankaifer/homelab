@@ -41,6 +41,15 @@ in
       description = "Stable serial device path for Zigbee coordinator.";
     };
 
+    allowPlaceholderSerialPort = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Allow the placeholder serial path to remain configured.
+        Intended for VM validation where no real coordinator is attached.
+      '';
+    };
+
     adapter = lib.mkOption {
       type = lib.types.enum [ "auto" "ember" "zstack" "deconz" "ezsp" ];
       default = "ember";
@@ -92,6 +101,13 @@ in
         assertion = cfg.mqtt.passwordFile != null;
         message = "homelab.services.zigbee2mqtt.mqtt.passwordFile must be set when Zigbee2MQTT is enabled.";
       }
+      {
+        assertion = cfg.allowPlaceholderSerialPort || !(lib.hasInfix "CHANGEME" cfg.serialPort);
+        message = ''
+          homelab.services.zigbee2mqtt.serialPort still uses the placeholder path.
+          Replace /dev/serial/by-id/usb-CHANGEME with the real coordinator path from ls -l /dev/serial/by-id/.
+        '';
+      }
     ];
 
     systemd.tmpfiles.rules = [
@@ -104,8 +120,6 @@ in
       description = "Generate Zigbee2MQTT configuration";
       wantedBy = [ "podman-zigbee2mqtt.service" ];
       before = [ "podman-zigbee2mqtt.service" ];
-      requires = [ "agenix.service" ];
-      after = [ "agenix.service" ];
       serviceConfig = {
         Type = "oneshot";
       };

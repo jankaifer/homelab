@@ -6,6 +6,9 @@
 
 let
   cfg = config.homelab.services.mosquitto;
+  acmeEnvService = "mosquitto-acme-cloudflare-env-${builtins.replaceStrings [ "." "*" ] [ "-" "wildcard" ] cfg.domain}";
+  acmeEnvFile = "/run/${acmeEnvService}.env";
+  acmeRenewService = "acme-order-renew-${cfg.domain}";
 in
 {
   options.homelab.services.mosquitto = {
@@ -27,6 +30,36 @@ in
       type = lib.types.nullOr lib.types.str;
       default = null;
       description = "Email used for ACME account registration.";
+    };
+
+    dnsResolver = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Optional DNS resolver override passed to NixOS ACME/lego.";
+    };
+
+    dnsPropagationCheck = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether lego should wait for DNS propagation checks.";
+    };
+
+    extraLegoFlags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Additional global flags to pass to lego for this certificate.";
+    };
+
+    extraLegoRunFlags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Additional flags to pass to lego run for this certificate.";
+    };
+
+    extraLegoRenewFlags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Additional flags to pass to lego renew for this certificate.";
     };
 
     cloudflareDnsTokenFile = lib.mkOption {
@@ -94,10 +127,59 @@ in
       defaults.email = lib.mkDefault cfg.acmeEmail;
       certs.${cfg.domain} = {
         dnsProvider = "cloudflare";
-        environmentFile = cfg.cloudflareDnsTokenFile;
+        environmentFile = acmeEnvFile;
+        dnsResolver = cfg.dnsResolver;
+        dnsPropagationCheck = cfg.dnsPropagationCheck;
+        extraLegoFlags = cfg.extraLegoFlags;
+        extraLegoRunFlags = cfg.extraLegoRunFlags;
+        extraLegoRenewFlags = cfg.extraLegoRenewFlags;
         group = "mosquitto";
         reloadServices = [ "mosquitto" ];
       };
+    };
+
+    systemd.services.${acmeEnvService} = {
+      description = "Prepare Cloudflare credentials for Mosquitto ACME";
+      wantedBy = [ "${acmeRenewService}.service" ];
+      before = [ "${acmeRenewService}.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+      };
+      script = ''
+        set -euo pipefail
+
+        export CLOUDFLARE_API_TOKEN=""
+        export CLOUDFLARE_DNS_API_TOKEN=""
+        export CLOUDFLARE_ZONE_API_TOKEN=""
+        export CLOUDFLARE_EMAIL=""
+        export CLOUDFLARE_API_KEY=""
+
+        set -a
+        . ${lib.escapeShellArg cfg.cloudflareDnsTokenFile}
+        set +a
+
+        dns_token="''${CLOUDFLARE_DNS_API_TOKEN:-''${CLOUDFLARE_API_TOKEN:-}}"
+
+        if [ -z "$dns_token" ] && {
+          [ -z "''${CLOUDFLARE_EMAIL:-}" ] || [ -z "''${CLOUDFLARE_API_KEY:-}" ];
+        }; then
+          echo "Cloudflare credentials file must define CLOUDFLARE_DNS_API_TOKEN, CLOUDFLARE_API_TOKEN, or CLOUDFLARE_EMAIL+CLOUDFLARE_API_KEY." >&2
+          exit 1
+        fi
+
+        umask 0077
+        cat > ${acmeEnvFile} <<EOF
+        ''${dns_token:+CLOUDFLARE_DNS_API_TOKEN=$dns_token}
+        ''${CLOUDFLARE_ZONE_API_TOKEN:+CLOUDFLARE_ZONE_API_TOKEN=$CLOUDFLARE_ZONE_API_TOKEN}
+        ''${CLOUDFLARE_EMAIL:+CLOUDFLARE_EMAIL=$CLOUDFLARE_EMAIL}
+        ''${CLOUDFLARE_API_KEY:+CLOUDFLARE_API_KEY=$CLOUDFLARE_API_KEY}
+        EOF
+      '';
+    };
+
+    systemd.services.${acmeRenewService} = {
+      requires = [ "${acmeEnvService}.service" ];
+      after = [ "${acmeEnvService}.service" ];
     };
 
     services.mosquitto = {
@@ -130,6 +212,10 @@ in
       }];
       logType = [ "error" "warning" "notice" "information" ];
     };
+
+    # Keep host-local clients on frame1 using the certificate hostname
+    # without depending on external DNS or hairpin routing.
+    networking.hosts."127.0.0.1" = [ cfg.domain ];
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.allowLAN [ cfg.tlsPort ];
 

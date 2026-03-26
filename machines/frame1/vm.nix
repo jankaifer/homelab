@@ -24,8 +24,13 @@
   # This key is mounted from the Mac via Docker -> QEMU virtfs chain
   age.identityPaths = [ "/mnt/host-ssh/id_ed25519" ];
 
-  # Ensure agenix waits for the SSH key mount before decrypting secrets
-  # The mount unit name is derived from the mount path: mnt-host\x2dssh.mount
-  systemd.services.agenix.after = [ "mnt-host\\x2dssh.mount" ];
-  systemd.services.agenix.requires = [ "mnt-host\\x2dssh.mount" ];
+  # VM testing should use Caddy's internal CA instead of mutating real DNS
+  # records or waiting on external ACME issuance.
+  homelab.services.caddy = {
+    localTls = lib.mkForce true;
+    cloudflareDns.enable = lib.mkForce false;
+  };
+
+  # Keep VM evaluation/builds usable without a real Zigbee coordinator.
+  homelab.services.zigbee2mqtt.allowPlaceholderSerialPort = lib.mkForce true;
 }
