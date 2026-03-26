@@ -23,7 +23,7 @@ Zigbee bridge service running in a Podman container with a USB coordinator.
 | `homelab.services.zigbee2mqtt.serialPort` | string | `/dev/serial/by-id/usb-CHANGEME` | Zigbee coordinator path |
 | `homelab.services.zigbee2mqtt.allowPlaceholderSerialPort` | bool | `false` | Allow VM-only placeholder serial path |
 | `homelab.services.zigbee2mqtt.adapter` | enum | `ember` | Adapter type |
-| `homelab.services.zigbee2mqtt.mqtt.*` | attrs | see module | MQTT TLS settings |
+| `homelab.services.zigbee2mqtt.mqtt.*` | attrs | see module | MQTT TLS settings; `mqtt.caFile` is optional for publicly trusted broker certs |
 
 **Current configuration:**
 ```nix
@@ -58,7 +58,7 @@ Zigbee2MQTT is configured to connect with:
 - `mqtts://mqtt.frame1.hobitin.eu:8883`
 - User: `zigbee2mqtt`
 - Password from agenix secret
-- CA file: `/var/lib/acme/mqtt.frame1.hobitin.eu/fullchain.pem`
+- CA file: optional; production can rely on the container's public root trust store for Let's Encrypt
 - On `frame1`, the broker hostname resolves to loopback so the container does not depend on external DNS or hairpin routing.
 
 ## Troubleshooting

@@ -85,9 +85,13 @@ in
       };
 
       caFile = lib.mkOption {
-        type = lib.types.str;
-        default = "/var/lib/acme/mqtt.frame1.hobitin.eu/fullchain.pem";
-        description = "CA/cert chain file used to verify MQTT TLS connection.";
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = ''
+          Optional CA bundle used to verify MQTT TLS.
+          Leave unset when the broker certificate chains to a public root in
+          the container's system trust store.
+        '';
       };
 
       baseTopic = lib.mkOption {
@@ -142,7 +146,9 @@ in
           echo "  user: ${cfg.mqtt.user}"
           echo "  password: |-"
           sed 's/^/    /' ${cfg.mqtt.passwordFile}
-          echo "  ca: ${cfg.mqtt.caFile}"
+          ${lib.optionalString (cfg.mqtt.caFile != null) ''
+            echo "  ca: ${cfg.mqtt.caFile}"
+          ''}
           echo "  base_topic: ${cfg.mqtt.baseTopic}"
           echo "serial:"
           echo "  port: ${cfg.serialPort}"
@@ -162,8 +168,7 @@ in
       pull = "missing";
       volumes = [
         "${cfg.dataDir}:/app/data"
-        "${cfg.mqtt.caFile}:${cfg.mqtt.caFile}:ro"
-      ];
+      ] ++ lib.optional (cfg.mqtt.caFile != null) "${cfg.mqtt.caFile}:${cfg.mqtt.caFile}:ro";
       devices = [ "${cfg.serialPort}:${cfg.serialPort}" ];
       extraOptions = [
         "--network=host"
