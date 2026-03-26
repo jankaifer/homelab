@@ -30,4 +30,7 @@
     localTls = lib.mkForce true;
     cloudflareDns.enable = lib.mkForce false;
   };
+
+  # Keep VM evaluation/builds usable without a real Zigbee coordinator.
+  homelab.services.zigbee2mqtt.allowPlaceholderSerialPort = lib.mkForce true;
 }

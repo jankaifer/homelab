@@ -2,7 +2,7 @@
 
 **Status**: IN_PROGRESS
 **Created**: 2026-02-08
-**Updated**: 2026-03-16
+**Updated**: 2026-03-26
 
 ## Task
 
@@ -44,6 +44,7 @@ Integrate Mosquitto, Zigbee2MQTT, and Home Assistant on `frame1`, wire required 
 - Fixed the `frame1-vm` overlay so Caddy uses internal TLS during local testing instead of trying real Cloudflare/Let's Encrypt issuance.
 - Removed the invalid `agenix.service` dependency from `zigbee2mqtt-config.service`; the config generator now runs successfully in the VM and `podman-zigbee2mqtt` proceeds into real container startup.
 - Added a Mosquitto ACME credential shim so the shared Cloudflare secret can satisfy both Caddy (`CLOUDFLARE_API_TOKEN`) and lego (`CLOUDFLARE_DNS_API_TOKEN`).
+- Added a Zigbee2MQTT production guardrail so `frame1` evaluation fails if the coordinator path is still the `/dev/serial/by-id/usb-CHANGEME` placeholder; `frame1-vm` explicitly allows the placeholder for local validation.
 - VM runtime check results:
   - `mosquitto.service` is running
   - `caddy.service` is running with internal TLS
