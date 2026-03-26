@@ -2,7 +2,7 @@
 
 **Status**: IN_PROGRESS
 **Created**: 2026-02-08
-**Updated**: 2026-02-08
+**Updated**: 2026-03-26
 
 ## Task
 
@@ -30,6 +30,12 @@ Add Zigbee2MQTT as a Podman-managed OCI container with direct USB coordinator ac
 - Added USB device mapping from configurable serial path
 - Added TLS MQTT settings (`mqtts://`, CA file)
 - Added Caddy reverse proxy integration and Homepage registration
+
+### 2026-03-26
+
+- Queried `frame1` over SSH and replaced the production Zigbee serial placeholder with the stable Sonoff by-id path:
+  - `/dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231101183952-if00`
+- The production eval guardrail added earlier is now satisfied on `frame1`
 
 ## Validation Notes
 

@@ -46,6 +46,7 @@ Integrate Mosquitto, Zigbee2MQTT, and Home Assistant on `frame1`, wire required 
 - Added a Mosquitto ACME credential shim so the shared Cloudflare secret can satisfy both Caddy (`CLOUDFLARE_API_TOKEN`) and lego (`CLOUDFLARE_DNS_API_TOKEN`).
 - Added a Zigbee2MQTT production guardrail so `frame1` evaluation fails if the coordinator path is still the `/dev/serial/by-id/usb-CHANGEME` placeholder; `frame1-vm` explicitly allows the placeholder for local validation.
 - Extended the Mosquitto module with ACME passthrough knobs (`dnsResolver`, `dnsPropagationCheck`, and raw `lego` flags) so the remaining Cloudflare/DNS issue can be tuned in production config without another module patch.
+- Queried `frame1` over SSH and replaced the Zigbee coordinator placeholder in production config with the stable Sonoff by-id path.
 - VM runtime check results:
   - `mosquitto.service` is running
   - `caddy.service` is running with internal TLS

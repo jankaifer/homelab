@@ -29,7 +29,7 @@ Zigbee bridge service running in a Podman container with a USB coordinator.
 ```nix
 homelab.services.zigbee2mqtt = {
   enable = true;
-  serialPort = "/dev/serial/by-id/usb-CHANGEME";
+  serialPort = "/dev/serial/by-id/usb-ITEAD_SONOFF_Zigbee_3.0_USB_Dongle_Plus_V2_20231101183952-if00";
   adapter = "ember";
   mqtt.passwordFile = config.age.secrets.mqtt-zigbee2mqtt-password.path;
 };
