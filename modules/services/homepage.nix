@@ -130,6 +130,20 @@ in
       ];
     };
 
+    # Homepage reads its YAML config on startup, so config file changes need a
+    # service restart during activation.
+    systemd.services.homepage-dashboard.restartTriggers = [
+      config.environment.etc."homepage-dashboard/bookmarks.yaml".source
+      config.environment.etc."homepage-dashboard/custom.css".source
+      config.environment.etc."homepage-dashboard/custom.js".source
+      config.environment.etc."homepage-dashboard/docker.yaml".source
+      config.environment.etc."homepage-dashboard/kubernetes.yaml".source
+      config.environment.etc."homepage-dashboard/proxmox.yaml".source
+      config.environment.etc."homepage-dashboard/services.yaml".source
+      config.environment.etc."homepage-dashboard/settings.yaml".source
+      config.environment.etc."homepage-dashboard/widgets.yaml".source
+    ];
+
     # Optionally open firewall
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ cfg.port ];
 

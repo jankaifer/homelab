@@ -45,6 +45,7 @@ homelab.services.homepage = {
 - Configurable widgets and bookmarks
 - Service health checks
 - Clean, modern UI
+- Restarts automatically on deploy when generated dashboard YAML changes
 
 ## Files
 
