@@ -46,6 +46,16 @@ in
       example = [ "local.hobitin.eu" "homepage.local" ];
       description = "Allowed hostnames for Homepage (for reverse proxy setups)";
     };
+
+    publicHttpsPort = lib.mkOption {
+      type = lib.types.nullOr lib.types.port;
+      default = null;
+      example = 8443;
+      description = ''
+        Optional external HTTPS port to append to service links rendered on the
+        dashboard. Leave null for normal production HTTPS on port 443.
+      '';
+    };
   };
 
   # Shared option for services to register themselves on the dashboard

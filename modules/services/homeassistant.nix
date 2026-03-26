@@ -5,6 +5,9 @@
 
 let
   cfg = config.homelab.services.homeassistant;
+  homepageHttpsPort = lib.attrByPath [ "homelab" "services" "homepage" "publicHttpsPort" ] null config;
+  homepageHref = "https://${cfg.domain}"
+    + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
 in
 {
   options.homelab.services.homeassistant = {
@@ -67,7 +70,7 @@ in
       name = "Home Assistant";
       category = "Smart Home";
       description = "Home automation platform";
-      href = "https://${cfg.domain}:8443";
+      href = homepageHref;
       icon = "home-assistant";
     }];
   };

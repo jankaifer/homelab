@@ -6,6 +6,9 @@
 
 let
   cfg = config.homelab.services.zigbee2mqtt;
+  homepageHttpsPort = lib.attrByPath [ "homelab" "services" "homepage" "publicHttpsPort" ] null config;
+  homepageHref = "https://${cfg.domain}"
+    + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
 in
 {
   options.homelab.services.zigbee2mqtt = {
@@ -182,7 +185,7 @@ in
       name = "Zigbee2MQTT";
       category = "Smart Home";
       description = "Zigbee bridge and device management";
-      href = "https://${cfg.domain}:8443";
+      href = homepageHref;
       icon = "zigbee2mqtt";
     }];
   };

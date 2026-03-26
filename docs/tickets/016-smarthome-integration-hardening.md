@@ -2,7 +2,7 @@
 
 **Status**: IN_PROGRESS
 **Created**: 2026-02-08
-**Updated**: 2026-03-26
+**Updated**: 2026-03-27
 
 ## Task
 
@@ -54,6 +54,12 @@ Integrate Mosquitto, Zigbee2MQTT, and Home Assistant on `frame1`, wire required 
   - `caddy.service` is running with internal TLS
   - `home.frame1.hobitin.eu` and `zigbee.frame1.hobitin.eu` now reach Caddy and return `502` while containers are still pulling/starting
   - MQTT ACME now gets past the missing-env-var failure and fails later on Cloudflare zone lookup (`ts.net.`), indicating a credential or DNS-zone issue outside the module wiring
+
+### 2026-03-27
+
+- Reproduced the homepage navigation bug from `https://frame1.hobitin.eu`: dashboard cards were generating `:8443` URLs such as `https://home.frame1.hobitin.eu:8443`, which refused connections in production.
+- Added `homelab.services.homepage.publicHttpsPort` so dashboard cards default to normal HTTPS in production and the VM overlay can still opt into host-mapped port `8443`.
+- Updated the Grafana, VictoriaMetrics, Home Assistant, and Zigbee2MQTT homepage registrations to derive their dashboard URLs from that shared setting instead of hardcoding `:8443`.
 
 ## Smoke-Check Runbook
 

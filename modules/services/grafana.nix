@@ -10,6 +10,9 @@ let
   cfg = config.homelab.services.grafana;
   victoriametricsCfg = config.homelab.services.victoriametrics;
   lokiCfg = config.homelab.services.loki;
+  homepageHttpsPort = lib.attrByPath [ "homelab" "services" "homepage" "publicHttpsPort" ] null config;
+  homepageHref = "https://${cfg.domain}"
+    + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
 in
 {
   options.homelab.services.grafana = {
@@ -99,7 +102,7 @@ in
       name = "Grafana";
       category = "Monitoring";
       description = "Dashboards & Visualization";
-      href = "https://${cfg.domain}:8443";
+      href = homepageHref;
       icon = "grafana";
     }];
   };

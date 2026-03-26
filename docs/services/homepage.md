@@ -18,6 +18,7 @@ Homepage is a modern, fully static, fast, secure, fully proxied dashboard with i
 | `homelab.services.homepage.port` | int | 3000 | Port to listen on |
 | `homelab.services.homepage.openFirewall` | bool | false | Open firewall port |
 | `homelab.services.homepage.allowedHosts` | list | [] | Allowed hostnames for reverse proxy |
+| `homelab.services.homepage.publicHttpsPort` | int or null | null | Optional external HTTPS port appended to dashboard service links |
 
 **Current settings (server):**
 ```nix
@@ -26,6 +27,7 @@ homelab.services.homepage = {
   port = 3000;
   openFirewall = false;  # Behind Caddy
   allowedHosts = [ "local.hobitin.eu" "local.hobitin.eu:8443" "frame1.hobitin.eu" ];
+  # publicHttpsPort = 8443;  # VM overlay only
 };
 ```
 
@@ -64,7 +66,7 @@ homelab.homepage.services = [{
   name = "MyService";
   category = "Monitoring";  # Groups services together
   description = "Short description";
-  href = "https://myservice.local.hobitin.eu:8443";
+  href = "https://myservice.local.hobitin.eu";
   icon = "myservice-icon";
   # widget = { ... };  # Optional widget config
 }];

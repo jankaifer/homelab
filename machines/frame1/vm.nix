@@ -31,6 +31,9 @@
     cloudflareDns.enable = lib.mkForce false;
   };
 
+  # Dashboard cards need the host-mapped HTTPS port during VM testing.
+  homelab.services.homepage.publicHttpsPort = lib.mkForce 8443;
+
   # Keep VM evaluation/builds usable without a real Zigbee coordinator.
   homelab.services.zigbee2mqtt.allowPlaceholderSerialPort = lib.mkForce true;
 }

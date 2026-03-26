@@ -10,6 +10,9 @@
 let
   cfg = config.homelab.services.victoriametrics;
   prometheusCfg = config.homelab.prometheus;
+  homepageHttpsPort = lib.attrByPath [ "homelab" "services" "homepage" "publicHttpsPort" ] null config;
+  homepageHref = "https://${cfg.domain}"
+    + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
 
   # Generate prometheus-compatible scrape config file
   scrapeConfigFile = pkgs.writeText "prometheus-scrape.yml" (builtins.toJSON {
@@ -104,7 +107,7 @@ in
       name = "VictoriaMetrics";
       category = "Monitoring";
       description = "Metrics Collection";
-      href = "https://${cfg.domain}:8443";
+      href = homepageHref;
       icon = "victoriametrics";
     }];
   };
