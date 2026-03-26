@@ -47,6 +47,8 @@ Integrate Mosquitto, Zigbee2MQTT, and Home Assistant on `frame1`, wire required 
 - Added a Zigbee2MQTT production guardrail so `frame1` evaluation fails if the coordinator path is still the `/dev/serial/by-id/usb-CHANGEME` placeholder; `frame1-vm` explicitly allows the placeholder for local validation.
 - Extended the Mosquitto module with ACME passthrough knobs (`dnsResolver`, `dnsPropagationCheck`, and raw `lego` flags) so the remaining Cloudflare/DNS issue can be tuned in production config without another module patch.
 - Queried `frame1` over SSH and replaced the Zigbee coordinator placeholder in production config with the stable Sonoff by-id path.
+- Fixed the Cloudflare ACME challenge chain for MQTT by creating an explicit `_acme-challenge.mqtt.frame1.hobitin.eu` CNAME to `_acme-challenge-mqtt.hobitin.eu`, which avoids the `*.frame1.hobitin.eu -> frame1.opah-wage.ts.net` wildcard/Tailscale chain.
+- Re-ran `acme-order-renew-mqtt.frame1.hobitin.eu.service` on `frame1`; certificate issuance succeeded and the new cert/key were installed under `/var/lib/acme/mqtt.frame1.hobitin.eu/`.
 - VM runtime check results:
   - `mosquitto.service` is running
   - `caddy.service` is running with internal TLS

@@ -101,6 +101,7 @@ mosquitto_sub \
 
 - Cloudflare API token secret for ACME DNS challenge
 - NixOS ACME (`security.acme`)
+- Cloudflare DNS record: `_acme-challenge.mqtt.frame1.hobitin.eu` must CNAME to a target inside the `hobitin.eu` zone, for example `_acme-challenge-mqtt.hobitin.eu`
 
 ## Links
 
