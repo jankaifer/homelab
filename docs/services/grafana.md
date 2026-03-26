@@ -25,7 +25,7 @@ Dashboards and visualization for metrics and logs.
 homelab.services.grafana = {
   enable = true;
   # port = 3001;                         # Web UI port
-  # domain = "grafana.local.hobitin.eu";   # Access domain
+  domain = "grafana.frame1.hobitin.eu";
 
   # For VM testing:
   adminPassword = "admin";
@@ -40,7 +40,7 @@ homelab.services.grafana = {
 | Environment | URL |
 |-------------|-----|
 | VM (local) | https://grafana.local.hobitin.eu:8443 |
-| Production | https://grafana.local.hobitin.eu |
+| Production | https://grafana.frame1.hobitin.eu |
 
 - **Default login (VM/default):** admin / admin
 

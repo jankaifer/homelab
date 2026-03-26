@@ -40,7 +40,7 @@ homelab.prometheus.scrapeConfigs = [
 
 ## Access
 
-- **Web UI**: https://metrics.local.hobitin.eu (via Caddy reverse proxy)
+- **Web UI**: https://metrics.frame1.hobitin.eu (via Caddy reverse proxy)
 - **VM Testing**: https://metrics.local.hobitin.eu:8443
 - **vmui**: Web UI at `/vmui` path for exploring metrics
 

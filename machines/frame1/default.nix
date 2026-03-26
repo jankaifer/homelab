@@ -182,7 +182,7 @@ in
     enable = true;
     # nodeExporter.enable = true; # Default, collects system metrics
     # retentionPeriod = "15d"; # Default
-    # domain = "metrics.local.hobitin.eu"; # Default
+    domain = "metrics.frame1.hobitin.eu";
   };
 
   # Loki - log storage
@@ -202,7 +202,7 @@ in
   homelab.services.grafana = {
     enable = true;
     # port = 3001; # Default
-    # domain = "grafana.local.hobitin.eu"; # Default
+    domain = "grafana.frame1.hobitin.eu";
     adminPasswordFile = config.age.secrets.grafana-admin-password.path;
   };
 

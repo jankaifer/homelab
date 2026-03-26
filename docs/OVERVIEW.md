@@ -53,8 +53,8 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 |---------|------|-----|---------------|
 | Caddy | 80/443 | (reverse proxy) | [docs/services/caddy.md](services/caddy.md) |
 | Homepage | 3000 (internal) | https://frame1.hobitin.eu (primary), https://local.hobitin.eu (compat) | [docs/services/homepage.md](services/homepage.md) |
-| Grafana | 3001 (internal) | https://grafana.local.hobitin.eu | [docs/services/grafana.md](services/grafana.md) |
-| VictoriaMetrics | 8428 (internal) | https://metrics.local.hobitin.eu | [docs/services/victoriametrics.md](services/victoriametrics.md) |
+| Grafana | 3001 (internal) | https://grafana.frame1.hobitin.eu | [docs/services/grafana.md](services/grafana.md) |
+| VictoriaMetrics | 8428 (internal) | https://metrics.frame1.hobitin.eu | [docs/services/victoriametrics.md](services/victoriametrics.md) |
 | Loki | 3100 (internal) | https://logs.local.hobitin.eu | [docs/services/loki.md](services/loki.md) |
 | Alloy | 12345 (internal) | (telemetry collector) | [docs/services/alloy.md](services/alloy.md) |
 | MQTT (Mosquitto) | 8883 | `mqtt.frame1.hobitin.eu:8883` | [docs/services/mqtt.md](services/mqtt.md) |

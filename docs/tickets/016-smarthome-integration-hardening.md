@@ -62,6 +62,7 @@ Integrate Mosquitto, Zigbee2MQTT, and Home Assistant on `frame1`, wire required 
 - Updated the Grafana, VictoriaMetrics, Home Assistant, and Zigbee2MQTT homepage registrations to derive their dashboard URLs from that shared setting instead of hardcoding `:8443`.
 - Verified on `frame1` that `/etc/homepage-dashboard/services.yaml` updated during deploy but `homepage-dashboard.service` did not restart, so the app kept serving stale links from its old process state.
 - Added `systemd.services.homepage-dashboard.restartTriggers` for the generated Homepage YAML/assets so future deploys restart the dashboard when its config changes.
+- Confirmed `grafana.local.hobitin.eu` does not resolve from the public/Tailscale browser path used for `frame1.hobitin.eu`, so production overrides now use `grafana.frame1.hobitin.eu` and `metrics.frame1.hobitin.eu` on `frame1`.
 
 ## Smoke-Check Runbook
 
