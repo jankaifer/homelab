@@ -63,6 +63,8 @@ Integrate Mosquitto, Zigbee2MQTT, and Home Assistant on `frame1`, wire required 
 - Verified on `frame1` that `/etc/homepage-dashboard/services.yaml` updated during deploy but `homepage-dashboard.service` did not restart, so the app kept serving stale links from its old process state.
 - Added `systemd.services.homepage-dashboard.restartTriggers` for the generated Homepage YAML/assets so future deploys restart the dashboard when its config changes.
 - Confirmed `grafana.local.hobitin.eu` does not resolve from the public/Tailscale browser path used for `frame1.hobitin.eu`, so production overrides now use `grafana.frame1.hobitin.eu` and `metrics.frame1.hobitin.eu` on `frame1`.
+- Upgraded the Sonoff ZBDongle-E coordinator on `frame1` from EmberZNet `6.10.3.0 build 297` to `7.4.4 [GA]`, which resolves the `EZSP protocol version (8) is not supported by Host [13-14]` startup failure in Zigbee2MQTT.
+- After the firmware fix, identified a second runtime issue: the bridged Zigbee2MQTT container resolved `mqtt.frame1.hobitin.eu` to its own loopback (`127.0.0.1`) and could not reach Mosquitto. Switched the container to host networking so the broker TLS hostname pinned on `frame1` works from inside Zigbee2MQTT too.
 
 ## Smoke-Check Runbook
 

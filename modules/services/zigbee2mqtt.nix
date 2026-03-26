@@ -160,13 +160,15 @@ in
       autoStart = true;
       autoRemoveOnStop = false;
       pull = "missing";
-      ports = [ "127.0.0.1:${toString cfg.port}:8080" ];
       volumes = [
         "${cfg.dataDir}:/app/data"
         "${cfg.mqtt.caFile}:${cfg.mqtt.caFile}:ro"
       ];
       devices = [ "${cfg.serialPort}:${cfg.serialPort}" ];
-      extraOptions = [ "--restart=unless-stopped" ];
+      extraOptions = [
+        "--network=host"
+        "--restart=unless-stopped"
+      ];
     };
 
     systemd.services.podman-zigbee2mqtt = {
