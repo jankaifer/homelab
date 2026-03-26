@@ -32,6 +32,36 @@ in
       description = "Email used for ACME account registration.";
     };
 
+    dnsResolver = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Optional DNS resolver override passed to NixOS ACME/lego.";
+    };
+
+    dnsPropagationCheck = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether lego should wait for DNS propagation checks.";
+    };
+
+    extraLegoFlags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Additional global flags to pass to lego for this certificate.";
+    };
+
+    extraLegoRunFlags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Additional flags to pass to lego run for this certificate.";
+    };
+
+    extraLegoRenewFlags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Additional flags to pass to lego renew for this certificate.";
+    };
+
     cloudflareDnsTokenFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -98,6 +128,11 @@ in
       certs.${cfg.domain} = {
         dnsProvider = "cloudflare";
         environmentFile = acmeEnvFile;
+        dnsResolver = cfg.dnsResolver;
+        dnsPropagationCheck = cfg.dnsPropagationCheck;
+        extraLegoFlags = cfg.extraLegoFlags;
+        extraLegoRunFlags = cfg.extraLegoRunFlags;
+        extraLegoRenewFlags = cfg.extraLegoRenewFlags;
         group = "mosquitto";
         reloadServices = [ "mosquitto" ];
       };

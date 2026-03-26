@@ -2,7 +2,7 @@
 
 **Status**: IN_PROGRESS
 **Created**: 2026-02-08
-**Updated**: 2026-02-08
+**Updated**: 2026-03-26
 
 ## Task
 
@@ -32,6 +32,7 @@ Add a reusable Mosquitto service module with TLS, username/password auth, ACL po
   - `zigbee2mqtt`
 - Added ACL rules for smart-home topic namespaces
 - Added firewall policy options for LAN and Tailscale exposure
+- Added ACME passthrough options for `dnsResolver`, `dnsPropagationCheck`, and raw `lego` flags so provider-specific DNS challenge quirks can be handled without editing the module again
 
 ## Validation Notes
 

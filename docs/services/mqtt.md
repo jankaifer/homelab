@@ -19,6 +19,11 @@ TLS-enabled MQTT broker for Home Assistant and Zigbee2MQTT.
 | `homelab.services.mosquitto.tlsPort` | int | 8883 | TLS MQTT listener port |
 | `homelab.services.mosquitto.domain` | string | `mqtt.frame1.hobitin.eu` | Domain used for ACME certificate |
 | `homelab.services.mosquitto.acmeEmail` | string or null | null | ACME registration email |
+| `homelab.services.mosquitto.dnsResolver` | string or null | null | Optional ACME DNS resolver override |
+| `homelab.services.mosquitto.dnsPropagationCheck` | bool | true | Toggle lego DNS propagation checks |
+| `homelab.services.mosquitto.extraLegoFlags` | list of string | `[]` | Extra global `lego` flags for ACME |
+| `homelab.services.mosquitto.extraLegoRunFlags` | list of string | `[]` | Extra `lego run` flags for ACME |
+| `homelab.services.mosquitto.extraLegoRenewFlags` | list of string | `[]` | Extra `lego renew` flags for ACME |
 | `homelab.services.mosquitto.cloudflareDnsTokenFile` | path or null | null | Cloudflare credentials env file; `CLOUDFLARE_API_TOKEN` is accepted and converted for ACME |
 | `homelab.services.mosquitto.homeAssistantPasswordFile` | path or null | null | Password file for `homeassistant` user |
 | `homelab.services.mosquitto.zigbee2mqttPasswordFile` | path or null | null | Password file for `zigbee2mqtt` user |
@@ -43,6 +48,8 @@ homelab.services.mosquitto = {
 Certificates are issued and renewed by NixOS `security.acme` using Cloudflare DNS challenge.
 
 The module derives a lego-compatible ACME environment file from the shared Cloudflare secret, so the same agenix secret can satisfy both Caddy and `security.acme`.
+
+If the upstream DNS setup needs provider-specific tuning, the module can now forward `dnsResolver`, `dnsPropagationCheck`, and raw `lego` flags into `security.acme` without another code change.
 
 Certificate paths used by Mosquitto:
 - `/var/lib/acme/mqtt.frame1.hobitin.eu/fullchain.pem`
