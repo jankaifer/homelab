@@ -18,6 +18,8 @@ in
     ../../modules/services/alloy.nix
     ../../modules/services/grafana.nix
     ../../modules/services/tailscale.nix
+    ../../modules/services/backup.nix
+    ../../modules/services/cert-monitoring.nix
     ../../modules/services/mosquitto.nix
     ../../modules/services/zigbee2mqtt.nix
     ../../modules/services/homeassistant.nix
@@ -144,6 +146,18 @@ in
       group = "root";
       mode = "0400";
     };
+    restic-password = {
+      file = ../../secrets/restic-password.age;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+    restic-repository-env = {
+      file = ../../secrets/restic-repository-env.age;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
   };
 
   # ===================
@@ -210,6 +224,17 @@ in
     authKeyFile = config.age.secrets.tailscale-auth-key.path;
     # acceptRoutes = false; # Default, reflected in auto up flags
     # exitNode = false; # Default
+  };
+
+  homelab.services.backup = {
+    enable = true;
+    repositoryEnvFile = config.age.secrets.restic-repository-env.path;
+    passwordFile = config.age.secrets.restic-password.path;
+  };
+
+  homelab.services.certMonitoring = {
+    enable = true;
+    warningDays = 14;
   };
 
   # Mosquitto - TLS broker for Home Assistant and Zigbee2MQTT

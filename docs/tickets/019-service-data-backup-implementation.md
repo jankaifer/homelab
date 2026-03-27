@@ -1,6 +1,6 @@
 # Ticket 019: Service Data Backup Implementation
 
-**Status**: PLANNING
+**Status**: IN_PROGRESS
 **Created**: 2026-03-27
 **Updated**: 2026-03-27
 
@@ -10,19 +10,19 @@ Implement backups for the service data that should be protected under the homela
 
 ## Implementation Plan
 
-1. Select the backup mechanism and destination based on Ticket 018
-2. Add declarative backup jobs for prioritized service data
-3. Ensure secrets needed for backup credentials are managed via agenix
-4. Add failure visibility through logs, metrics, or alerts
-5. Validate that at least one real backup completes successfully
+1. Implement backups with `services.restic.backups`
+2. Add agenix-managed restic repository/password secrets
+3. Back up Tier-1 service state and host recovery state
+4. Add selective Home Assistant stop/start hooks around backups
+5. Validate a real backup and restore after repository credentials are filled in
 
 ## Expected Initial Scope
 
 - Home Assistant state and configuration
 - Zigbee2MQTT data
-- Mosquitto configuration and durable state if needed
-- Grafana state if local data is worth preserving
-- Host-level configuration or exported state needed for recovery
+- VictoriaMetrics data
+- Grafana state
+- Tailscale state and SSH host keys
 
 ## Dependencies
 
@@ -34,3 +34,9 @@ Implement backups for the service data that should be protected under the homela
 
 - Ticket created from roadmap work selection.
 - Scoped as implementation-only so policy and restore design stay separate from mechanics.
+- Added `modules/services/backup.nix` and enabled it on `frame1`.
+- Wired `services.restic.backups.frame1` to object-storage credentials via agenix.
+- Added placeholder secrets and an example repository environment file format.
+- Configured retention to 30 daily / 12 monthly / 100 yearly snapshots as the practical restic equivalent of long-lived yearly retention.
+- Added selective Home Assistant stop/start hooks around the backup window.
+- Remaining work: fill in real repository credentials and execute a real backup plus restore validation.

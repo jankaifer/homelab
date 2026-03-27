@@ -1,6 +1,6 @@
 # Ticket 021: Camera and NVR Architecture
 
-**Status**: PLANNING
+**Status**: DONE
 **Created**: 2026-03-27
 **Updated**: 2026-03-27
 
@@ -33,3 +33,7 @@ Design the camera/NVR direction for the homelab before introducing implementatio
 
 - Ticket created from roadmap work selection.
 - Kept intentionally architecture-first because the long-term plan still targets a small multi-node fleet.
+- Captured the architecture decision in `docs/services/camera-nvr.md`.
+- Chose Frigate as the recommended direction for a first implementation on `frame1`.
+- Locked the access model to private Tailscale access and treated recordings as retention-only data.
+- Scoped Home Assistant integration to basic entity and stream integration rather than deep automation coupling.

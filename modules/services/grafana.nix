@@ -10,11 +10,31 @@ let
   cfg = config.homelab.services.grafana;
   victoriametricsCfg = config.homelab.services.victoriametrics;
   lokiCfg = config.homelab.services.loki;
+  dashboardEntries = config.homelab.grafana.dashboards;
   homepageHttpsPort = lib.attrByPath [ "homelab" "services" "homepage" "publicHttpsPort" ] null config;
   homepageHref = "https://${cfg.domain}"
     + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
+  dashboardDir = pkgs.linkFarm "grafana-dashboards" dashboardEntries;
 in
 {
+  options.homelab.grafana.dashboards = lib.mkOption {
+    type = lib.types.listOf (lib.types.submodule {
+      options = {
+        name = lib.mkOption {
+          type = lib.types.str;
+          description = "Filename for the provisioned Grafana dashboard.";
+        };
+
+        path = lib.mkOption {
+          type = lib.types.path;
+          description = "Path to the dashboard JSON file.";
+        };
+      };
+    });
+    default = [ ];
+    description = "Dashboards to provision into Grafana.";
+  };
+
   options.homelab.services.grafana = {
     enable = lib.mkEnableOption "Grafana dashboards";
 
@@ -76,21 +96,33 @@ in
 
         datasources.settings.datasources =
           # VictoriaMetrics (Prometheus-compatible)
-          lib.optional victoriametricsCfg.enable {
-            name = "VictoriaMetrics";
-            type = "prometheus";
-            url = "http://127.0.0.1:${toString victoriametricsCfg.port}";
-            isDefault = true;
-            editable = false;
-          }
+          lib.optional victoriametricsCfg.enable
+            {
+              name = "VictoriaMetrics";
+              uid = "victoriametrics";
+              type = "prometheus";
+              url = "http://127.0.0.1:${toString victoriametricsCfg.port}";
+              isDefault = true;
+              editable = false;
+            }
           ++
           # Loki for logs
           lib.optional lokiCfg.enable {
             name = "Loki";
+            uid = "loki";
             type = "loki";
             url = "http://127.0.0.1:${toString lokiCfg.port}";
             editable = false;
           };
+
+        dashboards.settings = lib.mkIf (dashboardEntries != [ ]) {
+          apiVersion = 1;
+          providers = [{
+            name = "homelab";
+            type = "file";
+            options.path = dashboardDir;
+          }];
+        };
       };
     };
 

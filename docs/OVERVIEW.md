@@ -33,6 +33,11 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 │                       │ (journal logs)  │                                   │
 │                       └─────────────────┘                                   │
 │                                                                             │
+│  ┌─────────────────┐  ┌────────────────────────────┐                        │
+│  │   Restic Job    │  │ Certificate Health Metrics │                        │
+│  │ (nightly push)  │  │ node_exporter textfile     │                        │
+│  └─────────────────┘  └────────────────────────────┘                        │
+│                                                                             │
 │  ┌─────────────────┐                                                        │
 │  │      SSH        │  (port 22)                                             │
 │  └─────────────────┘                                                        │
@@ -61,6 +66,8 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Zigbee2MQTT | 8080 (internal) | https://zigbee.frame1.hobitin.eu | [docs/services/zigbee2mqtt.md](services/zigbee2mqtt.md) |
 | Home Assistant | 8123 (internal) | https://home.frame1.hobitin.eu | [docs/services/homeassistant.md](services/homeassistant.md) |
 | Tailscale | 41641 (UDP) | (VPN mesh network) | [docs/services/tailscale.md](services/tailscale.md) |
+| Backup (Restic) | timer only | (no UI) | [docs/services/backup.md](services/backup.md) |
+| Certificate Monitoring | textfile metrics | Grafana dashboard `Certificate Health` | [docs/services/cert-monitoring.md](services/cert-monitoring.md) |
 | SSH | 22 | `ssh -p 2222 jankaifer@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
 
 ## Users
@@ -107,7 +114,9 @@ homelab/
 ├── modules/
 │   └── services/          # Reusable service modules
 │       ├── alloy.nix
+│       ├── backup.nix
 │       ├── caddy.nix
+│       ├── cert-monitoring.nix
 │       ├── grafana.nix
 │       ├── homeassistant.nix
 │       ├── homepage.nix
@@ -116,6 +125,9 @@ homelab/
 │       ├── victoriametrics.nix
 │       └── zigbee2mqtt.nix
 ├── secrets/               # agenix encrypted secrets
+│   ├── restic-password.age
+│   ├── restic-repository-env.age
+│   └── restic-repository.env.example
 ├── scripts/               # Development scripts
 │   ├── build-installer-iso.sh  # Build bootable installer ISO
 │   ├── install-server.sh       # Install NixOS on new hardware

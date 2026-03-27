@@ -1,6 +1,6 @@
 # Ticket 018: Backup Policy and Restore Runbook
 
-**Status**: PLANNING
+**Status**: DONE
 **Created**: 2026-03-27
 **Updated**: 2026-03-27
 
@@ -16,15 +16,13 @@ Define the homelab backup policy in concrete terms and document a restore runboo
 4. Document restore procedures for the highest-value services first
 5. Add a recurring validation checklist for restore testing
 
-## Open Questions
-
-- Which cloud or offsite target should be the default for encrypted backups?
-- Which datasets are explicitly allowed to remain rebuild-only?
-- What restore time objective is acceptable for smart-home services?
-
 ## Work Log
 
 ### 2026-03-27
 
 - Ticket created from roadmap work selection.
 - Scope intentionally starts with policy and runbook before implementation so later automation has a clear contract.
+- Locked the backup policy around encrypted object-storage restic backups with nightly cadence.
+- Classified Tier-1 and rebuildable datasets and documented them in `docs/services/backup.md`.
+- Added service-level restore runbooks for Home Assistant and Zigbee2MQTT.
+- Defined the real restore-test target as a restore into a scratch path on `frame1`.

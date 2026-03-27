@@ -16,6 +16,8 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 | Cloudflare API Token | `secrets/cloudflare-api-token.age` | Caddy and Mosquitto ACME |
 | Grafana Admin Password | `secrets/grafana-admin-password.age` | Grafana |
 | Tailscale Auth Key | `secrets/tailscale-auth-key.age` | Tailscale unattended login |
+| Restic Password | `secrets/restic-password.age` | Restic backup job |
+| Restic Repository Env | `secrets/restic-repository-env.age` | Restic repository URL and object-store credentials |
 
 ## Encryption Keys
 
@@ -95,6 +97,21 @@ For production, you need to:
 The shared Cloudflare secret can continue to expose `CLOUDFLARE_API_TOKEN=...`.
 
 Both Caddy's web certificates and Mosquitto's MQTT certificate now derive the lego-specific `CLOUDFLARE_DNS_API_TOKEN` value from that same secret at runtime, so you do not need separate Cloudflare secrets per service.
+
+## Restic Secret Format
+
+`restic-password.age` should contain only the repository password.
+
+`restic-repository-env.age` should contain an EnvironmentFile-compatible set of variables, for example:
+
+```bash
+RESTIC_REPOSITORY=s3:s3.amazonaws.com/my-homelab-bucket/frame1
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_DEFAULT_REGION=eu-central-1
+```
+
+See [restic-repository.env.example](/Users/jankaifer/dev/jankaifer/homelab/secrets/restic-repository.env.example) for the committed template.
 
 ## Links
 

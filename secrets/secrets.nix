@@ -41,4 +41,10 @@ in
 
   # MQTT password for Zigbee2MQTT MQTT client
   "mqtt-zigbee2mqtt-password.age".publicKeys = allKeys;
+
+  # Restic repository password
+  "restic-password.age".publicKeys = allKeys;
+
+  # Restic repository location and object-store credentials
+  "restic-repository-env.age".publicKeys = allKeys;
 }

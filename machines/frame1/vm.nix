@@ -36,4 +36,8 @@
 
   # Keep VM evaluation/builds usable without a real Zigbee coordinator.
   homelab.services.zigbee2mqtt.allowPlaceholderSerialPort = lib.mkForce true;
+
+  # Production-only operational jobs stay off in the VM.
+  homelab.services.backup.enable = lib.mkForce false;
+  homelab.services.certMonitoring.enable = lib.mkForce false;
 }

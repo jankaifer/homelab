@@ -53,12 +53,22 @@ Automatically provisioned when the corresponding services are enabled:
 | VictoriaMetrics | Prometheus | http://127.0.0.1:8428 |
 | Loki | Loki | http://127.0.0.1:3100 |
 
+Provisioned datasource UIDs:
+
+- `victoriametrics`
+- `loki`
+
 ## Features
 
 - **Metrics exploration**: Query VictoriaMetrics using PromQL
 - **Log exploration**: Query Loki using LogQL
 - **Dashboards**: Create and share dashboards
+- **Provisioned dashboards**: Shared homelab dashboards can be added declaratively by service modules
 - **Alerts**: Configure alerting rules (future)
+
+Current provisioned dashboard:
+
+- `Certificate Health`
 
 ## Storage
 
