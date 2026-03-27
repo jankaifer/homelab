@@ -13,7 +13,7 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 
 | Secret | File | Used By |
 |--------|------|---------|
-| Cloudflare API Token | `secrets/cloudflare-api-token.age` | Caddy DNS challenge and Mosquitto ACME |
+| Cloudflare API Token | `secrets/cloudflare-api-token.age` | Caddy and Mosquitto ACME |
 | Grafana Admin Password | `secrets/grafana-admin-password.age` | Grafana |
 | Tailscale Auth Key | `secrets/tailscale-auth-key.age` | Tailscale unattended login |
 
@@ -92,9 +92,9 @@ For production, you need to:
 
 ## Cloudflare Secret Format
 
-The shared Cloudflare secret can continue to expose `CLOUDFLARE_API_TOKEN=...` for Caddy.
+The shared Cloudflare secret can continue to expose `CLOUDFLARE_API_TOKEN=...`.
 
-Mosquitto's ACME flow derives the lego-specific `CLOUDFLARE_DNS_API_TOKEN` value from that same secret at runtime, so you do not need a second Cloudflare secret just for MQTT.
+Both Caddy's web certificates and Mosquitto's MQTT certificate now derive the lego-specific `CLOUDFLARE_DNS_API_TOKEN` value from that same secret at runtime, so you do not need separate Cloudflare secrets per service.
 
 ## Links
 

@@ -5,23 +5,22 @@
 #
 # Supports:
 # - Self-signed certs for quick local testing (localTls)
-# - Let's Encrypt with Cloudflare DNS challenge (cloudflareDns)
+# - Let's Encrypt via NixOS security.acme with Cloudflare DNS challenge
 # - Metrics endpoint for Prometheus scraping
 { config, lib, pkgs, ... }:
 
 let
   cfg = config.homelab.services.caddy;
-
-  # Build Caddy with Cloudflare DNS plugin if needed
-  caddyPackage =
-    if cfg.cloudflareDns.enable then
-      pkgs.caddy.withPlugins
-        {
-          plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
-          hash = "sha256-dnhEjopeA0UiI+XVYHYpsjcEI6Y1Hacbi28hVKYQURg=";
-        }
-    else
-      pkgs.caddy;
+  domains = builtins.attrNames cfg.virtualHosts;
+  acmeEnvService = "caddy-acme-cloudflare-env";
+  acmeEnvFile = "/run/${acmeEnvService}.env";
+  acmeRenewServices = map (domain: "acme-order-renew-${domain}.service") domains;
+  acmeCerts = lib.genAttrs domains (_: {
+    dnsProvider = "cloudflare";
+    environmentFile = acmeEnvFile;
+    group = "caddy";
+    reloadServices = [ "caddy" ];
+  });
 in
 {
   options.homelab.services.caddy = {
@@ -53,7 +52,7 @@ in
       description = "Email for Let's Encrypt ACME registration";
     };
 
-    # Cloudflare DNS challenge for Let's Encrypt
+    # Cloudflare DNS challenge for Let's Encrypt via security.acme
     cloudflareDns = {
       enable = lib.mkOption {
         type = lib.types.bool;
@@ -115,7 +114,7 @@ in
 
     services.caddy = {
       enable = true;
-      package = caddyPackage;
+      package = pkgs.caddy;
 
       # Global settings
       globalConfig = lib.concatStringsSep "\n" (lib.filter (x: x != "") [
@@ -129,10 +128,8 @@ in
           (domain: domainConfig: ''
             ${domain} {
               ${lib.optionalString cfg.localTls "tls internal"}
-              ${lib.optionalString cfg.cloudflareDns.enable ''
-                tls {
-                  dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-                }
+              ${lib.optionalString (!cfg.localTls && cfg.cloudflareDns.enable) ''
+                tls /var/lib/acme/${domain}/fullchain.pem /var/lib/acme/${domain}/key.pem
               ''}
               ${domainConfig}
             }
@@ -141,15 +138,62 @@ in
       );
     };
 
-    # Pass Cloudflare API token via environment variable
-    systemd.services.caddy = lib.mkIf cfg.cloudflareDns.enable {
-      serviceConfig = lib.mkIf (cfg.cloudflareDns.apiTokenFile != null) {
-        EnvironmentFile = cfg.cloudflareDns.apiTokenFile;
-      };
-      environment = lib.mkIf (cfg.cloudflareDns.apiToken != null) {
-        CLOUDFLARE_API_TOKEN = cfg.cloudflareDns.apiToken;
-      };
+    security.acme = lib.mkIf (!cfg.localTls && cfg.cloudflareDns.enable) {
+      acceptTerms = true;
+      defaults.email = lib.mkDefault cfg.acmeEmail;
+      certs = acmeCerts;
     };
+
+    systemd.services = lib.mkMerge [
+      (lib.mkIf (!cfg.localTls && cfg.cloudflareDns.enable) {
+        ${acmeEnvService} = {
+          description = "Prepare Cloudflare credentials for Caddy ACME";
+          wantedBy = acmeRenewServices;
+          before = acmeRenewServices;
+          serviceConfig = {
+            Type = "oneshot";
+          };
+          script = ''
+            set -euo pipefail
+
+            export CLOUDFLARE_API_TOKEN="${lib.optionalString (cfg.cloudflareDns.apiToken != null) cfg.cloudflareDns.apiToken}"
+            export CLOUDFLARE_DNS_API_TOKEN=""
+            export CLOUDFLARE_ZONE_API_TOKEN=""
+            export CLOUDFLARE_EMAIL=""
+            export CLOUDFLARE_API_KEY=""
+
+            ${lib.optionalString (cfg.cloudflareDns.apiTokenFile != null) ''
+              set -a
+              . ${lib.escapeShellArg cfg.cloudflareDns.apiTokenFile}
+              set +a
+            ''}
+
+            dns_token="''${CLOUDFLARE_DNS_API_TOKEN:-''${CLOUDFLARE_API_TOKEN:-}}"
+
+            if [ -z "$dns_token" ] && {
+              [ -z "''${CLOUDFLARE_EMAIL:-}" ] || [ -z "''${CLOUDFLARE_API_KEY:-}" ];
+            }; then
+              echo "Cloudflare credentials must define CLOUDFLARE_DNS_API_TOKEN, CLOUDFLARE_API_TOKEN, or CLOUDFLARE_EMAIL+CLOUDFLARE_API_KEY." >&2
+              exit 1
+            fi
+
+            umask 0077
+            cat > ${acmeEnvFile} <<EOF
+            ''${dns_token:+CLOUDFLARE_DNS_API_TOKEN=$dns_token}
+            ''${CLOUDFLARE_ZONE_API_TOKEN:+CLOUDFLARE_ZONE_API_TOKEN=$CLOUDFLARE_ZONE_API_TOKEN}
+            ''${CLOUDFLARE_EMAIL:+CLOUDFLARE_EMAIL=$CLOUDFLARE_EMAIL}
+            ''${CLOUDFLARE_API_KEY:+CLOUDFLARE_API_KEY=$CLOUDFLARE_API_KEY}
+            EOF
+          '';
+        };
+      })
+      (lib.mkIf (!cfg.localTls && cfg.cloudflareDns.enable) (
+        lib.genAttrs acmeRenewServices (_: {
+          requires = [ "${acmeEnvService}.service" ];
+          after = [ "${acmeEnvService}.service" ];
+        })
+      ))
+    ];
 
     # Open firewall ports
     networking.firewall.allowedTCPPorts = [ cfg.httpPort cfg.httpsPort ];
