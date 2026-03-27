@@ -19,7 +19,7 @@ VictoriaMetrics is a fast, cost-effective time-series database. It's a drop-in r
 | `homelab.services.victoriametrics.port` | `8428` | Internal port for VictoriaMetrics |
 | `homelab.services.victoriametrics.retentionPeriod` | `"15d"` | How long to retain metrics (e.g., 15d, 1w, 1y) |
 | `homelab.services.victoriametrics.nodeExporter.enable` | `true` | Enable node_exporter for system metrics |
-| `homelab.services.victoriametrics.domain` | `metrics.local.hobitin.eu` | Domain for web UI (via Caddy) |
+| `homelab.services.victoriametrics.domain` | `metrics.local.hobitin.eu` | Domain for web UI (via Caddy); production overrides this to `metrics.frame1.hobitin.eu` |
 
 ### Decentralized Scrape Config
 

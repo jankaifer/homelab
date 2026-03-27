@@ -25,7 +25,7 @@ homelab.services.loki = {
   enable = true;
   # port = 3100;              # HTTP API port
   # retentionPeriod = "360h"; # 15 days
-  # domain = "logs.local.hobitin.eu";
+  # domain = "logs.local.hobitin.eu"; # Production currently uses the default
 };
 ```
 

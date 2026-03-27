@@ -172,15 +172,10 @@ homelab/
 - Installation completed with 5130 packages
 - Bootloader (systemd-boot) installed successfully
 
-**Current state:**
-- Server booted into NixOS but no network (WiFi not configured in NixOS)
-- Need to configure WiFi manually: `nmcli device wifi connect "Hobitín" password "tecenamdosklepa"`
-- Login: root/nixos or admin/nixos
-
-**TODO:**
-- Add WiFi credentials to NixOS config (use agenix wifi-password.age)
-- Update secrets.nix to include server key for wifi-password.age
-- Re-encrypt wifi-password.age with server key
+**Current state at the time:**
+- Server booted into NixOS but no network because WiFi was not yet configured declaratively
+- Temporary manual recovery used `nmcli` to bring the machine online
+- Password-based local login was still being used during bootstrap
 
 ### 2026-02-01: Bug Fix - SSH Keys Missing
 
@@ -223,6 +218,5 @@ This ensures all keys defined in `lib/ssh-keys.nix` are automatically authorized
 **Next steps:**
 1. Run `nixos-rebuild switch --flake .#server` to apply current config with:
    - Proper SSH keys baked into NixOS config
-   - WiFi credentials via agenix (if configured)
    - Working Caddy with secrets
-2. Consider adding WiFi credentials to NixOS config declaratively
+2. Document the final wired-only production policy after bootstrap

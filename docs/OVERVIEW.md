@@ -18,7 +18,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 │           │                                                                 │
 │  ┌────────▼────────┐  ┌─────────────────┐  ┌─────────────────┐              │
 │  │    Homepage     │  │     Grafana     │  │ VictoriaMetrics │              │
-│  │frame1.hobitin.eu │  │grafana.local... │  │metrics.local... │              │
+│  │frame1.hobitin.eu │  │grafana.frame1...│  │metrics.frame1...│              │
 │  │ (internal:3000) │  │ (internal:3001) │  │ (internal:8428) │              │
 │  └─────────────────┘  └────────┬────────┘  └────────┬────────┘              │
 │                                │ queries            │ scrapes               │
@@ -61,16 +61,14 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Zigbee2MQTT | 8080 (internal) | https://zigbee.frame1.hobitin.eu | [docs/services/zigbee2mqtt.md](services/zigbee2mqtt.md) |
 | Home Assistant | 8123 (internal) | https://home.frame1.hobitin.eu | [docs/services/homeassistant.md](services/homeassistant.md) |
 | Tailscale | 41641 (UDP) | (VPN mesh network) | [docs/services/tailscale.md](services/tailscale.md) |
-| SSH | 22 | `ssh -p 2222 root@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
+| SSH | 22 | `ssh -p 2222 jankaifer@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
 
 ## Users
 
-| Username | Type | Password (VM only) | Notes |
-|----------|------|-------------------|-------|
-| `root` | System | `nixos` | For VM testing only |
-| `admin` | Normal | `nixos` | Has sudo (no password), wheel group |
-
-**Warning:** These passwords are for VM testing only. Production should use agenix-encrypted secrets.
+| Username | Type | Password | Notes |
+|----------|------|----------|-------|
+| `root` | System | disabled | SSH key access only in production |
+| `jankaifer` | Normal | disabled | Has sudo (no password), wheel + networkmanager |
 
 ## Development Workflow
 
@@ -88,7 +86,7 @@ nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x
 # Loki: https://logs.local.hobitin.eu:8443
 # Zigbee2MQTT: https://zigbee.frame1.hobitin.eu:8443
 # Home Assistant: https://home.frame1.hobitin.eu:8443
-# SSH: ssh -p 2222 root@localhost
+# SSH: ssh -p 2222 jankaifer@localhost
 ```
 
 ## Directory Structure
@@ -204,6 +202,22 @@ nix run .#deploy -- .#frame1 --dry-activate
 # Deploy to VM for testing (localhost:2222)
 nix run .#deploy -- .#frame1-vm --skip-checks
 ```
+
+### Post-Deploy Smoke Tests
+
+After a deploy, run:
+
+```bash
+./scripts/smoke-test-services.sh production
+```
+
+For local VM verification, run:
+
+```bash
+./scripts/smoke-test-services.sh vm
+```
+
+The `vm` mode uses `curl --resolve`, so it does not require modifying `/etc/hosts`.
 
 **Note:** `--skip-checks` is needed because deploy-rs checks require aarch64-linux builders (for frame1-vm config), which aren't available on Mac.
 

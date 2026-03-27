@@ -177,7 +177,7 @@ Building NixOS requires Linux. We use Docker for simplicity on macOS.
 
 **Access services:**
 - Homepage (via Caddy): https://local.hobitin.eu:8443
-- SSH: `ssh -p 2222 root@localhost` (password: `nixos`)
+- SSH: `ssh -p 2222 jankaifer@localhost`
 
 **Exit QEMU:** Press `Ctrl+A, X`
 

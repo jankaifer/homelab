@@ -86,7 +86,6 @@ in
 
   # Root user
   users.users.root = {
-    initialPassword = "nixos"; # Fallback password
     openssh.authorizedKeys.keys = allUserKeys;
   };
 
@@ -94,7 +93,6 @@ in
   users.users.jankaifer = {
     isNormalUser = true;
     extraGroups = [ "wheel" "networkmanager" ];
-    initialPassword = "nixos"; # Fallback password
     openssh.authorizedKeys.keys = allUserKeys;
   };
 

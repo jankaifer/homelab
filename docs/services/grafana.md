@@ -16,7 +16,7 @@ Dashboards and visualization for metrics and logs.
 |--------|------|---------|-------------|
 | `homelab.services.grafana.enable` | bool | false | Enable Grafana |
 | `homelab.services.grafana.port` | int | 3001 | Internal Grafana HTTP port |
-| `homelab.services.grafana.domain` | string | `grafana.local.hobitin.eu` | External domain via Caddy |
+| `homelab.services.grafana.domain` | string | `grafana.local.hobitin.eu` | External domain via Caddy; production overrides this to `grafana.frame1.hobitin.eu` |
 | `homelab.services.grafana.adminPassword` | string or null | `admin` | Admin password for local/VM testing |
 | `homelab.services.grafana.adminPasswordFile` | string or null | null | File path for production secret (agenix) |
 

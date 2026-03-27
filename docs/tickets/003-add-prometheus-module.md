@@ -77,7 +77,6 @@ VictoriaMetrics will:
 - Updated Homepage to show Prometheus and Grafana in dashboard
 - Updated documentation: prometheus.md, OVERVIEW.md
 - Config validates successfully
-- **TODO**: User needs to add wildcard DNS `*.lan.kaifer.dev` CNAME → `lan.kaifer.dev` in Cloudflare
 - VM build completed successfully
 - **PIVOT**: Switched from Prometheus to VictoriaMetrics (user preference)
   - More resource efficient (RAM, CPU, disk)
