@@ -1,8 +1,8 @@
 # Ticket 014: Add Zigbee2MQTT Module (Podman, USB Sonoff)
 
-**Status**: IN_PROGRESS
+**Status**: DONE
 **Created**: 2026-02-08
-**Updated**: 2026-03-26
+**Updated**: 2026-03-27
 
 ## Task
 
@@ -39,7 +39,8 @@ Add Zigbee2MQTT as a Podman-managed OCI container with direct USB coordinator ac
 
 ## Validation Notes
 
-- Pending runtime checks:
-  - Coordinator detection via configured serial path
-  - Successful MQTT TLS connection
-  - UI reachability via `zigbee.frame1.hobitin.eu`
+- Passed on 2026-03-27:
+  - Coordinator detected via configured Sonoff by-id serial path
+  - MQTT TLS connection succeeded after rotating the broker/client password and restarting the generated config path
+  - UI reachable via `https://zigbee.frame1.hobitin.eu`
+  - Bridge publishes `zigbee2mqtt/bridge/state = online`

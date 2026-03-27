@@ -1,8 +1,8 @@
 # Ticket 011: Add Tailscale Service Module
 
-**Status**: IN_PROGRESS
+**Status**: DONE
 **Created**: 2026-02-03
-**Updated**: 2026-02-03
+**Updated**: 2026-03-27
 
 ## Task
 
@@ -47,12 +47,9 @@ Add Tailscale VPN service to enable secure remote access to homelab services fro
 4. **Updated OVERVIEW.md**
    - Added Tailscale to services table
 
-**Status:** Implementation complete, waiting for deployment and testing
+**2026-03-27 validation:**
+- `tailscaled` is active on `frame1`
+- Tailnet IPv4 is `100.91.94.7`
+- `frame1` is authenticated and reachable over Tailscale
 
-**Remaining steps:**
-1. User needs to be home to deploy to frame1
-2. Deploy config to production: `nix run github:serokell/deploy-rs -- .#frame1 --skip-checks`
-3. SSH to frame1 and run: `tailscale up --accept-routes`
-4. Install Tailscale on laptop/phone
-5. Verify remote access works
-6. Optionally update DNS: point `home.kaifer.dev` to Tailscale IP
+**Status:** Complete

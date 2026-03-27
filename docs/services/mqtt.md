@@ -17,6 +17,7 @@ TLS-enabled MQTT broker for Home Assistant and Zigbee2MQTT.
 |--------|------|---------|-------------|
 | `homelab.services.mosquitto.enable` | bool | false | Enable Mosquitto |
 | `homelab.services.mosquitto.tlsPort` | int | 8883 | TLS MQTT listener port |
+| `homelab.services.mosquitto.loopbackPort` | int or null | null | Optional loopback-only plaintext listener for host-local clients |
 | `homelab.services.mosquitto.domain` | string | `mqtt.frame1.hobitin.eu` | Domain used for ACME certificate |
 | `homelab.services.mosquitto.acmeEmail` | string or null | null | ACME registration email |
 | `homelab.services.mosquitto.dnsResolver` | string or null | null | Optional ACME DNS resolver override |
@@ -36,6 +37,7 @@ homelab.services.mosquitto = {
   enable = true;
   domain = "mqtt.frame1.hobitin.eu";
   tlsPort = 8883;
+  loopbackPort = 1883;
   acmeEmail = "jan@kaifer.cz";
   cloudflareDnsTokenFile = config.age.secrets.cloudflare-api-token.path;
   homeAssistantPasswordFile = config.age.secrets.mqtt-homeassistant-password.path;
@@ -73,6 +75,11 @@ MQTT over TLS:
 - `mqtt.frame1.hobitin.eu:8883`
 - On `frame1` itself, `mqtt.frame1.hobitin.eu` is pinned to `127.0.0.1` so local services can reuse the TLS hostname without external DNS.
 
+Loopback-only plaintext listener:
+- `127.0.0.1:1883`
+- Intended only for Home Assistant running on `frame1`
+- Not exposed on LAN or Tailscale
+
 ## Troubleshooting
 
 Check broker status:
@@ -88,13 +95,17 @@ ls -l /var/lib/acme/mqtt.frame1.hobitin.eu/
 
 Test TLS subscription:
 ```bash
-mosquitto_sub \
+nix shell nixpkgs#mosquitto -c mosquitto_sub \
   -h mqtt.frame1.hobitin.eu \
   -p 8883 \
-  --cafile /var/lib/acme/mqtt.frame1.hobitin.eu/fullchain.pem \
   -u zigbee2mqtt \
   -P "$(cat /run/agenix/mqtt-zigbee2mqtt-password)" \
   -t 'zigbee2mqtt/#' -v
+```
+
+Verify listeners:
+```bash
+ss -ltnp | egrep ':1883|:8883'
 ```
 
 ## Dependencies

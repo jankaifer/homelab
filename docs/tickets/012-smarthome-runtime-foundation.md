@@ -1,8 +1,8 @@
 # Ticket 012: Podman Runtime Foundation for Smart-Home Services
 
-**Status**: IN_PROGRESS
+**Status**: DONE
 **Created**: 2026-02-08
-**Updated**: 2026-03-16
+**Updated**: 2026-03-27
 
 ## Task
 
@@ -34,4 +34,6 @@ Enable Podman + OCI runtime baseline for smart-home services on `frame1` and def
 - Passed on 2026-03-16:
   - `nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x: x.drvPath'`
   - `./scripts/run-vm-docker.sh --build`
-- Pending: verify existing services unaffected after deployment
+- Passed on 2026-03-27 after production deploy:
+  - `mosquitto`, `podman-zigbee2mqtt`, `podman-homeassistant`, `caddy`, and `tailscaled` all active on `frame1`
+  - Caddy-routed service endpoints returned expected responses via host-header checks

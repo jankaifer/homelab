@@ -20,6 +20,7 @@ Home Assistant Core running in a Podman container with host networking.
 | `homelab.services.homeassistant.port` | int | 8123 | Home Assistant HTTP port |
 | `homelab.services.homeassistant.domain` | string | `home.frame1.hobitin.eu` | Caddy-routed domain |
 | `homelab.services.homeassistant.dataDir` | path | `/var/lib/homeassistant` | Persistent config/data path |
+| `homelab.services.homeassistant.trustedProxies` | list of string | `[ "127.0.0.1" "::1" ]` | Trusted reverse proxies for Caddy |
 
 **Current configuration:**
 ```nix
@@ -36,6 +37,8 @@ homelab.services.homeassistant = {
 - Managed by `virtualisation.oci-containers` (Podman backend)
 - Host networking enabled (`--network=host`) for discovery compatibility
 - Persistent data in `/var/lib/homeassistant` mounted to `/config`
+- Baseline `configuration.yaml` is generated declaratively by `homeassistant-config.service`
+- Home Assistant was onboarded on production and now has an initialized admin account
 
 ## Access
 
@@ -44,22 +47,41 @@ homelab.services.homeassistant = {
 | VM / Local | https://home.frame1.hobitin.eu:8443 |
 | Production | https://home.frame1.hobitin.eu |
 
-## MQTT Integration (Manual in UI)
+## MQTT Integration
 
-Use these values in Home Assistant MQTT integration:
-- Broker: `mqtt.frame1.hobitin.eu`
-- Port: `8883`
-- TLS enabled
-- CA certificate: `/var/lib/acme/mqtt.frame1.hobitin.eu/fullchain.pem`
+Home Assistant 2025 no longer accepts broker connection details in `configuration.yaml`, so the MQTT broker is configured through the UI config flow.
+
+Current production setup:
+- Broker: `127.0.0.1`
+- Port: `1883`
 - Username: `homeassistant`
 - Password: value from `/run/agenix/mqtt-homeassistant-password`
-- On `frame1`, the broker hostname resolves locally to `127.0.0.1`, so the same TLS hostname works without external DNS.
+- Listener scope: loopback only on `frame1`
+
+Zigbee2MQTT still uses the TLS listener on `mqtt.frame1.hobitin.eu:8883`. Home Assistant uses the local loopback listener because it runs on the same host and the built-in UI flow does not expose the TLS path cleanly enough for unattended setup.
+
+The Home Assistant admin password created during onboarding is stored in [homeassistant-admin-password.age](/Users/jankaifer/dev/jankaifer/homelab/secrets/homeassistant-admin-password.age).
 
 ## Troubleshooting
 
 Check container logs:
 ```bash
 journalctl -u podman-homeassistant -n 200 --no-pager
+```
+
+Check generated config:
+```bash
+sed -n '1,200p' /var/lib/homeassistant/configuration.yaml
+```
+
+Validate config inside the running container:
+```bash
+podman exec homeassistant python -m homeassistant --script check_config --config /config
+```
+
+Check MQTT config entry:
+```bash
+grep -n '"domain":"mqtt"' /var/lib/homeassistant/.storage/core.config_entries
 ```
 
 Check local listener:

@@ -179,6 +179,9 @@ in
     systemd.services.podman-zigbee2mqtt = {
       requires = [ "zigbee2mqtt-config.service" ];
       after = [ "zigbee2mqtt-config.service" "mosquitto.service" ];
+      restartTriggers = [
+        config.systemd.services.zigbee2mqtt-config.script
+      ] ++ lib.optional (cfg.mqtt.passwordFile != null) cfg.mqtt.passwordFile;
       serviceConfig = {
         Restart = lib.mkForce "always";
         RestartSec = 5;

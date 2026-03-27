@@ -33,6 +33,9 @@ in
   # Tailscale auth key for unattended server login
   "tailscale-auth-key.age".publicKeys = allKeys;
 
+  # Home Assistant admin password created during onboarding
+  "homeassistant-admin-password.age".publicKeys = allKeys;
+
   # MQTT password for Home Assistant MQTT client
   "mqtt-homeassistant-password.age".publicKeys = allKeys;
 

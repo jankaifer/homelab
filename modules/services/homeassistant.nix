@@ -8,6 +8,7 @@ let
   homepageHttpsPort = lib.attrByPath [ "homelab" "services" "homepage" "publicHttpsPort" ] null config;
   homepageHref = "https://${cfg.domain}"
     + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
+  trustedProxyLines = lib.concatMapStringsSep "\n" (proxy: "    - ${proxy}") cfg.trustedProxies;
 in
 {
   options.homelab.services.homeassistant = {
@@ -36,12 +37,59 @@ in
       default = "/var/lib/homeassistant";
       description = "Persistent Home Assistant configuration directory.";
     };
+
+    trustedProxies = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "127.0.0.1" "::1" ];
+      description = "Trusted reverse proxy IPs for Home Assistant.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0750 root root - -"
+      "d ${cfg.dataDir}/themes 0750 root root - -"
     ];
+
+    systemd.services.homeassistant-config = {
+      description = "Generate Home Assistant configuration";
+      wantedBy = [ "podman-homeassistant.service" ];
+      before = [ "podman-homeassistant.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+      };
+      script = ''
+        set -euo pipefail
+
+        install -d -m 0750 ${cfg.dataDir}
+        install -d -m 0750 ${cfg.dataDir}/themes
+
+        cat > ${cfg.dataDir}/configuration.yaml <<'EOF'
+        # Managed by Nix. Put local overrides in dedicated includes or module options.
+        default_config:
+
+        frontend:
+          themes: !include_dir_merge_named themes
+
+        automation: !include automations.yaml
+        script: !include scripts.yaml
+        scene: !include scenes.yaml
+
+        http:
+          use_x_forwarded_for: true
+          trusted_proxies:
+        ${trustedProxyLines}
+        EOF
+
+        touch ${cfg.dataDir}/automations.yaml
+        touch ${cfg.dataDir}/scripts.yaml
+        touch ${cfg.dataDir}/scenes.yaml
+
+        touch ${cfg.dataDir}/secrets.yaml
+
+        chmod 0640 ${cfg.dataDir}/configuration.yaml ${cfg.dataDir}/automations.yaml ${cfg.dataDir}/scripts.yaml ${cfg.dataDir}/scenes.yaml ${cfg.dataDir}/secrets.yaml
+      '';
+    };
 
     virtualisation.oci-containers.containers.homeassistant = {
       image = cfg.image;
@@ -61,6 +109,14 @@ in
     systemd.services.podman-homeassistant.serviceConfig = {
       Restart = lib.mkForce "always";
       RestartSec = 5;
+    };
+
+    systemd.services.podman-homeassistant = {
+      requires = [ "homeassistant-config.service" ];
+      after = [ "homeassistant-config.service" "mosquitto.service" ];
+      restartTriggers = [
+        config.systemd.services.homeassistant-config.script
+      ];
     };
 
     homelab.services.caddy.virtualHosts.${cfg.domain} =

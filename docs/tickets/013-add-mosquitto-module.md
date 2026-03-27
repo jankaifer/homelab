@@ -1,8 +1,8 @@
 # Ticket 013: Add Mosquitto Module with ACME TLS + ACL Auth
 
-**Status**: IN_PROGRESS
+**Status**: DONE
 **Created**: 2026-02-08
-**Updated**: 2026-03-26
+**Updated**: 2026-03-27
 
 ## Task
 
@@ -36,7 +36,9 @@ Add a reusable Mosquitto service module with TLS, username/password auth, ACL po
 
 ## Validation Notes
 
-- Pending runtime checks:
-  - TLS handshake success with valid credentials
-  - Rejection with invalid credentials
-  - ACL negative tests
+- Passed on 2026-03-27:
+  - TLS listener active on `0.0.0.0:8883` / `[::]:8883`
+  - Loopback-only listener active on `127.0.0.1:1883` for Home Assistant
+  - Valid `zigbee2mqtt` credentials succeeded over TLS
+  - Invalid password was rejected with `Connection Refused: not authorised`
+  - Generated ACL files on `frame1` match the intended topic scope for `homeassistant/#` and `zigbee2mqtt/#`

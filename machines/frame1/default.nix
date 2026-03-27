@@ -221,6 +221,7 @@ in
     cloudflareDnsTokenFile = config.age.secrets.cloudflare-api-token.path;
     homeAssistantPasswordFile = config.age.secrets.mqtt-homeassistant-password.path;
     zigbee2mqttPasswordFile = config.age.secrets.mqtt-zigbee2mqtt-password.path;
+    loopbackPort = 1883;
     allowLAN = true;
     allowTailscale = true;
   };

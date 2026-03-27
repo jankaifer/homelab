@@ -1,6 +1,6 @@
 # Ticket 016: Smart-Home Integration, Hardening, and Validation
 
-**Status**: IN_PROGRESS
+**Status**: DONE
 **Created**: 2026-02-08
 **Updated**: 2026-03-27
 
@@ -66,6 +66,12 @@ Integrate Mosquitto, Zigbee2MQTT, and Home Assistant on `frame1`, wire required 
 - Upgraded the Sonoff ZBDongle-E coordinator on `frame1` from EmberZNet `6.10.3.0 build 297` to `7.4.4 [GA]`, which resolves the `EZSP protocol version (8) is not supported by Host [13-14]` startup failure in Zigbee2MQTT.
 - After the firmware fix, identified a second runtime issue: the bridged Zigbee2MQTT container resolved `mqtt.frame1.hobitin.eu` to its own loopback (`127.0.0.1`) and could not reach Mosquitto. Switched the container to host networking so the broker TLS hostname pinned on `frame1` works from inside Zigbee2MQTT too.
 - Identified a third runtime issue after host networking: Zigbee2MQTT was treating the broker leaf/full-chain cert as a CA bundle and failed TLS verification with `unable to get issuer certificate`. Made `mqtt.caFile` optional so production can use the container's built-in public trust store for the Let's Encrypt broker cert.
+- Added a declarative Home Assistant baseline config generator instead of relying on the container's first-run defaults.
+- Rotated both MQTT client passwords away from placeholder values and re-encrypted them into agenix secrets.
+- Added a loopback-only Mosquitto listener on `127.0.0.1:1883` so Home Assistant can use the supported UI config flow locally while Zigbee2MQTT and remote clients stay on the TLS listener.
+- Completed Home Assistant onboarding on `frame1`, stored the generated admin password in `secrets/homeassistant-admin-password.age`, and added the MQTT integration through the UI.
+- Verified Home Assistant now has an `mqtt` config entry and Zigbee2MQTT bridge entities in the entity registry.
+- Added restart triggers for both `podman-homeassistant` and `podman-zigbee2mqtt` so generated config and MQTT secret rotations actually restart the dependent services on deploy.
 
 ## Smoke-Check Runbook
 
@@ -75,12 +81,12 @@ Integrate Mosquitto, Zigbee2MQTT, and Home Assistant on `frame1`, wire required 
 2. Deploy:
    - `nix run .#deploy -- .#frame1 --skip-checks`
 3. MQTT checks on frame1:
-   - `mosquitto_sub -h mqtt.frame1.hobitin.eu -p 8883 --cafile /var/lib/acme/mqtt.frame1.hobitin.eu/fullchain.pem -u zigbee2mqtt -P "$(cat /run/agenix/mqtt-zigbee2mqtt-password)" -t 'zigbee2mqtt/#' -v`
-   - Verify invalid password is rejected
+   - `nix shell nixpkgs#mosquitto -c mosquitto_sub -h mqtt.frame1.hobitin.eu -p 8883 -u zigbee2mqtt -P "$(cat /run/agenix/mqtt-zigbee2mqtt-password)" -t 'zigbee2mqtt/bridge/state' -C 1 -W 5`
+   - Verify invalid password is rejected with `Connection Refused: not authorised`
 4. Zigbee adapter check:
    - `ls -l /dev/serial/by-id/`
    - `journalctl -u podman-zigbee2mqtt -n 200 --no-pager`
 5. HA flow:
    - Open `https://home.frame1.hobitin.eu`
-   - Configure MQTT integration with TLS/CA and `homeassistant` credentials
-   - Verify Zigbee2MQTT discovery entities appear
+   - Log in with the admin credential stored in `secrets/homeassistant-admin-password.age`
+   - Verify the MQTT integration exists and Zigbee2MQTT bridge entities appear

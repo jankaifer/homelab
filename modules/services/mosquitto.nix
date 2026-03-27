@@ -20,6 +20,15 @@ in
       description = "TLS MQTT port.";
     };
 
+    loopbackPort = lib.mkOption {
+      type = lib.types.nullOr lib.types.port;
+      default = null;
+      description = ''
+        Optional plaintext MQTT listener bound to 127.0.0.1 for host-local
+        clients such as Home Assistant.
+      '';
+    };
+
     domain = lib.mkOption {
       type = lib.types.str;
       default = "mqtt.frame1.hobitin.eu";
@@ -184,18 +193,39 @@ in
 
     services.mosquitto = {
       enable = true;
-      listeners = [{
-        port = cfg.tlsPort;
+      listeners = [
+        {
+          port = cfg.tlsPort;
+          users = {
+            homeassistant = {
+              passwordFile = cfg.homeAssistantPasswordFile;
+              acl = [
+                "readwrite homeassistant/#"
+                "readwrite zigbee2mqtt/#"
+              ];
+            };
+            zigbee2mqtt = {
+              passwordFile = cfg.zigbee2mqttPasswordFile;
+              acl = [
+                "readwrite homeassistant/#"
+                "readwrite zigbee2mqtt/#"
+              ];
+            };
+          };
+          acl = cfg.extraAcl;
+          settings = {
+            allow_anonymous = false;
+            certfile = "/var/lib/acme/${cfg.domain}/fullchain.pem";
+            keyfile = "/var/lib/acme/${cfg.domain}/key.pem";
+            tls_version = "tlsv1.2";
+          };
+        }
+      ] ++ lib.optional (cfg.loopbackPort != null) {
+        port = cfg.loopbackPort;
+        address = "127.0.0.1";
         users = {
           homeassistant = {
             passwordFile = cfg.homeAssistantPasswordFile;
-            acl = [
-              "readwrite homeassistant/#"
-              "readwrite zigbee2mqtt/#"
-            ];
-          };
-          zigbee2mqtt = {
-            passwordFile = cfg.zigbee2mqttPasswordFile;
             acl = [
               "readwrite homeassistant/#"
               "readwrite zigbee2mqtt/#"
@@ -205,11 +235,8 @@ in
         acl = cfg.extraAcl;
         settings = {
           allow_anonymous = false;
-          certfile = "/var/lib/acme/${cfg.domain}/fullchain.pem";
-          keyfile = "/var/lib/acme/${cfg.domain}/key.pem";
-          tls_version = "tlsv1.2";
         };
-      }];
+      };
       logType = [ "error" "warning" "notice" "information" ];
     };
 
