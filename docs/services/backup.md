@@ -64,6 +64,18 @@ The plan target was "infinite yearly". Restic only keeps a bounded count, so the
 - Other services stay online unless a future consistency issue justifies a pause
 - Repository checks run after backup with `restic check --read-data-subset=1/20`
 
+## Current Runtime Status
+
+Validated on `frame1` on 2026-03-27:
+
+- first repository initialization succeeded against Backblaze B2
+- first snapshot saved successfully as `49a3c261`
+- first restore test succeeded for `/var/lib/zigbee2mqtt` into `/restore-test`
+
+Observed follow-up note:
+
+- `restic snapshots` emitted stale lock-object warnings (`Load(<lock/...>) failed: Key not found`) before listing snapshots successfully. The backup, check, and restore all still succeeded.
+
 ## Restore Runbook
 
 ### Home Assistant
@@ -104,7 +116,13 @@ The plan target was "infinite yearly". Restic only keeps a bounded count, so the
 
 ### Restore Validation Target
 
-The first real restore test should restore Zigbee2MQTT or Home Assistant into a scratch path on `frame1` and confirm the restored files are complete before closing the ticket.
+Completed on 2026-03-27:
+
+- restored Zigbee2MQTT into `/restore-test` on `frame1`
+- verified `configuration.yaml`
+- verified `coordinator_backup.json`
+- verified `database.db`
+- verified `state.json`
 
 ## Secrets
 

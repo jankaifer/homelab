@@ -1,6 +1,6 @@
 # Ticket 019: Service Data Backup Implementation
 
-**Status**: IN_PROGRESS
+**Status**: DONE
 **Created**: 2026-03-27
 **Updated**: 2026-03-27
 
@@ -39,4 +39,15 @@ Implement backups for the service data that should be protected under the homela
 - Added placeholder secrets and an example repository environment file format.
 - Configured retention to 30 daily / 12 monthly / 100 yearly snapshots as the practical restic equivalent of long-lived yearly retention.
 - Added selective Home Assistant stop/start hooks around the backup window.
-- Remaining work: fill in real repository credentials and execute a real backup plus restore validation.
+- Replaced the placeholder restic credentials with a real Backblaze B2 S3 repository:
+  - bucket: `jankaifer-frame1-backup`
+  - prefix: `frame1`
+  - endpoint: `s3.eu-central-003.backblazeb2.com`
+- Deployed the updated configuration to `frame1` with `deploy-rs`.
+- Ran the first real backup via `systemctl start restic-backups-frame1.service`.
+- Restic initialized the repository and saved the first snapshot as `49a3c261`.
+- Verified post-backup repository health with the built-in `restic check` run; no errors were reported.
+- Ran a real restore test into `/restore-test` on `frame1`:
+  - restored `/var/lib/zigbee2mqtt`
+  - verified `configuration.yaml`, `coordinator_backup.json`, `database.db`, and `state.json`
+- Observed one follow-up item: `restic snapshots` printed stale lock-object warnings (`Load(<lock/...>) failed: Key not found`) before successfully listing snapshots. The backup and restore still succeeded, so this is tracked as an operational note rather than a blocker.
