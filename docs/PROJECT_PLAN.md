@@ -72,17 +72,31 @@ Out of scope for now:
 
 Now:
 1. Harden backup/restore implementation and policy enforcement.
-2. Stabilize core 3-role architecture foundations.
-3. Keep deployment/update process predictable and reversible.
+2. Establish concrete restore procedures and validation drills.
+3. Add operational visibility for certificate renewal paths.
 
 Next:
 1. Expand family-grade service reliability and operations hygiene.
-2. Introduce segmentation where it reduces risk.
-3. Add identity/SSO and mature access patterns.
+2. Evaluate camera/NVR architecture and storage model.
 
 Later:
-1. Broaden self-hosted app portfolio as operational capacity allows.
-2. Add specialized nodes only when workload-specific value is clear.
+1. Introduce segmentation where it reduces risk.
+2. Add identity/SSO and mature access patterns.
+3. Broaden self-hosted app portfolio as operational capacity allows.
+4. Add specialized nodes only when workload-specific value is clear.
+
+## Current Ticket Focus
+
+Active planning tickets:
+1. Ticket 018: Backup policy and restore runbook
+2. Ticket 019: Service data backup implementation
+3. Ticket 020: Certificate renewal monitoring and alerting
+4. Ticket 021: Camera/NVR architecture
+
+Deferred for later:
+1. Network segmentation
+2. Identity/SSO
+3. Additional family-facing service expansion beyond the current focus set
 
 ## Tech Stack
 
