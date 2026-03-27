@@ -14,6 +14,7 @@ let
   domains = builtins.attrNames cfg.virtualHosts;
   acmeEnvService = "caddy-acme-cloudflare-env";
   acmeEnvFile = "/run/${acmeEnvService}.env";
+  acmeIssueServices = map (domain: "acme-${domain}.service") domains;
   acmeRenewServices = map (domain: "acme-order-renew-${domain}.service") domains;
   acmeCerts = lib.genAttrs domains (_: {
     dnsProvider = "cloudflare";
@@ -145,6 +146,12 @@ in
     };
 
     systemd.services = lib.mkMerge [
+      (lib.mkIf (!cfg.localTls && cfg.cloudflareDns.enable) {
+        caddy = {
+          after = acmeIssueServices;
+          requires = acmeIssueServices;
+        };
+      })
       (lib.mkIf (!cfg.localTls && cfg.cloudflareDns.enable) {
         ${acmeEnvService} = {
           description = "Prepare Cloudflare credentials for Caddy ACME";

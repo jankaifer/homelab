@@ -29,6 +29,8 @@ Plan and evaluate migration from Caddy-managed ACME certificates to NixOS `secur
 - Added one `security.acme.certs.<domain>` entry per configured Caddy virtual host
 - Switched Caddy to load certificate and key paths from `/var/lib/acme/<domain>/`
 - Added a Cloudflare credential shim for Caddy so the existing shared secret still works with lego (`CLOUDFLARE_DNS_API_TOKEN`)
+- During first production deployment, `deploy-rs` rollback caught an activation ordering bug: `caddy.service` restarted before initial ACME issuance completed for new web cert paths
+- Fixed the module by making `caddy.service` require and start after the per-domain `acme-<domain>.service` units on non-VM ACME deployments
 - Kept VM behavior unchanged: `localTls = true` still uses Caddy's internal CA and skips ACME
 - Updated Caddy and secrets documentation to reflect the unified ACME flow
 - Validation:
