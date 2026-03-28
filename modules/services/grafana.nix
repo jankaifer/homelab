@@ -11,6 +11,22 @@ let
   victoriametricsCfg = config.homelab.services.victoriametrics;
   lokiCfg = config.homelab.services.loki;
   dashboardEntries = config.homelab.grafana.dashboards;
+  provisionedDatasources =
+    lib.optional victoriametricsCfg.enable {
+      name = "VictoriaMetrics";
+      uid = "victoriametrics";
+      type = "prometheus";
+      url = "http://127.0.0.1:${toString victoriametricsCfg.port}";
+      isDefault = true;
+      editable = false;
+    }
+    ++ lib.optional lokiCfg.enable {
+      name = "Loki";
+      uid = "loki";
+      type = "loki";
+      url = "http://127.0.0.1:${toString lokiCfg.port}";
+      editable = false;
+    };
   homepageHttpsPort = lib.attrByPath [ "homelab" "services" "homepage" "publicHttpsPort" ] null config;
   homepageHref = "https://${cfg.domain}"
     + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
@@ -94,26 +110,14 @@ in
       provision = {
         enable = true;
 
-        datasources.settings.datasources =
-          # VictoriaMetrics (Prometheus-compatible)
-          lib.optional victoriametricsCfg.enable
-            {
-              name = "VictoriaMetrics";
-              uid = "victoriametrics";
-              type = "prometheus";
-              url = "http://127.0.0.1:${toString victoriametricsCfg.port}";
-              isDefault = true;
-              editable = false;
-            }
-          ++
-          # Loki for logs
-          lib.optional lokiCfg.enable {
-            name = "Loki";
-            uid = "loki";
-            type = "loki";
-            url = "http://127.0.0.1:${toString lokiCfg.port}";
-            editable = false;
-          };
+        datasources.settings = {
+          prune = true;
+          deleteDatasources = map (datasource: {
+            name = datasource.name;
+            orgId = 1;
+          }) provisionedDatasources;
+          datasources = provisionedDatasources;
+        };
 
         dashboards.settings = lib.mkIf (dashboardEntries != [ ]) {
           apiVersion = 1;

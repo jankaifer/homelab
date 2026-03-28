@@ -40,4 +40,7 @@
   # Production-only operational jobs stay off in the VM.
   homelab.services.backup.enable = lib.mkForce false;
   homelab.services.certMonitoring.enable = lib.mkForce false;
+
+  # The NAS stack is production-focused and not useful in the local VM.
+  homelab.services.nas.enable = lib.mkForce false;
 }

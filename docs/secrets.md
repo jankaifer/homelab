@@ -16,6 +16,8 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 | Cloudflare API Token | `secrets/cloudflare-api-token.age` | Caddy and Mosquitto ACME |
 | Grafana Admin Password | `secrets/grafana-admin-password.age` | Grafana |
 | Tailscale Auth Key | `secrets/tailscale-auth-key.age` | Tailscale unattended login |
+| NAS SMB Password (`jankaifer`) | `secrets/nas-jankaifer-password.age` | Samba login for admin NAS access |
+| NAS SMB Password (`nasguest`) | `secrets/nas-guest-password.age` | Samba login for guest media access |
 | Restic Password | `secrets/restic-password.age` | Restic backup job |
 | Restic Repository Env | `secrets/restic-repository-env.age` | Restic repository URL and object-store credentials |
 
@@ -59,22 +61,22 @@ echo "my-secret-value" | age -r "ssh-ed25519 AAAA..." -o secret-name.age
 ### Adding a New Secret
 
 1. Add the secret declaration to `secrets/secrets.nix`:
-   ```nix
-   "new-secret.age".publicKeys = allKeys;
-   ```
+```nix
+"new-secret.age".publicKeys = allKeys;
+```
 
 2. Create the encrypted file:
-   ```bash
-   cd secrets && agenix -e new-secret.age
-   ```
+```bash
+cd secrets && agenix -e new-secret.age
+```
 
 3. Reference in NixOS config:
-   ```nix
-   age.secrets.new-secret = {
-     file = ../../secrets/new-secret.age;
-     owner = "service-user";
-   };
-   ```
+```nix
+age.secrets.new-secret = {
+  file = ../../secrets/new-secret.age;
+  owner = "service-user";
+};
+```
 
 ### Re-encrypting After Key Changes
 

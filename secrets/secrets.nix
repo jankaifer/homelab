@@ -47,4 +47,10 @@ in
 
   # Restic repository location and object-store credentials
   "restic-repository-env.age".publicKeys = allKeys;
+
+  # SMB password for jankaifer NAS access
+  "nas-jankaifer-password.age".publicKeys = allKeys;
+
+  # SMB password for guest NAS access
+  "nas-guest-password.age".publicKeys = allKeys;
 }

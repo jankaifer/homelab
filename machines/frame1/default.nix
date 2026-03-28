@@ -17,6 +17,7 @@ in
     ../../modules/services/loki.nix
     ../../modules/services/alloy.nix
     ../../modules/services/grafana.nix
+    ../../modules/services/nas.nix
     ../../modules/services/tailscale.nix
     ../../modules/services/backup.nix
     ../../modules/services/cert-monitoring.nix
@@ -158,6 +159,18 @@ in
       group = "root";
       mode = "0400";
     };
+    nas-jankaifer-password = {
+      file = ../../secrets/nas-jankaifer-password.age;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+    nas-guest-password = {
+      file = ../../secrets/nas-guest-password.age;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
   };
 
   # ===================
@@ -216,6 +229,15 @@ in
     # port = 3001; # Default
     domain = "grafana.frame1.hobitin.eu";
     adminPasswordFile = config.age.secrets.grafana-admin-password.path;
+  };
+
+  homelab.services.nas = {
+    enable = true;
+    rootPath = "/nas";
+    lanCidr = "192.168.2.0/24";
+    tailscaleCidr = "100.64.0.0/10";
+    adminSmbPasswordFile = config.age.secrets.nas-jankaifer-password.path;
+    guestSmbPasswordFile = config.age.secrets.nas-guest-password.path;
   };
 
   # Tailscale - VPN for remote access (autologin via auth key secret)

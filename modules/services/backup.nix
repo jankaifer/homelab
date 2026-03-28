@@ -59,6 +59,7 @@ in
         "/var/lib/grafana"
         "/var/lib/tailscale"
         "/etc/ssh"
+        "/nas/private"
       ];
       pruneOpts = [
         "--keep-daily 30"

@@ -5,6 +5,7 @@ let
   cfg = config.homelab.services.certMonitoring;
   caddyCfg = config.homelab.services.caddy;
   mosquittoCfg = config.homelab.services.mosquitto;
+  metricsDatasource = "VictoriaMetrics";
   caddyDomains = lib.attrNames caddyCfg.virtualHosts;
   renewalUnits =
     (lib.map
@@ -89,10 +90,7 @@ let
     links = [ ];
     panels = [
       {
-        datasource = {
-          type = "prometheus";
-          uid = "victoriametrics";
-        };
+        datasource = metricsDatasource;
         fieldConfig = {
           defaults = {
             color = {
@@ -143,10 +141,7 @@ let
         pluginVersion = "11.5.2";
         targets = [
           {
-            datasource = {
-              type = "prometheus";
-              uid = "victoriametrics";
-            };
+            datasource = metricsDatasource;
             expr = "min(homelab_certificate_days_until_expiry)";
             instant = true;
             legendFormat = "closest expiry";
@@ -157,10 +152,7 @@ let
         type = "stat";
       }
       {
-        datasource = {
-          type = "prometheus";
-          uid = "victoriametrics";
-        };
+        datasource = metricsDatasource;
         fieldConfig = {
           defaults = {
             color = {
@@ -219,10 +211,7 @@ let
         pluginVersion = "11.5.2";
         targets = [
           {
-            datasource = {
-              type = "prometheus";
-              uid = "victoriametrics";
-            };
+            datasource = metricsDatasource;
             expr = "max(homelab_certificate_expiring_soon)";
             instant = true;
             legendFormat = "expiring soon";
@@ -233,10 +222,7 @@ let
         type = "stat";
       }
       {
-        datasource = {
-          type = "prometheus";
-          uid = "victoriametrics";
-        };
+        datasource = metricsDatasource;
         fieldConfig = {
           defaults = {
             custom = {
@@ -281,10 +267,7 @@ let
         pluginVersion = "11.5.2";
         targets = [
           {
-            datasource = {
-              type = "prometheus";
-              uid = "victoriametrics";
-            };
+            datasource = metricsDatasource;
             expr = "homelab_certificate_days_until_expiry";
             format = "table";
             instant = true;
@@ -312,10 +295,7 @@ let
         type = "table";
       }
       {
-        datasource = {
-          type = "prometheus";
-          uid = "victoriametrics";
-        };
+        datasource = metricsDatasource;
         fieldConfig = {
           defaults = {
             custom = {
@@ -372,10 +352,7 @@ let
         pluginVersion = "11.5.2";
         targets = [
           {
-            datasource = {
-              type = "prometheus";
-              uid = "victoriametrics";
-            };
+            datasource = metricsDatasource;
             expr = "homelab_certificate_renewal_unit_result";
             format = "table";
             instant = true;

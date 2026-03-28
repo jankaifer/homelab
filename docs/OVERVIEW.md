@@ -38,6 +38,11 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 │  │ (nightly push)  │  │ node_exporter textfile     │                        │
 │  └─────────────────┘  └────────────────────────────┘                        │
 │                                                                             │
+│  ┌─────────────────┐  ┌────────────────────────────┐                        │
+│  │      NAS        │  │       SMB + NFS            │                        │
+│  │   /nas layout   │  │ media, downloads, nvr, ... │                        │
+│  └─────────────────┘  └────────────────────────────┘                        │
+│                                                                             │
 │  ┌─────────────────┐                                                        │
 │  │      SSH        │  (port 22)                                             │
 │  └─────────────────┘                                                        │
@@ -66,6 +71,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Zigbee2MQTT | 8080 (internal) | https://zigbee.frame1.hobitin.eu | [docs/services/zigbee2mqtt.md](services/zigbee2mqtt.md) |
 | Home Assistant | 8123 (internal) | https://home.frame1.hobitin.eu | [docs/services/homeassistant.md](services/homeassistant.md) |
 | Tailscale | 41641 (UDP) | (VPN mesh network) | [docs/services/tailscale.md](services/tailscale.md) |
+| NAS | SMB/NFS | `/nas` exported over LAN + Tailscale | [docs/services/nas.md](services/nas.md) |
 | Backup (Restic) | timer only | (no UI) | [docs/services/backup.md](services/backup.md) |
 | Certificate Monitoring | textfile metrics | Grafana dashboard `Certificate Health` | [docs/services/cert-monitoring.md](services/cert-monitoring.md) |
 | SSH | 22 | `ssh -p 2222 jankaifer@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
@@ -122,9 +128,12 @@ homelab/
 │       ├── homepage.nix
 │       ├── loki.nix
 │       ├── mosquitto.nix
+│       ├── nas.nix
 │       ├── victoriametrics.nix
 │       └── zigbee2mqtt.nix
 ├── secrets/               # agenix encrypted secrets
+│   ├── nas-guest-password.age
+│   ├── nas-jankaifer-password.age
 │   ├── restic-password.age
 │   ├── restic-repository-env.age
 │   └── restic-repository.env.example
