@@ -94,13 +94,13 @@ Recently completed:
 4. Ticket 021: Camera/NVR architecture
 
 Next execution candidates:
-1. Turn the camera/NVR architecture decision into an implementation ticket for the first Frigate deployment.
-2. Add active operational alerting on top of the backup and certificate visibility that now exists.
-3. Revisit network segmentation once the next smart-home or camera rollout makes the boundary concrete.
+1. Ticket 022: First Frigate deployment
+2. Ticket 023: Operational alerting foundation
+3. Ticket 024: Network segmentation plan
 
 Still deferred for later:
-1. Identity/SSO
-2. Broader family-facing service expansion beyond the current reliability and camera work
+1. Ticket 025: Identity and SSO direction
+2. Ticket 026: Family-facing service expansion plan
 
 ## Tech Stack
 
