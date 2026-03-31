@@ -1,6 +1,6 @@
 # Ticket 022: First Frigate Deployment
 
-**Status**: PLANNING
+**Status**: IN_PROGRESS
 **Created**: 2026-03-31
 **Updated**: 2026-03-31
 
@@ -28,3 +28,7 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 
 - Ticket created from the approved camera/NVR architecture decision.
 - Scoped specifically to the first private Frigate deployment on `frame1`.
+- Added `modules/services/frigate.nix` as a homelab wrapper around the upstream NixOS Frigate service.
+- Wired the module into `frame1` with the intended private hostname and NAS-backed recordings path.
+- Added service documentation in `docs/services/frigate.md`.
+- Kept the service disabled because the repo still lacks real RTSP camera definitions and a Frigate-specific MQTT credential path.

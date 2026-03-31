@@ -24,6 +24,7 @@ in
     ../../modules/services/mosquitto.nix
     ../../modules/services/zigbee2mqtt.nix
     ../../modules/services/homeassistant.nix
+    ../../modules/services/frigate.nix
   ];
 
   # Basic system settings
@@ -282,5 +283,13 @@ in
   # Home Assistant Core (containerized, host networking for discovery)
   homelab.services.homeassistant = {
     enable = true;
+  };
+
+  # Frigate scaffolding is present, but the service stays disabled until
+  # real camera RTSP streams and any MQTT credentials are added.
+  homelab.services.frigate = {
+    enable = false;
+    domain = "frigate.frame1.hobitin.eu";
+    recordingsDir = "/nas/nvr/frigate";
   };
 }

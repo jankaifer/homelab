@@ -76,6 +76,12 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Certificate Monitoring | textfile metrics | Grafana dashboard `Certificate Health` | [docs/services/cert-monitoring.md](services/cert-monitoring.md) |
 | SSH | 22 | `ssh -p 2222 jankaifer@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
 
+## Defined But Not Enabled
+
+| Service | Planned URL | Notes | Documentation |
+|---------|-------------|-------|---------------|
+| Frigate NVR | https://frigate.frame1.hobitin.eu | Module implemented, waiting on real camera definitions | [docs/services/frigate.md](services/frigate.md) |
+
 ## Users
 
 | Username | Type | Password | Notes |
@@ -123,6 +129,7 @@ homelab/
 │       ├── backup.nix
 │       ├── caddy.nix
 │       ├── cert-monitoring.nix
+│       ├── frigate.nix
 │       ├── grafana.nix
 │       ├── homeassistant.nix
 │       ├── homepage.nix

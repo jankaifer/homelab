@@ -93,10 +93,12 @@ Recently completed:
 3. Ticket 020: Certificate renewal monitoring and alerting
 4. Ticket 021: Camera/NVR architecture
 
-Next execution candidates:
+In progress:
 1. Ticket 022: First Frigate deployment
-2. Ticket 023: Operational alerting foundation
-3. Ticket 024: Network segmentation plan
+
+Next execution candidates:
+1. Ticket 023: Operational alerting foundation
+2. Ticket 024: Network segmentation plan
 
 Still deferred for later:
 1. Ticket 025: Identity and SSO direction

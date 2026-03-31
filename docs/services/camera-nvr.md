@@ -1,11 +1,11 @@
 # Camera and NVR Architecture
 
-Architecture decision for a future camera/NVR stack. This is an implementation guide for the next ticket, not an enabled service today.
+Architecture decision for the homelab camera/NVR stack. The implementation scaffold now exists in `modules/services/frigate.nix`, but the service is not enabled yet because real camera definitions are still missing.
 
 ## Status
 
 **Enabled:** No  
-**Decision state:** Architecture selected
+**Decision state:** Architecture selected, implementation scaffold added
 
 ## Primary Goal
 
@@ -36,6 +36,12 @@ Why this is the best fit for the current homelab:
 - run the first NVR deployment on `frame1`
 - store recordings on local disk
 - keep the stack private behind Tailscale
+
+Current implementation state:
+
+- a reusable Frigate module exists in `modules/services/frigate.nix`
+- the default storage target is `/nas/nvr/frigate`
+- the service remains disabled until real camera stream definitions are added
 
 ### Future split trigger
 
@@ -77,11 +83,13 @@ This keeps the backup system focused on rebuildability and avoids turning video 
 
 ## Next Implementation Ticket
 
-The implementation ticket should:
+Ticket 022 now covers this work. Remaining implementation steps are:
 
 1. Add a Frigate module
-2. Define recording and config storage paths
-3. Route the UI privately through Caddy
-4. Add basic Home Assistant integration
+2. Add real camera definitions
+3. Decide whether to wire Frigate into MQTT on day one
+4. Add basic Home Assistant integration once camera streams and MQTT shape are known
 5. Keep recordings on local retention-only storage
 6. Avoid introducing public exposure or backup of raw footage
+
+See also: `docs/services/frigate.md`
