@@ -87,16 +87,20 @@ Later:
 
 ## Current Ticket Focus
 
-Active planning tickets:
+Recently completed:
 1. Ticket 018: Backup policy and restore runbook
 2. Ticket 019: Service data backup implementation
 3. Ticket 020: Certificate renewal monitoring and alerting
 4. Ticket 021: Camera/NVR architecture
 
-Deferred for later:
-1. Network segmentation
-2. Identity/SSO
-3. Additional family-facing service expansion beyond the current focus set
+Next execution candidates:
+1. Turn the camera/NVR architecture decision into an implementation ticket for the first Frigate deployment.
+2. Add active operational alerting on top of the backup and certificate visibility that now exists.
+3. Revisit network segmentation once the next smart-home or camera rollout makes the boundary concrete.
+
+Still deferred for later:
+1. Identity/SSO
+2. Broader family-facing service expansion beyond the current reliability and camera work
 
 ## Tech Stack
 

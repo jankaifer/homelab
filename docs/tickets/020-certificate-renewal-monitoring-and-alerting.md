@@ -1,8 +1,8 @@
 # Ticket 020: Certificate Renewal Monitoring and Alerting
 
-**Status**: IN_PROGRESS
+**Status**: DONE
 **Created**: 2026-03-27
-**Updated**: 2026-03-27
+**Updated**: 2026-03-31
 
 ## Task
 
@@ -34,4 +34,11 @@ Add observability for certificate renewal so TLS failures are detected before th
 - Implemented a systemd timer that writes certificate and renewal-unit metrics into node exporter's textfile collector.
 - Added automatic Grafana dashboard provisioning for `Certificate Health`.
 - Kept email or other active alerting out of scope for v1.
-- Remaining work: validate metrics and dashboard rendering on a running deployment.
+
+### 2026-03-31
+
+- Validated the production deployment on `frame1`.
+- Confirmed `homelab-certificate-metrics.timer` is refreshing metrics every 15 minutes without failures.
+- Verified `/var/lib/node-exporter-textfile/homelab-certificates.prom` contains certificate-presence, expiry-horizon, and renewal-unit metrics for all current Caddy domains plus `mqtt.frame1.hobitin.eu`.
+- Confirmed the current live state is healthy: all observed renewal units report success and all tracked certificates currently have roughly 85 days remaining.
+- Closed the ticket after the live validation step.
