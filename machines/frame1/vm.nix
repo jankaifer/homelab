@@ -9,6 +9,7 @@
   imports = [
     # Import qemu-vm module to get virtualisation options
     (modulesPath + "/virtualisation/qemu-vm.nix")
+    ../../modules/services/mock-rtsp-camera.nix
   ];
 
   # Share host's SSH directory into VM via virtfs/9p
@@ -43,4 +44,14 @@
 
   # The NAS stack is production-focused and not useful in the local VM.
   homelab.services.nas.enable = lib.mkForce false;
+
+  # Mock camera feed for Frigate and camera-integration testing in the VM.
+  homelab.services.mockRtspCamera = {
+    enable = true;
+    streamName = "mock-driveway";
+    rtspPort = 8554;
+    width = 1280;
+    height = 720;
+    fps = 10;
+  };
 }

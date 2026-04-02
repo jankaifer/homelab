@@ -32,3 +32,5 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Wired the module into `frame1` with the intended private hostname and NAS-backed recordings path.
 - Added service documentation in `docs/services/frigate.md`.
 - Kept the service disabled because the repo still lacks real RTSP camera definitions and a Frigate-specific MQTT credential path.
+- Added a VM-only mock RTSP camera source at `rtsp://127.0.0.1:8554/mock-driveway` for Frigate integration testing without hardware.
+- Verified the `frame1-vm` Docker build still completes successfully with the mock RTSP camera services included.

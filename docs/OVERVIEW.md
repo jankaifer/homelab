@@ -82,6 +82,12 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 |---------|-------------|-------|---------------|
 | Frigate NVR | https://frigate.frame1.hobitin.eu | Module implemented, waiting on real camera definitions | [docs/services/frigate.md](services/frigate.md) |
 
+## VM-Only Services
+
+| Service | URL / Endpoint | Notes | Documentation |
+|---------|----------------|-------|---------------|
+| Mock RTSP Camera | `rtsp://127.0.0.1:8554/mock-driveway` | Synthetic camera feed for Frigate integration testing in `frame1-vm` | [docs/services/mock-rtsp-camera.md](services/mock-rtsp-camera.md) |
+
 ## Users
 
 | Username | Type | Password | Notes |
@@ -134,6 +140,7 @@ homelab/
 │       ├── homeassistant.nix
 │       ├── homepage.nix
 │       ├── loki.nix
+│       ├── mock-rtsp-camera.nix
 │       ├── mosquitto.nix
 │       ├── nas.nix
 │       ├── victoriametrics.nix
