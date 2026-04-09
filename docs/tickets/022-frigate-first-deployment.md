@@ -2,7 +2,7 @@
 
 **Status**: IN_PROGRESS
 **Created**: 2026-03-31
-**Updated**: 2026-03-31
+**Updated**: 2026-04-09
 
 ## Task
 
@@ -36,3 +36,9 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Verified the `frame1-vm` Docker build still completes successfully with the mock RTSP camera services included.
 - Enabled a VM-only Frigate test camera that consumes the mock RTSP stream so the camera integration path is now exercised end to end in `frame1-vm`.
 - Enabled the same synthetic RTSP source and Frigate test camera on `frame1` so the private production UI and NAS-backed recordings path can be verified before real cameras are added.
+
+### 2026-04-09
+
+- Investigated Frigate review/history loading failures on `frame1`.
+- Confirmed the API itself was reachable through Caddy, while nginx logged `Permission denied` when serving review/history media from `/var/lib/frigate/...`.
+- Fixed the NAS-backed storage path by adding the NAS shared group to the nginx systemd unit when Frigate recordings are stored under `/nas`.

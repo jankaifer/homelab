@@ -138,6 +138,8 @@ in
       addr = "127.0.0.1";
       port = 5003;
     }];
+    systemd.services.nginx.serviceConfig.SupplementaryGroups =
+      lib.mkIf recordingsOnNas (lib.mkAfter [ nasCfg.sharedGroup ]);
 
     systemd.services.frigate = {
       requires = [ "frigate-storage-setup.service" ];
