@@ -129,10 +129,15 @@ in
     };
 
     # The upstream module injects `listen 127.0.0.1:5000` directly into the
-    # Frigate nginx vhost. Disable nginx's global default listeners so it does
-    # not also try to bind :80/:443 on the host alongside Caddy.
+    # Frigate nginx vhost. Give the vhost an explicit loopback-only listener so
+    # the nginx module does not fall back to binding :80/:443 on the host
+    # alongside Caddy. Caddy continues to proxy to the Frigate-managed listener
+    # on 127.0.0.1:5000.
     services.nginx.defaultListen = lib.mkForce [ ];
-    services.nginx.virtualHosts.${cfg.domain}.listen = lib.mkForce [ ];
+    services.nginx.virtualHosts.${cfg.domain}.listen = lib.mkForce [{
+      addr = "127.0.0.1";
+      port = 5003;
+    }];
 
     systemd.services.frigate = {
       requires = [ "frigate-storage-setup.service" ];
