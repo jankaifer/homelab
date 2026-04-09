@@ -42,3 +42,4 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Investigated Frigate review/history loading failures on `frame1`.
 - Confirmed the API itself was reachable through Caddy, while nginx logged `Permission denied` when serving review/history media from `/var/lib/frigate/...`.
 - Fixed the NAS-backed storage path by adding the NAS shared group to the nginx systemd unit when Frigate recordings are stored under `/nas`.
+- Enabled Intel iGPU video decode on `frame1` by turning on `hardware.graphics`, adding `intel-media-driver`, setting `services.frigate.vaapiDriver = "iHD"`, and applying Frigate `ffmpeg.hwaccel_args = "preset-vaapi"`.

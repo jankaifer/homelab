@@ -44,6 +44,7 @@ homelab.services.frigate = {
   };
   extraSettings = {
     birdseye.enabled = false;
+    ffmpeg.hwaccel_args = "preset-vaapi";
     objects.track = [ "person" "car" "bicycle" ];
   };
 };
@@ -81,6 +82,7 @@ homelab.services.frigate = {
 - Stores media-oriented data under `/nas/nvr/frigate`
 - Symlinks `/var/lib/frigate/clips`, `/var/lib/frigate/exports`, and `/var/lib/frigate/recordings` into the NAS-backed retention path
 - Extends the internal nginx unit with the NAS shared group when recordings live under `/nas` so review/history media remains readable through the UI
+- On `frame1`, enables Intel VA-API decode with `intel-media-driver`, `services.frigate.vaapiDriver = "iHD"`, and `ffmpeg.hwaccel_args = "preset-vaapi"`
 - Publishes Frigate only through Caddy on `https://frigate.frame1.hobitin.eu`
 - In `frame1-vm`, records against the mock RTSP source and stores media in `/var/lib/frigate-test-media`
 - On `frame1`, records against the same mock RTSP source while real camera URLs are still pending

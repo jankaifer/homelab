@@ -48,6 +48,13 @@ in
   networking.networkmanager.enable = true;
   networking.networkmanager.unmanaged = [ "type:wifi" ];
 
+  # Enable the Intel iGPU render stack so Frigate can offload video decode
+  # through VA-API instead of burning CPU on ffmpeg.
+  hardware.graphics = {
+    enable = true;
+    extraPackages = [ pkgs.intel-media-driver ];
+  };
+
   # Frame1 should stay wired-only in production. Leaving both Wi-Fi and
   # ethernet active on the same LAN caused asymmetric routing and broke SSH
   # over the wired address.
@@ -319,7 +326,10 @@ in
     };
     extraSettings = {
       birdseye.enabled = false;
+      ffmpeg.hwaccel_args = "preset-vaapi";
       objects.track = [ "person" "car" "bicycle" ];
     };
   };
+
+  services.frigate.vaapiDriver = "iHD";
 }
