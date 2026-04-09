@@ -132,6 +132,7 @@ in
     # Frigate nginx vhost. Disable nginx's global default listeners so it does
     # not also try to bind :80/:443 on the host alongside Caddy.
     services.nginx.defaultListen = lib.mkForce [ ];
+    services.nginx.virtualHosts.${cfg.domain}.listen = lib.mkForce [ ];
 
     systemd.services.frigate = {
       requires = [ "frigate-storage-setup.service" ];
