@@ -128,6 +128,13 @@ in
       settings = lib.recursiveUpdate defaultSettings cfg.extraSettings;
     };
 
+    # The upstream Frigate module enables nginx for its internal reverse proxy.
+    # Keep that nginx instance loopback-only so it does not collide with Caddy.
+    services.nginx.defaultListen = lib.mkForce [{
+      addr = "127.0.0.1";
+      port = 5000;
+    }];
+
     systemd.services.frigate = {
       requires = [ "frigate-storage-setup.service" ];
       after = [ "frigate-storage-setup.service" ];

@@ -25,6 +25,7 @@ in
     ../../modules/services/zigbee2mqtt.nix
     ../../modules/services/homeassistant.nix
     ../../modules/services/frigate.nix
+    ../../modules/services/mock-rtsp-camera.nix
   ];
 
   # Basic system settings
@@ -285,11 +286,36 @@ in
     enable = true;
   };
 
-  # Frigate scaffolding is present, but the service stays disabled until
-  # real camera RTSP streams and any MQTT credentials are added.
+  # Synthetic RTSP source for Frigate integration work until real cameras
+  # are configured.
+  homelab.services.mockRtspCamera = {
+    enable = true;
+    streamName = "mock-driveway";
+    rtspPort = 8554;
+    width = 1280;
+    height = 720;
+    fps = 10;
+  };
+
+  # Frigate is enabled in production against the synthetic RTSP source so the
+  # private UI, storage path, and service plumbing can be verified end to end.
   homelab.services.frigate = {
-    enable = false;
+    enable = true;
     domain = "frigate.frame1.hobitin.eu";
     recordingsDir = "/nas/nvr/frigate";
+    cameras.mock_driveway = {
+      ffmpeg.inputs = [{
+        path = "rtsp://127.0.0.1:8554/mock-driveway";
+        input_args = "preset-rtsp-restream";
+        roles = [ "detect" "record" ];
+      }];
+      detect = {
+        enabled = false;
+        width = 1280;
+        height = 720;
+        fps = 5;
+      };
+    };
+    extraSettings.birdseye.enabled = false;
   };
 }

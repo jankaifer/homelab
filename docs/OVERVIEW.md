@@ -70,17 +70,12 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | MQTT (Mosquitto) | 8883 | `mqtt.frame1.hobitin.eu:8883` | [docs/services/mqtt.md](services/mqtt.md) |
 | Zigbee2MQTT | 8080 (internal) | https://zigbee.frame1.hobitin.eu | [docs/services/zigbee2mqtt.md](services/zigbee2mqtt.md) |
 | Home Assistant | 8123 (internal) | https://home.frame1.hobitin.eu | [docs/services/homeassistant.md](services/homeassistant.md) |
+| Frigate NVR | internal via nginx | https://frigate.frame1.hobitin.eu | [docs/services/frigate.md](services/frigate.md) |
 | Tailscale | 41641 (UDP) | (VPN mesh network) | [docs/services/tailscale.md](services/tailscale.md) |
 | NAS | SMB/NFS | `/nas` exported over LAN + Tailscale | [docs/services/nas.md](services/nas.md) |
 | Backup (Restic) | timer only | (no UI) | [docs/services/backup.md](services/backup.md) |
 | Certificate Monitoring | textfile metrics | Grafana dashboard `Certificate Health` | [docs/services/cert-monitoring.md](services/cert-monitoring.md) |
 | SSH | 22 | `ssh -p 2222 jankaifer@localhost` (VM) | [docs/services/ssh.md](services/ssh.md) |
-
-## Defined But Not Enabled
-
-| Service | Planned URL | Notes | Documentation |
-|---------|-------------|-------|---------------|
-| Frigate NVR | https://frigate.frame1.hobitin.eu | Module implemented, waiting on real camera definitions | [docs/services/frigate.md](services/frigate.md) |
 
 ## VM-Only Services
 

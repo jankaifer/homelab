@@ -1,10 +1,10 @@
 # Mock RTSP Camera
 
-VM-only mock RTSP camera source for Frigate and camera integration testing.
+Mock RTSP camera source for Frigate and camera integration testing.
 
 ## Status
 
-**Enabled:** Yes in `frame1-vm`, no in production
+**Enabled:** Yes in `frame1-vm` and on `frame1`
 
 ## Configuration
 
@@ -12,6 +12,18 @@ VM-only mock RTSP camera source for Frigate and camera integration testing.
 **Pattern:** `homelab.services.mockRtspCamera.enable`
 
 **Current VM configuration:**
+```nix
+homelab.services.mockRtspCamera = {
+  enable = true;
+  streamName = "mock-driveway";
+  rtspPort = 8554;
+  width = 1280;
+  height = 720;
+  fps = 10;
+};
+```
+
+**Current production configuration:**
 ```nix
 homelab.services.mockRtspCamera = {
   enable = true;
@@ -31,7 +43,7 @@ Use this RTSP source inside the VM:
 rtsp://127.0.0.1:8554/mock-driveway
 ```
 
-This is intended for Frigate or other local camera consumers running on the same VM.
+This is intended for Frigate or other local camera consumers running on the same machine.
 
 ## Runtime Model
 
@@ -43,7 +55,7 @@ This is intended for Frigate or other local camera consumers running on the same
 
 - Frigate integration testing
 - Camera pipeline validation without real hardware
-- UI, recording, and retention-path verification in the VM
+- UI, recording, and retention-path verification before real cameras are added
 
 ## Validation
 

@@ -56,10 +56,22 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "mediamtx.service" "network.target" ];
       requires = [ "mediamtx.service" ];
+      path = [ pkgs.netcat-openbsd ];
       serviceConfig = {
         Type = "simple";
         Restart = "always";
         RestartSec = 3;
+        ExecStartPre = pkgs.writeShellScript "wait-for-mediamtx" ''
+          for _ in $(seq 1 30); do
+            if nc -z 127.0.0.1 ${toString cfg.rtspPort}; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "MediaMTX did not open RTSP port ${toString cfg.rtspPort} in time." >&2
+          exit 1
+        '';
         ExecStart = pkgs.writeShellScript "mock-rtsp-camera-publisher" ''
           exec ${lib.getExe pkgs.ffmpeg-headless} \
             -hide_banner \
