@@ -18,6 +18,42 @@ let
       "-re -f lavfi -i ${lib.escapeShellArg "testsrc2=size=${toString cfg.width}x${toString cfg.height}:rate=${toString cfg.fps}"}";
   videoFilter = lib.escapeShellArg
     "fps=${toString cfg.fps},scale=${toString cfg.width}:${toString cfg.height}:force_original_aspect_ratio=decrease,pad=${toString cfg.width}:${toString cfg.height}:(ow-iw)/2:(oh-ih)/2";
+  normalizedDetectionDemo = pkgs.runCommand "mock-rtsp-camera-detection-demo-${toString cfg.width}x${toString cfg.height}-${toString cfg.fps}fps.mp4"
+    {
+      nativeBuildInputs = [ pkgs.ffmpeg-headless ];
+    } ''
+      ffmpeg -hide_banner -loglevel error \
+        -stream_loop 1 \
+        -i ${lib.escapeShellArg personVehicleDemo} \
+        -an \
+        -c:v libx264 \
+        -pix_fmt yuv420p \
+        -preset veryfast \
+        -profile:v baseline \
+        -level 3.1 \
+        -g ${toString (cfg.fps * 2)} \
+        -movflags +faststart \
+        -vf ${videoFilter} \
+        -r ${toString cfg.fps} \
+        -y "$out"
+    '';
+  publisherSourceInput =
+    if cfg.videoProfile == "detection-demo" then
+      "-stream_loop -1 -re -i ${lib.escapeShellArg normalizedDetectionDemo}"
+    else
+      sourceInput;
+  publisherVideoArgs =
+    if cfg.videoProfile == "detection-demo" then
+      "-c:v copy"
+    else
+      ''
+        -c:v libx264
+        -pix_fmt yuv420p
+        -preset veryfast
+        -tune zerolatency
+        -g ${toString (cfg.fps * 2)}
+        -vf ${videoFilter}
+      '';
 in
 {
   options.homelab.services.mockRtspCamera = {
@@ -101,14 +137,9 @@ in
           exec ${lib.getExe pkgs.ffmpeg-headless} \
             -hide_banner \
             -loglevel warning \
-            ${sourceInput} \
+            ${publisherSourceInput} \
             -an \
-            -c:v libx264 \
-            -pix_fmt yuv420p \
-            -preset veryfast \
-            -tune zerolatency \
-            -g ${toString (cfg.fps * 2)} \
-            -vf ${videoFilter} \
+            ${publisherVideoArgs} \
             -f rtsp \
             -rtsp_transport tcp \
             ${lib.escapeShellArg streamUrl}

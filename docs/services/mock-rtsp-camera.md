@@ -52,6 +52,7 @@ This is intended for Frigate or other local camera consumers running on the same
 - `services.mediamtx` provides the RTSP server
 - `mock-rtsp-camera-publisher.service` uses `ffmpeg` to loop either a pinned sample clip or a synthetic test pattern
 - The default `detection-demo` profile uses Intel's `person-bicycle-car-detection.mp4`, which is much closer to a real driveway/street feed for Frigate testing
+- The `detection-demo` path is normalized once during the Nix build, then streamed with `-c:v copy` so the long-running publisher does not keep re-encoding the sample clip on CPU
 - `test-pattern` remains available when only stream-path validation is needed
 
 ## Intended Use

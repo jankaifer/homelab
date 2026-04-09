@@ -69,7 +69,7 @@
         enabled = true;
         width = 1280;
         height = 720;
-        fps = 5;
+        fps = 1;
       };
     };
     extraSettings = {
