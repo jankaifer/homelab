@@ -46,6 +46,9 @@ in
     services.mediamtx = {
       enable = true;
       settings = {
+        rtmp = false;
+        hls = false;
+        webrtc = false;
         rtspAddress = ":${toString cfg.rtspPort}";
         paths.${cfg.streamName} = { };
       };
