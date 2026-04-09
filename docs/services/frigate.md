@@ -36,13 +36,16 @@ homelab.services.frigate = {
       roles = [ "detect" "record" ];
     }];
     detect = {
-      enabled = false;
+      enabled = true;
       width = 1280;
       height = 720;
       fps = 5;
     };
   };
-  extraSettings.birdseye.enabled = false;
+  extraSettings = {
+    birdseye.enabled = false;
+    objects.track = [ "person" "car" "bicycle" ];
+  };
 };
 ```
 
@@ -58,13 +61,16 @@ homelab.services.frigate = {
       roles = [ "detect" "record" ];
     }];
     detect = {
-      enabled = false;
+      enabled = true;
       width = 1280;
       height = 720;
       fps = 5;
     };
   };
-  extraSettings.birdseye.enabled = false;
+  extraSettings = {
+    birdseye.enabled = false;
+    objects.track = [ "person" "car" "bicycle" ];
+  };
 };
 ```
 
