@@ -54,4 +54,24 @@
     height = 720;
     fps = 10;
   };
+
+  # Use the mock RTSP camera to exercise the Frigate integration path in the VM.
+  homelab.services.frigate = {
+    enable = lib.mkForce true;
+    recordingsDir = lib.mkForce "/var/lib/frigate-test-media";
+    cameras.mock_driveway = {
+      ffmpeg.inputs = [{
+        path = "rtsp://127.0.0.1:8554/mock-driveway";
+        input_args = "preset-rtsp-restream";
+        roles = [ "detect" "record" ];
+      }];
+      detect = {
+        enabled = false;
+        width = 1280;
+        height = 720;
+        fps = 5;
+      };
+    };
+    extraSettings.birdseye.enabled = false;
+  };
 }

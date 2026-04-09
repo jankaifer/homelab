@@ -4,8 +4,8 @@ Frigate-based camera NVR scaffold for the homelab.
 
 ## Status
 
-**Enabled:** No  
-**State:** Module implemented, waiting on real camera definitions
+**Enabled:** Yes in `frame1-vm`, no on `frame1`  
+**State:** Mock-camera integration enabled in the VM, production still waiting on real camera definitions
 
 ## Configuration
 
@@ -32,6 +32,28 @@ homelab.services.frigate = {
 };
 ```
 
+**Current VM testing configuration:**
+```nix
+homelab.services.frigate = {
+  enable = true;
+  recordingsDir = "/var/lib/frigate-test-media";
+  cameras.mock_driveway = {
+    ffmpeg.inputs = [{
+      path = "rtsp://127.0.0.1:8554/mock-driveway";
+      input_args = "preset-rtsp-restream";
+      roles = [ "detect" "record" ];
+    }];
+    detect = {
+      enabled = false;
+      width = 1280;
+      height = 720;
+      fps = 5;
+    };
+  };
+  extraSettings.birdseye.enabled = false;
+};
+```
+
 ## Runtime Model
 
 - Uses the upstream NixOS `services.frigate` module
@@ -39,18 +61,26 @@ homelab.services.frigate = {
 - Stores media-oriented data under `/nas/nvr/frigate`
 - Symlinks `/var/lib/frigate/clips`, `/var/lib/frigate/exports`, and `/var/lib/frigate/recordings` into the NAS-backed retention path
 - Publishes Frigate only through Caddy on `https://frigate.frame1.hobitin.eu`
+- In `frame1-vm`, records against the mock RTSP source and stores media in `/var/lib/frigate-test-media`
 
 ## Current Blockers
 
 - No real RTSP camera definitions are committed yet
 - No Frigate-specific MQTT credential path is defined yet
-- Because of that, the service is intentionally left disabled on `frame1`
+- Because of that, the service is intentionally left disabled on `frame1` even though the VM path is active
 
 ## Access Model
 
 - Primary UI: Frigate web interface
 - Access path: private HTTPS via Caddy
 - Intended remote path: Tailscale to Caddy, not public internet exposure
+
+## Access
+
+| Environment | URL |
+|-------------|-----|
+| VM / Local | https://frigate.frame1.hobitin.eu:8443 |
+| Production | reserved, not enabled yet |
 
 ## Storage Policy
 
@@ -68,8 +98,9 @@ homelab.services.frigate = {
 
 1. Add real camera definitions under `homelab.services.frigate.cameras`
 2. Decide whether Frigate should publish events to MQTT on day one
-3. Validate the config with `nix eval`
-4. Build and boot the VM or deploy to `frame1` once the camera inputs exist
+3. Validate the mock-camera path in the VM at runtime
+4. Replace the mock stream with real camera inputs for `frame1`
+5. Build and boot the VM or deploy to `frame1` once the production camera inputs exist
 
 ## Links
 

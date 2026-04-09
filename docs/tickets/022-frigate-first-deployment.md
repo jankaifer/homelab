@@ -34,3 +34,4 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Kept the service disabled because the repo still lacks real RTSP camera definitions and a Frigate-specific MQTT credential path.
 - Added a VM-only mock RTSP camera source at `rtsp://127.0.0.1:8554/mock-driveway` for Frigate integration testing without hardware.
 - Verified the `frame1-vm` Docker build still completes successfully with the mock RTSP camera services included.
+- Enabled a VM-only Frigate test camera that consumes the mock RTSP stream so the camera integration path is now exercised end to end in `frame1-vm`.

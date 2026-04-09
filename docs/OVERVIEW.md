@@ -86,6 +86,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 
 | Service | URL / Endpoint | Notes | Documentation |
 |---------|----------------|-------|---------------|
+| Frigate NVR | https://frigate.frame1.hobitin.eu:8443 | Mock-camera-backed Frigate test instance in `frame1-vm` | [docs/services/frigate.md](services/frigate.md) |
 | Mock RTSP Camera | `rtsp://127.0.0.1:8554/mock-driveway` | Synthetic camera feed for Frigate integration testing in `frame1-vm` | [docs/services/mock-rtsp-camera.md](services/mock-rtsp-camera.md) |
 
 ## Users
