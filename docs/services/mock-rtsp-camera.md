@@ -20,6 +20,7 @@ homelab.services.mockRtspCamera = {
   width = 1280;
   height = 720;
   fps = 10;
+  videoProfile = "detection-demo";
 };
 ```
 
@@ -32,6 +33,7 @@ homelab.services.mockRtspCamera = {
   width = 1280;
   height = 720;
   fps = 10;
+  videoProfile = "detection-demo";
 };
 ```
 
@@ -48,14 +50,15 @@ This is intended for Frigate or other local camera consumers running on the same
 ## Runtime Model
 
 - `services.mediamtx` provides the RTSP server
-- `mock-rtsp-camera-publisher.service` uses `ffmpeg` to generate a continuous test-pattern video
-- The stream is deterministic and does not depend on any physical camera device
+- `mock-rtsp-camera-publisher.service` uses `ffmpeg` to loop either a pinned sample clip or a synthetic test pattern
+- The default `detection-demo` profile uses Intel's `person-bicycle-car-detection.mp4`, which is much closer to a real driveway/street feed for Frigate testing
+- `test-pattern` remains available when only stream-path validation is needed
 
 ## Intended Use
 
 - Frigate integration testing
 - Camera pipeline validation without real hardware
-- UI, recording, and retention-path verification before real cameras are added
+- UI, recording, retention-path, and basic object-detection verification before real cameras are added
 
 ## Validation
 

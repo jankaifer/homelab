@@ -1,11 +1,23 @@
 # Mock RTSP camera stream for VM/integration testing
 #
-# Publishes a generated test-pattern video over RTSP using MediaMTX and ffmpeg.
+# Publishes either a realistic detection-oriented sample clip or a synthetic
+# test pattern over RTSP using MediaMTX and ffmpeg.
 { config, lib, pkgs, ... }:
 
 let
   cfg = config.homelab.services.mockRtspCamera;
   streamUrl = "rtsp://127.0.0.1:${toString cfg.rtspPort}/${cfg.streamName}";
+  personVehicleDemo = pkgs.fetchurl {
+    url = "https://raw.githubusercontent.com/intel-iot-devkit/sample-videos/master/person-bicycle-car-detection.mp4";
+    hash = "sha256-RSsRt+DvvQGfHZVw0MeQ6QQWrUrSnuxgA4ctCEQxQO8=";
+  };
+  sourceInput =
+    if cfg.videoProfile == "detection-demo" then
+      "-stream_loop -1 -re -i ${lib.escapeShellArg personVehicleDemo}"
+    else
+      "-re -f lavfi -i ${lib.escapeShellArg "testsrc2=size=${toString cfg.width}x${toString cfg.height}:rate=${toString cfg.fps}"}";
+  videoFilter = lib.escapeShellArg
+    "fps=${toString cfg.fps},scale=${toString cfg.width}:${toString cfg.height}:force_original_aspect_ratio=decrease,pad=${toString cfg.width}:${toString cfg.height}:(ow-iw)/2:(oh-ih)/2";
 in
 {
   options.homelab.services.mockRtspCamera = {
@@ -39,6 +51,16 @@ in
       type = lib.types.ints.positive;
       default = 10;
       description = "Frame rate for the generated stream.";
+    };
+
+    videoProfile = lib.mkOption {
+      type = lib.types.enum [ "detection-demo" "test-pattern" ];
+      default = "detection-demo";
+      description = ''
+        Video source used for the mock stream. `detection-demo` loops a pinned
+        sample clip with people, bicycles, and cars. `test-pattern` keeps the
+        synthetic lavfi source for pure stream-path testing.
+      '';
     };
   };
 
@@ -79,14 +101,14 @@ in
           exec ${lib.getExe pkgs.ffmpeg-headless} \
             -hide_banner \
             -loglevel warning \
-            -re \
-            -f lavfi -i testsrc2=size=${toString cfg.width}x${toString cfg.height}:rate=${toString cfg.fps} \
+            ${sourceInput} \
             -an \
             -c:v libx264 \
             -pix_fmt yuv420p \
             -preset veryfast \
             -tune zerolatency \
             -g ${toString (cfg.fps * 2)} \
+            -vf ${videoFilter} \
             -f rtsp \
             -rtsp_transport tcp \
             ${lib.escapeShellArg streamUrl}
