@@ -24,6 +24,12 @@ in
       description = "Accept subnet routes advertised by other Tailscale nodes";
     };
 
+    acceptDns = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Accept DNS configuration pushed by Tailscale";
+    };
+
     authKeyFile = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
@@ -45,6 +51,7 @@ in
       authKeyFile = lib.mkIf (cfg.authKeyFile != null) cfg.authKeyFile;
       extraUpFlags = lib.mkIf (cfg.authKeyFile != null) [
         "--accept-routes=${lib.boolToString cfg.acceptRoutes}"
+        "--accept-dns=${lib.boolToString cfg.acceptDns}"
       ];
     };
 

@@ -246,6 +246,7 @@ in
   homelab.services.tailscale = {
     enable = true;
     authKeyFile = config.age.secrets.tailscale-auth-key.path;
+    acceptDns = false;
     # acceptRoutes = false; # Default, reflected in auto up flags
     # exitNode = false; # Default
   };
