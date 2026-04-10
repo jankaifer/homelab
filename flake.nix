@@ -68,6 +68,9 @@
           default = pkgs.mkShell {
             packages = [
               deploy-rs.packages.${system}.deploy-rs
+              (pkgs.python312.withPackages (ps: [
+                ps.pulp
+              ]))
             ];
           };
         }) deploy-rs.packages;
