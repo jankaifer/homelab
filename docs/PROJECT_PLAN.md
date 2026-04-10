@@ -92,9 +92,7 @@ Recently completed:
 2. Ticket 019: Service data backup implementation
 3. Ticket 020: Certificate renewal monitoring and alerting
 4. Ticket 021: Camera/NVR architecture
-
-In progress:
-1. Ticket 022: First Frigate deployment
+5. Ticket 022: First Frigate deployment
 
 Next execution candidates:
 1. Ticket 023: Operational alerting foundation

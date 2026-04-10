@@ -1,8 +1,8 @@
 # Ticket 022: First Frigate Deployment
 
-**Status**: IN_PROGRESS
+**Status**: DONE
 **Created**: 2026-03-31
-**Updated**: 2026-04-09
+**Updated**: 2026-04-10
 
 ## Task
 
@@ -21,6 +21,8 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - This is the direct implementation follow-up to Ticket 021.
 - Day-one scope excludes accelerator-dependent detection work and public internet exposure.
 - Raw recordings remain retention-only data and should not be added to offsite backup.
+- Ticket completion means the first private Frigate deployment is live, reproducible from NixOS configuration, and verified on `frame1` with the synthetic camera path.
+- A future follow-on can still add real camera definitions and a first-class Home Assistant Frigate integration, but those are no longer blockers for closing this rollout ticket.
 
 ## Work Log
 
@@ -61,3 +63,11 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Updated the retention profile again after sizing review: `3` days of continuous retention, `7` days of motion retention, and `365` days for alert/detection review segments.
 - The subsequent deploy exposed a Frigate `0.16.3` schema limitation: the packaged version does not accept separate base `continuous` and `motion` retention windows yet, so the deployed compromise keeps `3` days of base retention plus `365` days for alert/detection review segments.
 - Disabled Frigate's build-time config validation in the homelab wrapper because the checker cannot see the MQTT password that is injected later at runtime from agenix.
+
+### 2026-04-10
+
+- Verified on `frame1` that the deployed Frigate UI is reachable through Caddy at `https://frigate.frame1.hobitin.eu` and the local API responds as expected.
+- Verified the runtime-generated Frigate config now includes both the agenix-backed MQTT password and the Nix-store ffmpeg path, keeping the deployment reproducible without host-local manual fixes.
+- Verified Frigate publishes MQTT topics under `frigate/#`, and confirmed the Home Assistant MQTT credentials can subscribe to those topics through the existing broker ACLs.
+- Increased the mock RTSP publisher to `30` FPS while keeping Frigate detection at `5` FPS, improving live-view responsiveness without changing the overall declarative camera setup.
+- Re-deployed and verified the final `frame1` generation with Frigate, Mosquitto, Caddy, MediaMTX, and the mock RTSP publisher all active.

@@ -5,7 +5,7 @@ Frigate-based camera NVR scaffold for the homelab.
 ## Status
 
 **Enabled:** Yes in `frame1-vm` and on `frame1`  
-**State:** Enabled against a synthetic RTSP source pending real camera definitions
+**State:** Private Frigate deployment live on `frame1`, currently backed by a synthetic RTSP source pending real camera definitions
 
 ## Configuration
 
@@ -112,18 +112,21 @@ homelab.services.frigate = {
 - Stores media-oriented data under `/nas/nvr/frigate`
 - Defaults to `3` days of base continuous retention and one-year review retention
 - Caps snapshot retention to one week and disables clean-copy duplicates
+- Uses a synthetic RTSP publisher running at `30` FPS while Frigate detection remains capped at `5` FPS for lower compute cost
 - Symlinks `/var/lib/frigate/clips`, `/var/lib/frigate/exports`, and `/var/lib/frigate/recordings` into the NAS-backed retention path
 - Extends the internal nginx unit with the NAS shared group when recordings live under `/nas` so review/history media remains readable through the UI
 - On `frame1`, enables Intel VA-API decode with `intel-media-driver`, `services.frigate.vaapiDriver = "iHD"`, and `ffmpeg.hwaccel_args = "preset-vaapi"`
 - Publishes Frigate only through Caddy on `https://frigate.frame1.hobitin.eu`
 - Renders the final Frigate runtime config in `/run/frigate/frigate.yml` so the MQTT password can come from agenix instead of the Nix store
+- Publishes Frigate MQTT topics under `frigate/#` through the host-local Mosquitto listener
 - In `frame1-vm`, records against the mock RTSP source and stores media in `/var/lib/frigate-test-media`
 - On `frame1`, records against the same mock RTSP source while real camera URLs are still pending
 
-## Current Blockers
+## Current Limits
 
 - No real RTSP camera definitions are committed yet
 - Production currently uses a synthetic RTSP stream instead of a real camera feed
+- Home Assistant has working MQTT access to `frigate/#`, but the dedicated Frigate integration/entities are not configured yet
 
 ## Access Model
 
@@ -170,8 +173,8 @@ homelab.services.frigate = {
 ## Next Steps
 
 1. Replace the synthetic RTSP source with real camera definitions under `homelab.services.frigate.cameras`
-2. Validate the lower-retention profile at runtime and tune per camera once real streams are available
-3. Confirm Home Assistant sees Frigate MQTT entities/events through the existing broker integration
+2. Configure the Home Assistant Frigate integration once you want Frigate devices/entities to appear in Home Assistant
+3. Validate the lower-retention profile against real camera traffic and tune per camera as needed
 4. Keep only the cameras and review windows that are operationally useful once the synthetic source is removed
 
 ## Links
