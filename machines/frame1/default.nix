@@ -309,7 +309,7 @@ in
     rtspPort = 8554;
     width = 1280;
     height = 720;
-    fps = 10;
+    fps = 30;
   };
 
   # Frigate is enabled in production against the synthetic RTSP source so the
@@ -331,7 +331,7 @@ in
         enabled = true;
         width = 1280;
         height = 720;
-        fps = 1;
+        fps = 5;
       };
     };
     extraSettings = {
