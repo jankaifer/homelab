@@ -19,7 +19,7 @@ homelab.services.mockRtspCamera = {
   rtspPort = 8554;
   width = 1280;
   height = 720;
-  fps = 10;
+  fps = 30;
   videoProfile = "detection-demo";
 };
 ```
@@ -32,7 +32,7 @@ homelab.services.mockRtspCamera = {
   rtspPort = 8554;
   width = 1280;
   height = 720;
-  fps = 10;
+  fps = 30;
   videoProfile = "detection-demo";
 };
 ```
@@ -53,6 +53,7 @@ This is intended for Frigate or other local camera consumers running on the same
 - `mock-rtsp-camera-publisher.service` uses `ffmpeg` to loop either a pinned sample clip or a synthetic test pattern
 - The default `detection-demo` profile uses Intel's `person-bicycle-car-detection.mp4`, which is much closer to a real driveway/street feed for Frigate testing
 - The `detection-demo` path is normalized once during the Nix build, then streamed with `-c:v copy` so the long-running publisher does not keep re-encoding the sample clip on CPU
+- The mock publisher now emits a `30` FPS RTSP stream so UI playback stays close to real-time, while Frigate detection remains throttled separately in the camera config
 - `test-pattern` remains available when only stream-path validation is needed
 
 ## Intended Use
