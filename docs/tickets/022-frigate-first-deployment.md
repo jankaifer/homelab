@@ -52,3 +52,4 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Reworked the homelab Frigate defaults to match Frigate's newer storage controls: no continuous retention, `3` days of motion retention, `14` days for alert/detection review segments, and `7` days for snapshots.
 - Added explicit snapshot retention controls to the Frigate module and kept `snapshots.cleanCopy = false` so Frigate does not store duplicate clean-copy images by default.
 - Applied the tighter retention profile to both `frame1` and `frame1-vm` so the same lower-disk behavior is exercised in the test environment.
+- Updated the retention profile again after sizing review: `3` days of continuous retention, `7` days of motion retention, and `365` days for alert/detection review segments.

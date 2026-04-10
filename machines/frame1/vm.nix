@@ -59,8 +59,9 @@
   homelab.services.frigate = {
     enable = lib.mkForce true;
     recordingsDir = lib.mkForce "/var/lib/frigate-test-media";
-    retainDays = lib.mkForce 3;
-    reviewRetainDays = lib.mkForce 14;
+    continuousRetainDays = lib.mkForce 3;
+    retainDays = lib.mkForce 7;
+    reviewRetainDays = lib.mkForce 365;
     cameras.mock_driveway = {
       ffmpeg.inputs = [{
         path = "rtsp://127.0.0.1:8554/mock-driveway";

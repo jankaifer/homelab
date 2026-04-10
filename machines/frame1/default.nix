@@ -318,8 +318,9 @@ in
     enable = true;
     domain = "frigate.frame1.hobitin.eu";
     recordingsDir = "/nas/nvr/frigate";
-    retainDays = 3;
-    reviewRetainDays = 14;
+    continuousRetainDays = 3;
+    retainDays = 7;
+    reviewRetainDays = 365;
     cameras.mock_driveway = {
       ffmpeg.inputs = [{
         path = "rtsp://127.0.0.1:8554/mock-driveway";

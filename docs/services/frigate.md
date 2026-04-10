@@ -20,9 +20,9 @@ Frigate-based camera NVR scaffold for the homelab.
 | `homelab.services.frigate.enable`               | bool         | false                       | Enable Frigate                                   |
 | `homelab.services.frigate.domain`               | string       | `frigate.frame1.hobitin.eu` | Private Caddy-routed hostname                    |
 | `homelab.services.frigate.recordingsDir`        | string       | `/nas/nvr/frigate`          | Retention-oriented media storage                 |
-| `homelab.services.frigate.retainDays`           | unsigned int | `3`                         | Motion recording retention window                |
-| `homelab.services.frigate.continuousRetainDays`| unsigned int | `0`                         | Continuous recording retention window            |
-| `homelab.services.frigate.reviewRetainDays`     | unsigned int | `14`                        | Retention for alert/detection review segments    |
+| `homelab.services.frigate.retainDays`           | unsigned int | `7`                         | Motion recording retention window                |
+| `homelab.services.frigate.continuousRetainDays`| unsigned int | `3`                         | Continuous recording retention window            |
+| `homelab.services.frigate.reviewRetainDays`     | unsigned int | `365`                       | Retention for alert/detection review segments    |
 | `homelab.services.frigate.reviewRetainMode`     | enum         | `"motion"`                  | How much video around review events to keep      |
 | `homelab.services.frigate.cameras`              | attrset      | `{}`                        | Camera definitions passed to Frigate             |
 | `homelab.services.frigate.extraSettings`        | attrset      | `{}`                        | Additional Frigate settings merged over defaults |
@@ -37,8 +37,9 @@ homelab.services.frigate = {
   enable = true;
   domain = "frigate.frame1.hobitin.eu";
   recordingsDir = "/nas/nvr/frigate";
-  retainDays = 3;
-  reviewRetainDays = 14;
+  continuousRetainDays = 3;
+  retainDays = 7;
+  reviewRetainDays = 365;
   cameras.mock_driveway = {
     ffmpeg.inputs = [{
       path = "rtsp://127.0.0.1:8554/mock-driveway";
@@ -76,8 +77,9 @@ homelab.services.frigate = {
 homelab.services.frigate = {
   enable = true;
   recordingsDir = "/var/lib/frigate-test-media";
-  retainDays = 3;
-  reviewRetainDays = 14;
+  continuousRetainDays = 3;
+  retainDays = 7;
+  reviewRetainDays = 365;
   cameras.mock_driveway = {
     ffmpeg.inputs = [{
       path = "rtsp://127.0.0.1:8554/mock-driveway";
@@ -107,7 +109,7 @@ homelab.services.frigate = {
 - Uses the upstream NixOS `services.frigate` module
 - Keeps Frigate state in `/var/lib/frigate`
 - Stores media-oriented data under `/nas/nvr/frigate`
-- Defaults to no continuous retention, short motion retention, and longer review retention
+- Defaults to short continuous retention, one-week motion retention, and one-year review retention
 - Caps snapshot retention to one week and disables clean-copy duplicates
 - Symlinks `/var/lib/frigate/clips`, `/var/lib/frigate/exports`, and `/var/lib/frigate/recordings` into the NAS-backed retention path
 - Extends the internal nginx unit with the NAS shared group when recordings live under `/nas` so review/history media remains readable through the UI
@@ -143,9 +145,9 @@ homelab.services.frigate = {
 - These files are retention-only and are not currently in offsite backup scope
 - Frigate state remains local under `/var/lib/frigate`
 - Default retention profile:
-  - Continuous recordings: `0` days
-  - Motion recordings: `3` days
-  - Alert/detection review segments: `14` days
+  - Continuous recordings: `3` days
+  - Motion recordings: `7` days
+  - Alert/detection review segments: `365` days
   - Snapshots: `7` days
 
 ## Disk Reduction Levers

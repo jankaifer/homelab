@@ -79,19 +79,19 @@ in
 
     retainDays = lib.mkOption {
       type = lib.types.ints.unsigned;
-      default = 3;
+      default = 7;
       description = "Default motion recording retention window in days.";
     };
 
     continuousRetainDays = lib.mkOption {
       type = lib.types.ints.unsigned;
-      default = 0;
+      default = 3;
       description = "How many days of continuous recordings to retain.";
     };
 
     reviewRetainDays = lib.mkOption {
       type = lib.types.ints.unsigned;
-      default = 14;
+      default = 365;
       description = "How many days to retain recordings tied to alerts or detections.";
     };
 
