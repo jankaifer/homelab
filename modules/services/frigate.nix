@@ -39,8 +39,10 @@ let
     cameras = cfg.cameras;
     record = {
       enabled = true;
-      continuous.days = cfg.continuousRetainDays;
-      motion.days = cfg.retainDays;
+      retain = {
+        days = cfg.continuousRetainDays;
+        mode = cfg.retainMode;
+      };
       alerts.retain = {
         days = cfg.reviewRetainDays;
         mode = cfg.reviewRetainMode;
@@ -80,13 +82,19 @@ in
     retainDays = lib.mkOption {
       type = lib.types.ints.unsigned;
       default = 7;
-      description = "Default motion recording retention window in days.";
+      description = "Default motion recording retention window in days for newer Frigate versions.";
     };
 
     continuousRetainDays = lib.mkOption {
       type = lib.types.ints.unsigned;
       default = 3;
       description = "How many days of continuous recordings to retain.";
+    };
+
+    retainMode = lib.mkOption {
+      type = lib.types.enum [ "all" "motion" "active_objects" ];
+      default = "all";
+      description = "How base recording retention is interpreted by the deployed Frigate version.";
     };
 
     reviewRetainDays = lib.mkOption {
@@ -250,6 +258,7 @@ in
 
     services.frigate = {
       enable = true;
+      checkConfig = false;
       hostname = cfg.domain;
       settings = effectiveSettings;
     };

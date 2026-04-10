@@ -319,7 +319,7 @@ in
     domain = "frigate.frame1.hobitin.eu";
     recordingsDir = "/nas/nvr/frigate";
     continuousRetainDays = 3;
-    retainDays = 7;
+    retainMode = "all";
     reviewRetainDays = 365;
     cameras.mock_driveway = {
       ffmpeg.inputs = [{

@@ -53,3 +53,5 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Added explicit snapshot retention controls to the Frigate module and kept `snapshots.cleanCopy = false` so Frigate does not store duplicate clean-copy images by default.
 - Applied the tighter retention profile to both `frame1` and `frame1-vm` so the same lower-disk behavior is exercised in the test environment.
 - Updated the retention profile again after sizing review: `3` days of continuous retention, `7` days of motion retention, and `365` days for alert/detection review segments.
+- The subsequent deploy exposed a Frigate `0.16.3` schema limitation: the packaged version does not accept separate base `continuous` and `motion` retention windows yet, so the deployed compromise keeps `3` days of base retention plus `365` days for alert/detection review segments.
+- Disabled Frigate's build-time config validation in the homelab wrapper because the checker cannot see the MQTT password that is injected later at runtime from agenix.

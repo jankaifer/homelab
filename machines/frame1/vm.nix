@@ -60,7 +60,7 @@
     enable = lib.mkForce true;
     recordingsDir = lib.mkForce "/var/lib/frigate-test-media";
     continuousRetainDays = lib.mkForce 3;
-    retainDays = lib.mkForce 7;
+    retainMode = lib.mkForce "all";
     reviewRetainDays = lib.mkForce 365;
     cameras.mock_driveway = {
       ffmpeg.inputs = [{
