@@ -14,22 +14,31 @@ Frigate-based camera NVR scaffold for the homelab.
 
 **Options:**
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `homelab.services.frigate.enable` | bool | false | Enable Frigate |
-| `homelab.services.frigate.domain` | string | `frigate.frame1.hobitin.eu` | Private Caddy-routed hostname |
-| `homelab.services.frigate.recordingsDir` | string | `/nas/nvr/frigate` | Retention-oriented media storage |
-| `homelab.services.frigate.retainDays` | unsigned int | `14` | Default recording retention window |
-| `homelab.services.frigate.cameras` | attrset | `{}` | Camera definitions passed to Frigate |
-| `homelab.services.frigate.extraSettings` | attrset | `{}` | Additional Frigate settings merged over defaults |
-| `homelab.services.frigate.mqtt.*` | attrs | see module | Optional secret-backed MQTT publishing for Frigate events and stats |
+
+| Option                                   | Type         | Default                     | Description                                      |
+| ---------------------------------------- | ------------ | --------------------------- | ------------------------------------------------ |
+| `homelab.services.frigate.enable`               | bool         | false                       | Enable Frigate                                   |
+| `homelab.services.frigate.domain`               | string       | `frigate.frame1.hobitin.eu` | Private Caddy-routed hostname                    |
+| `homelab.services.frigate.recordingsDir`        | string       | `/nas/nvr/frigate`          | Retention-oriented media storage                 |
+| `homelab.services.frigate.retainDays`           | unsigned int | `3`                         | Motion recording retention window                |
+| `homelab.services.frigate.continuousRetainDays`| unsigned int | `0`                         | Continuous recording retention window            |
+| `homelab.services.frigate.reviewRetainDays`     | unsigned int | `14`                        | Retention for alert/detection review segments    |
+| `homelab.services.frigate.reviewRetainMode`     | enum         | `"motion"`                  | How much video around review events to keep      |
+| `homelab.services.frigate.cameras`              | attrset      | `{}`                        | Camera definitions passed to Frigate             |
+| `homelab.services.frigate.extraSettings`        | attrset      | `{}`                        | Additional Frigate settings merged over defaults |
+| `homelab.services.frigate.snapshots.*`          | attrs        | see module                  | Snapshot enablement plus retention controls      |
+| `homelab.services.frigate.mqtt.*`               | attrs        | see module                  | Optional secret-backed MQTT publishing for Frigate events and stats |
+
 
 **Current machine configuration:**
+
 ```nix
 homelab.services.frigate = {
   enable = true;
   domain = "frigate.frame1.hobitin.eu";
   recordingsDir = "/nas/nvr/frigate";
+  retainDays = 3;
+  reviewRetainDays = 14;
   cameras.mock_driveway = {
     ffmpeg.inputs = [{
       path = "rtsp://127.0.0.1:8554/mock-driveway";
@@ -48,6 +57,10 @@ homelab.services.frigate = {
     ffmpeg.hwaccel_args = "preset-vaapi";
     objects.track = [ "person" "car" "bicycle" ];
   };
+  snapshots = {
+    retainDays = 7;
+    cleanCopy = false;
+  };
   mqtt = {
     enable = true;
     host = "127.0.0.1";
@@ -58,10 +71,13 @@ homelab.services.frigate = {
 ```
 
 **Current VM testing configuration:**
+
 ```nix
 homelab.services.frigate = {
   enable = true;
   recordingsDir = "/var/lib/frigate-test-media";
+  retainDays = 3;
+  reviewRetainDays = 14;
   cameras.mock_driveway = {
     ffmpeg.inputs = [{
       path = "rtsp://127.0.0.1:8554/mock-driveway";
@@ -79,6 +95,10 @@ homelab.services.frigate = {
     birdseye.enabled = false;
     objects.track = [ "person" "car" "bicycle" ];
   };
+  snapshots = {
+    retainDays = 7;
+    cleanCopy = false;
+  };
 };
 ```
 
@@ -87,6 +107,8 @@ homelab.services.frigate = {
 - Uses the upstream NixOS `services.frigate` module
 - Keeps Frigate state in `/var/lib/frigate`
 - Stores media-oriented data under `/nas/nvr/frigate`
+- Defaults to no continuous retention, short motion retention, and longer review retention
+- Caps snapshot retention to one week and disables clean-copy duplicates
 - Symlinks `/var/lib/frigate/clips`, `/var/lib/frigate/exports`, and `/var/lib/frigate/recordings` into the NAS-backed retention path
 - Extends the internal nginx unit with the NAS shared group when recordings live under `/nas` so review/history media remains readable through the UI
 - On `frame1`, enables Intel VA-API decode with `intel-media-driver`, `services.frigate.vaapiDriver = "iHD"`, and `ffmpeg.hwaccel_args = "preset-vaapi"`
@@ -108,16 +130,33 @@ homelab.services.frigate = {
 
 ## Access
 
-| Environment | URL |
-|-------------|-----|
-| VM / Local | https://frigate.frame1.hobitin.eu:8443 |
-| Production | https://frigate.frame1.hobitin.eu |
+
+| Environment | URL                                                                              |
+| ----------- | -------------------------------------------------------------------------------- |
+| VM / Local  | [https://frigate.frame1.hobitin.eu:8443](https://frigate.frame1.hobitin.eu:8443) |
+| Production  | [https://frigate.frame1.hobitin.eu](https://frigate.frame1.hobitin.eu)           |
+
 
 ## Storage Policy
 
 - Recordings, clips, and exports live under `/nas/nvr/frigate`
 - These files are retention-only and are not currently in offsite backup scope
 - Frigate state remains local under `/var/lib/frigate`
+- Default retention profile:
+  - Continuous recordings: `0` days
+  - Motion recordings: `3` days
+  - Alert/detection review segments: `14` days
+  - Snapshots: `7` days
+
+## Disk Reduction Levers
+
+- Keep `continuousRetainDays = 0` unless you explicitly need a full rolling archive
+- Lower `retainDays` further if generic motion footage still dominates the NAS
+- Lower `reviewRetainDays` if review/history clips remain the main consumer
+- Set `snapshots.enable = false` if Frigate snapshots are not needed by Home Assistant or notifications
+- Keep `snapshots.cleanCopy = false` to avoid duplicate stored images
+- When real cameras are added, use a low-bitrate substream for `detect` and keep the main stream for `record`
+- The current synthetic `mock_driveway` stream is noisier than a tuned real camera and can overstate expected disk growth during testing
 
 ## Dependencies
 
@@ -128,9 +167,9 @@ homelab.services.frigate = {
 ## Next Steps
 
 1. Replace the synthetic RTSP source with real camera definitions under `homelab.services.frigate.cameras`
-2. Validate the mock-camera path at runtime in both VM and production with MQTT-backed events enabled
+2. Validate the lower-retention profile at runtime and tune per camera once real streams are available
 3. Confirm Home Assistant sees Frigate MQTT entities/events through the existing broker integration
-4. Replace the synthetic camera with real RTSP definitions once they are ready
+4. Keep only the cameras and review windows that are operationally useful once the synthetic source is removed
 
 ## Links
 

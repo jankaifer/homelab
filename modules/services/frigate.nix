@@ -39,9 +39,22 @@ let
     cameras = cfg.cameras;
     record = {
       enabled = true;
-      retain.days = cfg.retainDays;
+      continuous.days = cfg.continuousRetainDays;
+      motion.days = cfg.retainDays;
+      alerts.retain = {
+        days = cfg.reviewRetainDays;
+        mode = cfg.reviewRetainMode;
+      };
+      detections.retain = {
+        days = cfg.reviewRetainDays;
+        mode = cfg.reviewRetainMode;
+      };
     };
-    snapshots.enabled = true;
+    snapshots = {
+      enabled = cfg.snapshots.enable;
+      clean_copy = cfg.snapshots.cleanCopy;
+      retain.default = cfg.snapshots.retainDays;
+    };
   };
   effectiveSettings = lib.recursiveUpdate (lib.recursiveUpdate defaultSettings mqttSettings) cfg.extraSettings;
   runtimeConfigTemplate = pkgs.writeText "frigate-runtime-config.json" (
@@ -66,8 +79,26 @@ in
 
     retainDays = lib.mkOption {
       type = lib.types.ints.unsigned;
+      default = 3;
+      description = "Default motion recording retention window in days.";
+    };
+
+    continuousRetainDays = lib.mkOption {
+      type = lib.types.ints.unsigned;
+      default = 0;
+      description = "How many days of continuous recordings to retain.";
+    };
+
+    reviewRetainDays = lib.mkOption {
+      type = lib.types.ints.unsigned;
       default = 14;
-      description = "Default recording retention window in days.";
+      description = "How many days to retain recordings tied to alerts or detections.";
+    };
+
+    reviewRetainMode = lib.mkOption {
+      type = lib.types.enum [ "all" "motion" "active_objects" ];
+      default = "motion";
+      description = "How much video around alerts or detections to keep.";
     };
 
     cameras = lib.mkOption {
@@ -142,6 +173,26 @@ in
         type = lib.types.bool;
         default = false;
         description = "Allow insecure TLS verification for MQTT. Leave disabled unless testing.";
+      };
+    };
+
+    snapshots = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether Frigate should save object snapshots.";
+      };
+
+      retainDays = lib.mkOption {
+        type = lib.types.ints.unsigned;
+        default = 7;
+        description = "How many days to retain snapshots.";
+      };
+
+      cleanCopy = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Whether to keep Frigate clean-copy snapshots alongside the regular snapshot.";
       };
     };
   };

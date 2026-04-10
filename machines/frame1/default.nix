@@ -50,7 +50,7 @@ in
 
   # Enable the Intel iGPU render stack so Frigate can offload video decode
   # through VA-API instead of burning CPU on ffmpeg.
-  hardware.graphics = {
+  hardware.graphics = lib.mkIf pkgs.stdenv.hostPlatform.isx86_64 {
     enable = true;
     extraPackages = [ pkgs.intel-media-driver ];
   };
@@ -318,6 +318,8 @@ in
     enable = true;
     domain = "frigate.frame1.hobitin.eu";
     recordingsDir = "/nas/nvr/frigate";
+    retainDays = 3;
+    reviewRetainDays = 14;
     cameras.mock_driveway = {
       ffmpeg.inputs = [{
         path = "rtsp://127.0.0.1:8554/mock-driveway";
@@ -336,6 +338,10 @@ in
       ffmpeg.hwaccel_args = "preset-vaapi";
       objects.track = [ "person" "car" "bicycle" ];
     };
+    snapshots = {
+      retainDays = 7;
+      cleanCopy = false;
+    };
     mqtt = {
       enable = true;
       host = "127.0.0.1";
@@ -344,5 +350,5 @@ in
     };
   };
 
-  services.frigate.vaapiDriver = "iHD";
+  services.frigate.vaapiDriver = lib.mkIf pkgs.stdenv.hostPlatform.isx86_64 "iHD";
 }
