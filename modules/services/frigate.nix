@@ -37,6 +37,7 @@ let
   defaultSettings = {
     mqtt.enabled = false;
     cameras = cfg.cameras;
+    ffmpeg.path = "${pkgs.ffmpeg-headless}";
     record = {
       enabled = true;
       retain = {
