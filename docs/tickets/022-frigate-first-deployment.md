@@ -48,6 +48,8 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Added a Frigate-specific MQTT credential path in the homelab modules and Mosquitto ACLs so Frigate can publish under `frigate/#` without sharing another client's broker credentials.
 - Switched the Frigate wrapper to render its final runtime config under `/run/frigate/frigate.yml`, which keeps the MQTT password out of the Nix store while preserving declarative Frigate settings.
 - Enabled Frigate MQTT publishing on `frame1` against the host-local Mosquitto loopback listener so Home Assistant can consume Frigate events through the existing broker integration.
+- After the first deploy, verified on `frame1` that Frigate was still crash-looping because the upstream `frigate-create-writable-config` `ExecStartPre` step overwrote the secret-injected runtime config and dropped the MQTT password.
+- Replaced the upstream Frigate `ExecStartPre` list in the homelab wrapper so the final `/run/frigate/frigate.yml` is rendered from the runtime template after cache cleanup, preserving the MQTT password from agenix on every start.
 - Investigated Frigate disk-growth controls from the repo side after a direct SSH probe to `192.168.2.241` timed out, so live on-host `du` numbers could not be collected from this workspace.
 - Reworked the homelab Frigate defaults to match Frigate's newer storage controls: no continuous retention, `3` days of motion retention, `14` days for alert/detection review segments, and `7` days for snapshots.
 - Added explicit snapshot retention controls to the Frigate module and kept `snapshots.cleanCopy = false` so Frigate does not store duplicate clean-copy images by default.

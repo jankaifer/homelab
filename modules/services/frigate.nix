@@ -280,20 +280,26 @@ in
       requires = [ "frigate-storage-setup.service" ];
       after = [ "frigate-storage-setup.service" ];
       path = lib.mkAfter [ pkgs.jq ];
-      preStart = ''
-        set -euo pipefail
+      serviceConfig.ExecStartPre = lib.mkForce [
+        (pkgs.writeShellScript "frigate-clear-cache" ''
+          shopt -s extglob
+          rm --recursive --force /var/cache/frigate/!(model_cache)
+        '')
+        (pkgs.writeShellScript "frigate-render-runtime-config" ''
+          set -euo pipefail
 
-        ${if cfg.mqtt.enable then ''
-          password="$(tr -d '\n' < ${lib.escapeShellArg cfg.mqtt.passwordFile})"
-          jq --arg password "$password" '.mqtt.password = $password' \
-            ${runtimeConfigTemplate} > /run/frigate/frigate.yml
-        '' else ''
-          cp --no-preserve=mode ${runtimeConfigTemplate} /run/frigate/frigate.yml
-        ''}
+          ${if cfg.mqtt.enable then ''
+            password="$(tr -d '\n' < ${lib.escapeShellArg cfg.mqtt.passwordFile})"
+            jq --arg password "$password" '.mqtt.password = $password' \
+              ${runtimeConfigTemplate} > /run/frigate/frigate.yml
+          '' else ''
+            cp --no-preserve=mode ${runtimeConfigTemplate} /run/frigate/frigate.yml
+          ''}
 
-        chown frigate:frigate /run/frigate/frigate.yml
-        chmod 0600 /run/frigate/frigate.yml
-      '';
+          chown frigate:frigate /run/frigate/frigate.yml
+          chmod 0600 /run/frigate/frigate.yml
+        '')
+      ];
     };
 
     homelab.services.caddy.virtualHosts.${cfg.domain} =
