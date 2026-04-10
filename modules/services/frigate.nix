@@ -4,7 +4,7 @@
 # - private access via Caddy
 # - recordings kept under /nas/nvr
 # - no public exposure by default
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.homelab.services.frigate;
@@ -19,6 +19,21 @@ let
     "exports"
     "recordings"
   ];
+  mqttSettings =
+    lib.optionalAttrs cfg.mqtt.enable ({
+      mqtt = {
+        enabled = true;
+        host = cfg.mqtt.host;
+        port = cfg.mqtt.port;
+        user = cfg.mqtt.user;
+        topic_prefix = cfg.mqtt.topicPrefix;
+        client_id = cfg.mqtt.clientId;
+        tls_ca_certs = cfg.mqtt.tlsCaFile;
+      }
+      // lib.optionalAttrs cfg.mqtt.tlsInsecure {
+        tls_insecure = true;
+      };
+    });
   defaultSettings = {
     mqtt.enabled = false;
     cameras = cfg.cameras;
@@ -28,6 +43,10 @@ let
     };
     snapshots.enabled = true;
   };
+  effectiveSettings = lib.recursiveUpdate (lib.recursiveUpdate defaultSettings mqttSettings) cfg.extraSettings;
+  runtimeConfigTemplate = pkgs.writeText "frigate-runtime-config.json" (
+    builtins.toJSON (lib.filterAttrsRecursive (_: v: v != null) effectiveSettings)
+  );
 in
 {
   options.homelab.services.frigate = {
@@ -73,6 +92,58 @@ in
       default = { };
       description = "Additional Frigate settings merged over the homelab defaults.";
     };
+
+    mqtt = {
+      enable = lib.mkEnableOption "Frigate MQTT publishing";
+
+      host = lib.mkOption {
+        type = lib.types.str;
+        default = "127.0.0.1";
+        description = "MQTT broker hostname for Frigate.";
+      };
+
+      port = lib.mkOption {
+        type = lib.types.port;
+        default = 1883;
+        description = "MQTT broker port for Frigate.";
+      };
+
+      user = lib.mkOption {
+        type = lib.types.str;
+        default = "frigate";
+        description = "MQTT username used by Frigate.";
+      };
+
+      passwordFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Secret-backed file containing the MQTT password for Frigate.";
+      };
+
+      topicPrefix = lib.mkOption {
+        type = lib.types.str;
+        default = "frigate";
+        description = "MQTT topic prefix used by Frigate events and stats.";
+      };
+
+      clientId = lib.mkOption {
+        type = lib.types.str;
+        default = "frigate";
+        description = "MQTT client ID used by Frigate.";
+      };
+
+      tlsCaFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Optional CA bundle path for TLS MQTT connections.";
+      };
+
+      tlsInsecure = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Allow insecure TLS verification for MQTT. Leave disabled unless testing.";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -91,6 +162,10 @@ in
       {
         assertion = (!recordingsOnNas) || nasCfg.enable;
         message = "homelab.services.frigate.recordingsDir uses /nas but homelab.services.nas is not enabled.";
+      }
+      {
+        assertion = (!cfg.mqtt.enable) || (cfg.mqtt.passwordFile != null);
+        message = "homelab.services.frigate.mqtt.passwordFile must be set when MQTT is enabled.";
       }
     ];
 
@@ -125,7 +200,7 @@ in
     services.frigate = {
       enable = true;
       hostname = cfg.domain;
-      settings = lib.recursiveUpdate defaultSettings cfg.extraSettings;
+      settings = effectiveSettings;
     };
 
     # The upstream module injects `listen 127.0.0.1:5000` directly into the
@@ -144,6 +219,21 @@ in
     systemd.services.frigate = {
       requires = [ "frigate-storage-setup.service" ];
       after = [ "frigate-storage-setup.service" ];
+      path = lib.mkAfter [ pkgs.jq ];
+      preStart = ''
+        set -euo pipefail
+
+        ${if cfg.mqtt.enable then ''
+          password="$(tr -d '\n' < ${lib.escapeShellArg cfg.mqtt.passwordFile})"
+          jq --arg password "$password" '.mqtt.password = $password' \
+            ${runtimeConfigTemplate} > /run/frigate/frigate.yml
+        '' else ''
+          cp --no-preserve=mode ${runtimeConfigTemplate} /run/frigate/frigate.yml
+        ''}
+
+        chown frigate:frigate /run/frigate/frigate.yml
+        chmod 0600 /run/frigate/frigate.yml
+      '';
     };
 
     homelab.services.caddy.virtualHosts.${cfg.domain} =

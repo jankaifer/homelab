@@ -16,6 +16,9 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 | Cloudflare API Token | `secrets/cloudflare-api-token.age` | Caddy and Mosquitto ACME |
 | Grafana Admin Password | `secrets/grafana-admin-password.age` | Grafana |
 | Tailscale Auth Key | `secrets/tailscale-auth-key.age` | Tailscale unattended login |
+| MQTT Password (`homeassistant`) | `secrets/mqtt-homeassistant-password.age` | Home Assistant MQTT client |
+| MQTT Password (`zigbee2mqtt`) | `secrets/mqtt-zigbee2mqtt-password.age` | Zigbee2MQTT MQTT client |
+| MQTT Password (`frigate`) | `secrets/mqtt-frigate-password.age` | Frigate MQTT client |
 | NAS SMB Password (`jankaifer`) | `secrets/nas-jankaifer-password.age` | Samba login for admin NAS access |
 | NAS SMB Password (`nasguest`) | `secrets/nas-guest-password.age` | Samba login for guest media access |
 | Restic Password | `secrets/restic-password.age` | Restic backup job |

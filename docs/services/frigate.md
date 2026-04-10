@@ -22,6 +22,7 @@ Frigate-based camera NVR scaffold for the homelab.
 | `homelab.services.frigate.retainDays` | unsigned int | `14` | Default recording retention window |
 | `homelab.services.frigate.cameras` | attrset | `{}` | Camera definitions passed to Frigate |
 | `homelab.services.frigate.extraSettings` | attrset | `{}` | Additional Frigate settings merged over defaults |
+| `homelab.services.frigate.mqtt.*` | attrs | see module | Optional secret-backed MQTT publishing for Frigate events and stats |
 
 **Current machine configuration:**
 ```nix
@@ -46,6 +47,12 @@ homelab.services.frigate = {
     birdseye.enabled = false;
     ffmpeg.hwaccel_args = "preset-vaapi";
     objects.track = [ "person" "car" "bicycle" ];
+  };
+  mqtt = {
+    enable = true;
+    host = "127.0.0.1";
+    port = 1883;
+    passwordFile = config.age.secrets.mqtt-frigate-password.path;
   };
 };
 ```
@@ -84,13 +91,13 @@ homelab.services.frigate = {
 - Extends the internal nginx unit with the NAS shared group when recordings live under `/nas` so review/history media remains readable through the UI
 - On `frame1`, enables Intel VA-API decode with `intel-media-driver`, `services.frigate.vaapiDriver = "iHD"`, and `ffmpeg.hwaccel_args = "preset-vaapi"`
 - Publishes Frigate only through Caddy on `https://frigate.frame1.hobitin.eu`
+- Renders the final Frigate runtime config in `/run/frigate/frigate.yml` so the MQTT password can come from agenix instead of the Nix store
 - In `frame1-vm`, records against the mock RTSP source and stores media in `/var/lib/frigate-test-media`
 - On `frame1`, records against the same mock RTSP source while real camera URLs are still pending
 
 ## Current Blockers
 
 - No real RTSP camera definitions are committed yet
-- No Frigate-specific MQTT credential path is defined yet
 - Production currently uses a synthetic RTSP stream instead of a real camera feed
 
 ## Access Model
@@ -121,9 +128,9 @@ homelab.services.frigate = {
 ## Next Steps
 
 1. Replace the synthetic RTSP source with real camera definitions under `homelab.services.frigate.cameras`
-2. Decide whether Frigate should publish events to MQTT on day one
-3. Validate the mock-camera path at runtime in both VM and production
-4. Wire Frigate into MQTT if Home Assistant entities/events are needed
+2. Validate the mock-camera path at runtime in both VM and production with MQTT-backed events enabled
+3. Confirm Home Assistant sees Frigate MQTT entities/events through the existing broker integration
+4. Replace the synthetic camera with real RTSP definitions once they are ready
 
 ## Links
 

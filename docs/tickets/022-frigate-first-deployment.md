@@ -45,3 +45,6 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Enabled Intel iGPU video decode on `frame1` by turning on `hardware.graphics`, adding `intel-media-driver`, setting `services.frigate.vaapiDriver = "iHD"`, and applying Frigate `ffmpeg.hwaccel_args = "preset-vaapi"`.
 - Reduced mock-camera Frigate detection from `5` FPS to `1` FPS in both production and VM configs to cut CPU load while keeping the integration path active.
 - Changed the mock RTSP `detection-demo` publisher to pre-transcode the sample clip once during the Nix build and then stream the cached file with `-c:v copy`, avoiding continuous `libx264` re-encoding on `frame1`.
+- Added a Frigate-specific MQTT credential path in the homelab modules and Mosquitto ACLs so Frigate can publish under `frigate/#` without sharing another client's broker credentials.
+- Switched the Frigate wrapper to render its final runtime config under `/run/frigate/frigate.yml`, which keeps the MQTT password out of the Nix store while preserving declarative Frigate settings.
+- Enabled Frigate MQTT publishing on `frame1` against the host-local Mosquitto loopback listener so Home Assistant can consume Frigate events through the existing broker integration.

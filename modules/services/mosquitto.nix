@@ -92,6 +92,12 @@ in
       description = "Path to Zigbee2MQTT MQTT user password (agenix secret).";
     };
 
+    frigatePasswordFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to Frigate MQTT user password (agenix secret).";
+    };
+
     allowLAN = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -201,6 +207,7 @@ in
               passwordFile = cfg.homeAssistantPasswordFile;
               acl = [
                 "readwrite homeassistant/#"
+                "read frigate/#"
                 "readwrite zigbee2mqtt/#"
               ];
             };
@@ -209,6 +216,13 @@ in
               acl = [
                 "readwrite homeassistant/#"
                 "readwrite zigbee2mqtt/#"
+              ];
+            };
+          } // lib.optionalAttrs (cfg.frigatePasswordFile != null) {
+            frigate = {
+              passwordFile = cfg.frigatePasswordFile;
+              acl = [
+                "readwrite frigate/#"
               ];
             };
           };
@@ -228,7 +242,15 @@ in
             passwordFile = cfg.homeAssistantPasswordFile;
             acl = [
               "readwrite homeassistant/#"
+              "read frigate/#"
               "readwrite zigbee2mqtt/#"
+            ];
+          };
+        } // lib.optionalAttrs (cfg.frigatePasswordFile != null) {
+          frigate = {
+            passwordFile = cfg.frigatePasswordFile;
+            acl = [
+              "readwrite frigate/#"
             ];
           };
         };

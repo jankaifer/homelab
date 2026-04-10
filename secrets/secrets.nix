@@ -42,6 +42,9 @@ in
   # MQTT password for Zigbee2MQTT MQTT client
   "mqtt-zigbee2mqtt-password.age".publicKeys = allKeys;
 
+  # MQTT password for Frigate MQTT client
+  "mqtt-frigate-password.age".publicKeys = allKeys;
+
   # Restic repository password
   "restic-password.age".publicKeys = allKeys;
 

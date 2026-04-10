@@ -156,6 +156,12 @@ in
       group = "root";
       mode = "0400";
     };
+    mqtt-frigate-password = {
+      file = ../../secrets/mqtt-frigate-password.age;
+      owner = "frigate";
+      group = "frigate";
+      mode = "0400";
+    };
     restic-password = {
       file = ../../secrets/restic-password.age;
       owner = "root";
@@ -276,6 +282,7 @@ in
     cloudflareDnsTokenFile = config.age.secrets.cloudflare-api-token.path;
     homeAssistantPasswordFile = config.age.secrets.mqtt-homeassistant-password.path;
     zigbee2mqttPasswordFile = config.age.secrets.mqtt-zigbee2mqtt-password.path;
+    frigatePasswordFile = config.age.secrets.mqtt-frigate-password.path;
     loopbackPort = 1883;
     allowLAN = true;
     allowTailscale = true;
@@ -328,6 +335,12 @@ in
       birdseye.enabled = false;
       ffmpeg.hwaccel_args = "preset-vaapi";
       objects.track = [ "person" "car" "bicycle" ];
+    };
+    mqtt = {
+      enable = true;
+      host = "127.0.0.1";
+      port = 1883;
+      passwordFile = config.age.secrets.mqtt-frigate-password.path;
     };
   };
 

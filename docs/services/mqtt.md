@@ -28,6 +28,7 @@ TLS-enabled MQTT broker for Home Assistant and Zigbee2MQTT.
 | `homelab.services.mosquitto.cloudflareDnsTokenFile` | path or null | null | Cloudflare credentials env file; `CLOUDFLARE_API_TOKEN` is accepted and converted for ACME |
 | `homelab.services.mosquitto.homeAssistantPasswordFile` | path or null | null | Password file for `homeassistant` user |
 | `homelab.services.mosquitto.zigbee2mqttPasswordFile` | path or null | null | Password file for `zigbee2mqtt` user |
+| `homelab.services.mosquitto.frigatePasswordFile` | path or null | null | Password file for `frigate` user |
 | `homelab.services.mosquitto.allowLAN` | bool | true | Open listener for LAN clients |
 | `homelab.services.mosquitto.allowTailscale` | bool | true | Allow listener via tailscale interface |
 
@@ -42,6 +43,7 @@ homelab.services.mosquitto = {
   cloudflareDnsTokenFile = config.age.secrets.cloudflare-api-token.path;
   homeAssistantPasswordFile = config.age.secrets.mqtt-homeassistant-password.path;
   zigbee2mqttPasswordFile = config.age.secrets.mqtt-zigbee2mqtt-password.path;
+  frigatePasswordFile = config.age.secrets.mqtt-frigate-password.path;
 };
 ```
 
@@ -63,11 +65,15 @@ On renewal, Mosquitto is reloaded automatically.
 
 Configured users:
 - `homeassistant`
+- `frigate`
 - `zigbee2mqtt`
 
 ACL scope:
 - `homeassistant/#`
+- `frigate/#`
 - `zigbee2mqtt/#`
+
+Home Assistant is also granted read access to `frigate/#` so MQTT-backed Frigate entities and events can flow into Home Assistant without broadening the Frigate client's own write scope.
 
 ## Access
 
