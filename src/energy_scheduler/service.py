@@ -212,6 +212,8 @@ class SchedulerService:
             "planner_status": "ok",
             "planner_timestamp": plan_input.created_at.isoformat(),
             "objective_value_czk": result.objective_value_czk,
+            "bucket_minutes": plan_input.bucket_minutes,
+            "horizon_buckets": plan_input.horizon_buckets,
             "battery_soc_kwh": telemetry_timeline[0]["battery_soc_kwh"] if telemetry_timeline else plan_input.battery.initial_soc_kwh,
             "current_import_kwh": telemetry_timeline[0]["import_kwh"] if telemetry_timeline else 0.0,
             "current_export_kwh": telemetry_timeline[0]["export_kwh"] if telemetry_timeline else 0.0,

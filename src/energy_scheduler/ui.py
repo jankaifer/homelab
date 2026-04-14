@@ -22,49 +22,169 @@ INDEX_HTML = """<!doctype html>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <div id="app">
-    <header class="hero">
-      <div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand-block">
+        <p class="eyebrow">Homelab Energy</p>
         <h1>Energy Scheduler</h1>
-        <p>Understand the current plan, inspect Tesla departure confidence, and run a few what-if presets.</p>
+        <p class="lede">A clearer view of what the optimizer is planning, why it is doing it, and when the Tesla actually needs to be ready.</p>
       </div>
-      <div class="hero-meta">
-        <div class="meta-card"><span>Planner</span><strong id="planner-status">Loading…</strong></div>
-        <div class="meta-card"><span>Updated</span><strong id="planner-timestamp">—</strong></div>
+      <nav class="nav" id="nav-links">
+        <a href="/" data-route="overview">Overview</a>
+        <a href="/timeline" data-route="timeline">Timeline</a>
+        <a href="/tesla" data-route="tesla">Tesla Plan</a>
+        <a href="/scenarios" data-route="scenarios">Scenarios</a>
+      </nav>
+      <div class="status-stack">
+        <div class="status-card">
+          <span>Planner</span>
+          <strong id="planner-status">Loading…</strong>
+        </div>
+        <div class="status-card">
+          <span>Updated</span>
+          <strong id="planner-timestamp">—</strong>
+        </div>
       </div>
-    </header>
-    <main class="layout">
-      <section class="panel">
-        <h2>Current Plan</h2>
-        <div class="summary-grid" id="summary-grid"></div>
+    </aside>
+
+    <main class="main-shell">
+      <section class="page active" id="page-overview">
+        <header class="page-header">
+          <div>
+            <p class="eyebrow">Live plan</p>
+            <h2>Overview</h2>
+          </div>
+          <p class="page-copy">Start here. This page answers three questions quickly: what the optimizer expects, what it is prioritizing, and whether tomorrow's Tesla departure is already protected.</p>
+        </header>
+
+        <section class="hero-strip">
+          <div class="hero-card" id="headline-card"></div>
+          <div class="summary-grid" id="summary-grid"></div>
+        </section>
+
+        <section class="content-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Reasoning</p>
+                <h3>Decision Cards</h3>
+              </div>
+            </div>
+            <div class="card-stack" id="decision-cards"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Near-term commitments</p>
+                <h3>Important Bands</h3>
+              </div>
+            </div>
+            <div class="band-stack" id="band-cards"></div>
+          </article>
+        </section>
       </section>
-      <section class="panel">
-        <h2>Decision Cards</h2>
-        <div id="decision-cards" class="cards"></div>
+
+      <section class="page" id="page-timeline">
+        <header class="page-header">
+          <div>
+            <p class="eyebrow">Expected behavior</p>
+            <h2>Timeline</h2>
+          </div>
+          <p class="page-copy">The first chart shows where energy goes. The second focuses only on the battery so it is easier to read reserve behavior and charge/discharge swings.</p>
+        </header>
+
+        <article class="panel panel-chart">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Expected flow</p>
+              <h3>Solar, Grid, and Tesla</h3>
+            </div>
+            <div class="legend" id="flow-legend"></div>
+          </div>
+          <canvas id="flow-chart" width="1200" height="420"></canvas>
+        </article>
+
+        <article class="panel panel-chart">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Storage</p>
+              <h3>Battery SoC and Battery Power</h3>
+            </div>
+            <div class="legend" id="battery-legend"></div>
+          </div>
+          <canvas id="battery-chart" width="1200" height="360"></canvas>
+        </article>
       </section>
-      <section class="panel">
-        <h2>Expected Timeline</h2>
-        <canvas id="timeline-chart" width="960" height="320"></canvas>
+
+      <section class="page" id="page-tesla">
+        <header class="page-header">
+          <div>
+            <p class="eyebrow">Editable</p>
+            <h2>Tesla Planning Calendar</h2>
+          </div>
+          <p class="page-copy">Each day supports one departure. Explicit entries are treated at 90% confidence. “No departure” still leaves a 10% fallback default scenario so the planner is never completely blind.</p>
+        </header>
+
+        <section class="content-grid tesla-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Summary</p>
+                <h3>How confidence works</h3>
+              </div>
+            </div>
+            <div class="confidence-notes" id="tesla-summary"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Next 14 days</p>
+                <h3>Departure Calendar</h3>
+              </div>
+            </div>
+            <div class="calendar-grid" id="calendar-grid"></div>
+          </article>
+        </section>
       </section>
-      <section class="panel">
-        <h2>Demand Bands</h2>
-        <table id="bands-table">
-          <thead><tr><th>Band</th><th>Asset</th><th>Target</th><th>Served</th><th>Shortfall</th><th>Deadline</th><th>Confidence</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </section>
-      <section class="panel">
-        <h2>Tesla Planning Calendar</h2>
-        <p class="hint">One departure per day. Explicit departures are taken at 90% confidence. “No departure” still leaves a 10% fallback default scenario.</p>
-        <table id="calendar-table">
-          <thead><tr><th>Date</th><th>Mode</th><th>Departure</th><th>Target SoC</th><th>Confidence</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </section>
-      <section class="panel">
-        <h2>Scenario Presets</h2>
-        <div id="preset-list" class="cards"></div>
-        <div id="simulation-output" class="simulation-output"></div>
+
+      <section class="page" id="page-scenarios">
+        <header class="page-header">
+          <div>
+            <p class="eyebrow">Preset experiments</p>
+            <h2>Scenarios</h2>
+          </div>
+          <p class="page-copy">These runs do not change the live planner. Use them to get a feel for tradeoffs before we tune the economics further.</p>
+        </header>
+
+        <section class="content-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Pick one</p>
+                <h3>Scenario Presets</h3>
+              </div>
+            </div>
+            <div class="preset-grid" id="preset-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Simulation output</p>
+                <h3>Preset Result</h3>
+              </div>
+            </div>
+            <div id="simulation-empty" class="empty-state">Choose a preset to run a what-if plan.</div>
+            <div id="simulation-result" class="simulation-result hidden">
+              <div class="summary-grid" id="simulation-summary"></div>
+              <div class="card-stack" id="simulation-cards"></div>
+              <div class="legend" id="simulation-legend"></div>
+              <canvas id="simulation-chart" width="1200" height="340"></canvas>
+            </div>
+          </article>
+        </section>
       </section>
     </main>
   </div>
@@ -73,217 +193,792 @@ INDEX_HTML = """<!doctype html>
 </html>
 """
 
+
 APP_CSS = """
 :root {
-  --bg: #eef2e8;
-  --panel: #fffef8;
-  --ink: #14211b;
-  --muted: #5e6d63;
-  --accent: #2f6d54;
-  --accent-2: #bf6b2c;
-  --border: #d7ddcf;
+  --bg: #f0ede5;
+  --panel: rgba(255, 252, 244, 0.92);
+  --panel-solid: #fffaf2;
+  --ink: #162018;
+  --muted: #5e6b61;
+  --accent: #255d49;
+  --accent-soft: rgba(37, 93, 73, 0.12);
+  --accent-warm: #b96a31;
+  --border: #d9d3c6;
+  --line-1: #255d49;
+  --line-2: #d08b3c;
+  --line-3: #4168ad;
+  --line-4: #a5481f;
+  --line-5: #111111;
+  --shadow: 0 18px 40px rgba(22, 32, 24, 0.08);
 }
-body { margin: 0; font-family: Georgia, "Iowan Old Style", serif; background: linear-gradient(180deg, #f5f2e9 0%, var(--bg) 100%); color: var(--ink); }
-.hero { display: flex; justify-content: space-between; gap: 2rem; padding: 2rem 2.5rem; background: radial-gradient(circle at top left, rgba(47,109,84,0.18), transparent 45%), transparent; }
-.hero h1 { margin: 0 0 0.5rem 0; font-size: 2.4rem; }
-.hero p { margin: 0; color: var(--muted); max-width: 52rem; }
-.hero-meta { display: flex; gap: 1rem; align-items: flex-start; }
-.meta-card, .summary-card, .card, .preset-card { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 8px 28px rgba(20,33,27,0.06); }
-.meta-card { padding: 1rem 1.25rem; min-width: 9rem; }
-.meta-card span { display:block; color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; }
-.layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; padding: 0 2.5rem 2.5rem; }
-.panel { background: rgba(255,255,255,0.55); border: 1px solid rgba(215,221,207,0.9); border-radius: 22px; padding: 1.2rem; backdrop-filter: blur(6px); }
-.panel h2 { margin-top: 0; font-size: 1.2rem; }
-.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; }
-.summary-card { padding: 0.95rem; }
-.summary-card span { color: var(--muted); display:block; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; }
-.summary-card strong { font-size: 1.3rem; }
-.cards { display: grid; gap: 0.75rem; }
-.card, .preset-card { padding: 1rem; }
-.card h3, .preset-card h3 { margin: 0 0 0.4rem 0; font-size: 1rem; }
-.card p, .preset-card p, .hint { margin: 0; color: var(--muted); line-height: 1.45; }
-table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 0.6rem 0.4rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
-input, select, button { font: inherit; }
-input, select { width: 100%; box-sizing: border-box; padding: 0.45rem 0.55rem; border-radius: 10px; border: 1px solid #c3cbba; background: white; }
-button { padding: 0.55rem 0.8rem; border-radius: 999px; border: 0; background: var(--accent); color: white; cursor: pointer; }
-button.secondary { background: var(--accent-2); }
-.simulation-output { margin-top: 1rem; padding: 1rem; background: #f6f8f3; border-radius: 16px; min-height: 4rem; white-space: pre-wrap; color: var(--muted); }
-canvas { width: 100%; height: auto; background: linear-gradient(180deg, rgba(47,109,84,0.08), rgba(191,107,44,0.03)); border-radius: 16px; }
+* { box-sizing: border-box; }
+html { background: radial-gradient(circle at top left, rgba(37, 93, 73, 0.11), transparent 32%), linear-gradient(180deg, #f8f3e8 0%, var(--bg) 100%); min-height: 100%; }
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  min-height: 100vh;
+}
+h1, h2, h3 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+p { margin: 0; }
+.eyebrow {
+  margin-bottom: 0.4rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+}
+.app-shell {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  min-height: 100vh;
+}
+.sidebar {
+  padding: 2rem 1.4rem;
+  border-right: 1px solid rgba(217, 211, 198, 0.85);
+  background: rgba(250, 244, 233, 0.72);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+.brand-block h1 {
+  font-size: 2rem;
+  margin-bottom: 0.6rem;
+}
+.lede {
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 0.97rem;
+}
+.nav {
+  display: grid;
+  gap: 0.45rem;
+}
+.nav a {
+  text-decoration: none;
+  color: var(--ink);
+  padding: 0.8rem 0.95rem;
+  border-radius: 16px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: 160ms ease;
+}
+.nav a:hover,
+.nav a.active {
+  background: var(--accent-soft);
+  border-color: rgba(37, 93, 73, 0.16);
+}
+.status-stack {
+  margin-top: auto;
+  display: grid;
+  gap: 0.75rem;
+}
+.status-card,
+.hero-card,
+.summary-card,
+.panel,
+.decision-card,
+.band-card,
+.calendar-card,
+.preset-card {
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+.status-card,
+.summary-card,
+.decision-card,
+.band-card,
+.calendar-card,
+.preset-card {
+  padding: 1rem;
+}
+.status-card span,
+.summary-card span,
+.mini-label {
+  color: var(--muted);
+  display: block;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.35rem;
+}
+.status-card strong,
+.summary-card strong,
+.hero-value {
+  font-size: 1.25rem;
+}
+.main-shell {
+  padding: 2rem 2rem 3rem;
+  max-width: 1440px;
+  width: 100%;
+}
+.page {
+  display: none;
+}
+.page.active {
+  display: grid;
+  gap: 1.25rem;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: end;
+}
+.page-header h2 {
+  font-size: 2.25rem;
+}
+.page-copy {
+  max-width: 42rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.hero-strip {
+  display: grid;
+  grid-template-columns: 1.25fr 1.75fr;
+  gap: 1rem;
+}
+.hero-card {
+  padding: 1.25rem 1.35rem;
+  background:
+    radial-gradient(circle at top right, rgba(185, 106, 49, 0.15), transparent 34%),
+    linear-gradient(135deg, rgba(37, 93, 73, 0.08), rgba(255, 250, 242, 0.92));
+}
+.hero-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.45rem;
+}
+.hero-card p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.9rem;
+}
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.tesla-grid {
+  grid-template-columns: 360px minmax(0, 1fr);
+}
+.panel {
+  padding: 1.15rem;
+}
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+.panel h3 {
+  font-size: 1.3rem;
+}
+.card-stack,
+.band-stack,
+.confidence-notes,
+.preset-grid,
+.calendar-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+.decision-card h3,
+.band-card h3,
+.preset-card h3,
+.calendar-card h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.45rem;
+}
+.decision-card p,
+.band-card p,
+.preset-card p,
+.calendar-card p,
+.confidence-notes p,
+.empty-state {
+  color: var(--muted);
+  line-height: 1.55;
+}
+.band-meta,
+.calendar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.34rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(37, 93, 73, 0.08);
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.pill.muted {
+  background: rgba(22, 32, 24, 0.06);
+  color: var(--muted);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.legend-dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+}
+.panel-chart canvas,
+#simulation-chart {
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(37, 93, 73, 0.06), rgba(255, 250, 242, 0.86));
+  border: 1px solid rgba(217, 211, 198, 0.85);
+}
+.calendar-grid {
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+}
+.calendar-card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+.calendar-card .date {
+  font-family: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-size: 1.08rem;
+}
+.field-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+.field-row {
+  display: grid;
+  gap: 0.35rem;
+}
+.field-row label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+input,
+select,
+button {
+  font: inherit;
+}
+input,
+select {
+  width: 100%;
+  border: 1px solid #c8cfc2;
+  border-radius: 14px;
+  padding: 0.7rem 0.8rem;
+  background: white;
+  color: var(--ink);
+}
+button {
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+button.secondary {
+  background: var(--accent-warm);
+}
+button.ghost {
+  background: rgba(37, 93, 73, 0.08);
+  color: var(--accent);
+}
+.preset-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.preset-card {
+  display: grid;
+  gap: 0.8rem;
+  align-content: start;
+}
+.simulation-result {
+  display: grid;
+  gap: 1rem;
+}
+.hidden {
+  display: none;
+}
+.empty-state {
+  padding: 1.2rem;
+  border-radius: 18px;
+  background: rgba(37, 93, 73, 0.05);
+}
+@media (max-width: 1180px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid rgba(217, 211, 198, 0.85);
+  }
+  .hero-strip,
+  .content-grid,
+  .tesla-grid {
+    grid-template-columns: 1fr;
+  }
+}
 @media (max-width: 760px) {
-  .hero, .layout { padding-left: 1rem; padding-right: 1rem; }
-  .hero { flex-direction: column; }
+  .main-shell {
+    padding: 1rem 1rem 2rem;
+  }
+  .sidebar {
+    padding: 1rem;
+  }
+  .page-header {
+    align-items: start;
+    flex-direction: column;
+  }
+  .page-header h2 {
+    font-size: 1.8rem;
+  }
+  .summary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .calendar-grid,
+  .preset-grid {
+    grid-template-columns: 1fr;
+  }
+  .nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .nav {
+    grid-template-columns: 1fr;
+  }
 }
 """
 
+
 APP_JS = """
+const appState = {
+  livePlan: null,
+  calendar: null,
+  presets: [],
+  simulation: null,
+};
+
+const ROUTES = {
+  "/": "overview",
+  "/timeline": "timeline",
+  "/tesla": "tesla",
+  "/scenarios": "scenarios",
+};
+
+const FLOW_SERIES = [
+  { key: "solar_kwh", label: "Solar", color: "#d08b3c" },
+  { key: "import_kwh", label: "Grid import", color: "#4168ad" },
+  { key: "export_kwh", label: "Grid export", color: "#a5481f" },
+  { key: "tesla_kwh", label: "Tesla charging", color: "#111111" },
+];
+
+const BATTERY_SERIES = [
+  { key: "battery_soc_kwh", label: "Battery SoC", color: "#255d49" },
+  { key: "battery_charge_kwh", label: "Battery charge", color: "#b96a31" },
+  { key: "battery_discharge_kwh", label: "Battery discharge", color: "#4168ad" },
+];
+
+function routeName() {
+  return ROUTES[window.location.pathname] || "overview";
+}
+
 async function fetchJson(path, options = {}) {
-  const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options });
+  const response = await fetch(path, {
+    headers: { "Content-Type": "application/json" },
+    ...options,
+  });
   if (!response.ok) {
     const text = await response.text();
     throw new Error(text || response.statusText);
   }
   return response.json();
 }
-function fmt(value, suffix = '') {
-  if (value === null || value === undefined) return '—';
-  if (typeof value === 'number') return value.toFixed(2) + suffix;
+
+function fmt(value, suffix = "") {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "number") return `${value.toFixed(2)}${suffix}`;
   return String(value);
 }
+
+function fmtShort(value, suffix = "") {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "number") return `${value.toFixed(1)}${suffix}`;
+  return String(value);
+}
+
+function renderNav() {
+  const active = routeName();
+  document.querySelectorAll("[data-route]").forEach((link) => {
+    link.classList.toggle("active", link.dataset.route === active);
+  });
+  document.querySelectorAll(".page").forEach((page) => {
+    page.classList.toggle("active", page.id === `page-${active}`);
+  });
+}
+
+function renderStatus(summary) {
+  document.getElementById("planner-status").textContent = summary.planner_status || "unknown";
+  document.getElementById("planner-timestamp").textContent = summary.planner_timestamp || "—";
+}
+
+function renderHeadline(summary) {
+  const nextTesla = summary.next_tesla_day;
+  const headline = document.getElementById("headline-card");
+  headline.innerHTML = `
+    <p class="eyebrow">What matters now</p>
+    <h3>${summary.current_export_kwh > summary.current_import_kwh ? "Selling energy is currently winning" : "The system is still protecting tomorrow's needs"}</h3>
+    <p>${nextTesla ? `Next Tesla planning day: ${nextTesla.date} at ${nextTesla.departure_time || "—"} with ${Math.round((nextTesla.confidence || 0) * 100)}% confidence.` : "No Tesla departure is currently in view for the loaded horizon."}</p>
+    <div class="band-meta">
+      <span class="pill">${fmtShort(summary.battery_soc_kwh, " kWh")} battery</span>
+      <span class="pill muted">${fmtShort(summary.current_import_kwh, " kWh")} importing now</span>
+      <span class="pill muted">${fmtShort(summary.current_export_kwh, " kWh")} exporting now</span>
+    </div>
+  `;
+}
+
 function renderSummary(summary) {
-  document.getElementById('planner-status').textContent = summary.planner_status || 'unknown';
-  document.getElementById('planner-timestamp').textContent = summary.planner_timestamp || '—';
-  const grid = document.getElementById('summary-grid');
-  grid.innerHTML = '';
-  [
-    ['Objective (CZK)', fmt(summary.objective_value_czk)],
-    ['Battery SoC (kWh)', fmt(summary.battery_soc_kwh)],
-    ['Import Now (kWh)', fmt(summary.current_import_kwh)],
-    ['Export Now (kWh)', fmt(summary.current_export_kwh)],
-    ['Grid', summary.grid_available ? 'Available' : 'Outage'],
-    ['Next Tesla Day', summary.next_tesla_day ? `${summary.next_tesla_day.date} ${summary.next_tesla_day.departure_time || ''}` : 'None'],
-  ].forEach(([label, value]) => {
-    const card = document.createElement('div');
-    card.className = 'summary-card';
-    card.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
-    grid.appendChild(card);
-  });
-}
-function renderDecisionCards(cards) {
-  const container = document.getElementById('decision-cards');
-  container.innerHTML = '';
-  cards.forEach(card => {
-    const div = document.createElement('div');
-    div.className = 'card';
-    div.innerHTML = `<h3>${card.title}</h3><p>${card.body}</p>`;
-    container.appendChild(div);
-  });
-}
-function drawTimelineChart(points) {
-  const canvas = document.getElementById('timeline-chart');
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#eef2e8';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  if (!points.length) return;
-  const series = [
-    { key: 'battery_soc_kwh', color: '#2f6d54' },
-    { key: 'solar_kwh', color: '#d08f42' },
-    { key: 'import_kwh', color: '#4c6fa8' },
-    { key: 'export_kwh', color: '#9a4a22' },
-    { key: 'tesla_kwh', color: '#111111' },
+  const grid = document.getElementById("summary-grid");
+  const items = [
+    ["Objective", fmtShort(summary.objective_value_czk, " CZK")],
+    ["Battery SoC", fmtShort(summary.battery_soc_kwh, " kWh")],
+    ["Grid import", fmtShort(summary.current_import_kwh, " kWh")],
+    ["Grid export", fmtShort(summary.current_export_kwh, " kWh")],
+    ["Bucket size", `${summary.bucket_minutes} min`],
+    ["Horizon", `${summary.horizon_buckets} buckets`],
   ];
-  const maxY = Math.max(1, ...points.flatMap(p => series.map(s => Number(p[s.key] || 0))));
-  const pad = 28;
-  const width = canvas.width - pad * 2;
-  const height = canvas.height - pad * 2;
-  ctx.strokeStyle = '#cfd7ca';
-  ctx.beginPath();
-  for (let i = 0; i <= 4; i++) {
-    const y = pad + (height / 4) * i;
-    ctx.moveTo(pad, y);
-    ctx.lineTo(pad + width, y);
+  grid.innerHTML = items.map(([label, value]) => `
+    <div class="summary-card">
+      <span>${label}</span>
+      <strong>${value}</strong>
+    </div>
+  `).join("");
+}
+
+function renderDecisionCards(cards, targetId = "decision-cards") {
+  const container = document.getElementById(targetId);
+  container.innerHTML = cards.map((card) => `
+    <article class="decision-card">
+      <h3>${card.title}</h3>
+      <p>${card.body}</p>
+    </article>
+  `).join("");
+}
+
+function renderBandCards(bands) {
+  const important = [...bands]
+    .sort((a, b) => {
+      const requiredDelta = Number(b.required_level) - Number(a.required_level);
+      if (requiredDelta !== 0) return requiredDelta;
+      return a.deadline_index - b.deadline_index;
+    })
+    .slice(0, 8);
+  const container = document.getElementById("band-cards");
+  container.innerHTML = important.map((band) => `
+    <article class="band-card">
+      <h3>${band.display_name}</h3>
+      <p>${band.required_level ? "Required band" : "Opportunistic band"} for ${band.asset_id}. Target ${fmtShort(band.target_quantity_kwh, " kWh")} by bucket ${band.deadline_index}.</p>
+      <div class="band-meta">
+        <span class="pill">${fmtShort(band.served_quantity_kwh, " kWh")} served</span>
+        <span class="pill ${band.shortfall_kwh > 0.01 ? "" : "muted"}">${fmtShort(band.shortfall_kwh, " kWh")} shortfall</span>
+        <span class="pill muted">${band.confidence !== null ? `${Math.round(band.confidence * 100)}% ${band.confidence_source}` : "no confidence"}</span>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderLegend(targetId, series) {
+  const target = document.getElementById(targetId);
+  target.innerHTML = series.map((item) => `
+    <span class="legend-item"><span class="legend-dot" style="background:${item.color}"></span>${item.label}</span>
+  `).join("");
+}
+
+function drawChart(canvasId, points, series, bucketMinutes, opts = {}) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const { width, height } = canvas;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#fffaf2";
+  ctx.fillRect(0, 0, width, height);
+  if (!points.length) return;
+
+  const padLeft = 66;
+  const padRight = 18;
+  const padTop = 18;
+  const padBottom = 40;
+  const plotWidth = width - padLeft - padRight;
+  const plotHeight = height - padTop - padBottom;
+  const maxY = Math.max(1, ...points.flatMap((point) => series.map((item) => Number(point[item.key] || 0))));
+
+  ctx.strokeStyle = "#d9d3c6";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i += 1) {
+    const y = padTop + (plotHeight / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(padLeft, y);
+    ctx.lineTo(padLeft + plotWidth, y);
+    ctx.stroke();
+    const labelValue = ((maxY * (4 - i)) / 4).toFixed(1);
+    ctx.fillStyle = "#5e6b61";
+    ctx.font = "12px Avenir Next";
+    ctx.fillText(labelValue, 14, y + 4);
   }
-  ctx.stroke();
-  series.forEach(seriesItem => {
-    ctx.strokeStyle = seriesItem.color;
-    ctx.lineWidth = 2;
+
+  const labelHours = (index) => {
+    const hours = (index * bucketMinutes) / 60;
+    return `+${hours.toFixed(hours >= 10 ? 0 : 1)}h`;
+  };
+  const tickIndexes = [0, Math.floor(points.length * 0.25), Math.floor(points.length * 0.5), Math.floor(points.length * 0.75), points.length - 1]
+    .filter((value, index, self) => self.indexOf(value) === index);
+
+  tickIndexes.forEach((idx) => {
+    const x = padLeft + (plotWidth * idx / Math.max(1, points.length - 1));
+    ctx.strokeStyle = "rgba(217, 211, 198, 0.6)";
+    ctx.beginPath();
+    ctx.moveTo(x, padTop);
+    ctx.lineTo(x, padTop + plotHeight);
+    ctx.stroke();
+    ctx.fillStyle = "#5e6b61";
+    ctx.font = "12px Avenir Next";
+    ctx.fillText(labelHours(idx), x - 14, height - 14);
+  });
+
+  series.forEach((item) => {
+    ctx.strokeStyle = item.color;
+    ctx.lineWidth = item.width || 3;
     ctx.beginPath();
     points.forEach((point, index) => {
-      const x = pad + (width * index / Math.max(1, points.length - 1));
-      const y = pad + height - ((Number(point[seriesItem.key] || 0) / maxY) * height);
-      if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      const value = Number(point[item.key] || 0);
+      const x = padLeft + (plotWidth * index / Math.max(1, points.length - 1));
+      const y = padTop + plotHeight - ((value / maxY) * plotHeight);
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     });
     ctx.stroke();
   });
+
+  if (opts.title) {
+    ctx.fillStyle = "#162018";
+    ctx.font = "600 14px Avenir Next";
+    ctx.fillText(opts.title, padLeft, 14);
+  }
 }
-function renderBands(bands) {
-  const tbody = document.querySelector('#bands-table tbody');
-  tbody.innerHTML = '';
-  bands.slice(0, 24).forEach(band => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${band.display_name}</td>
-      <td>${band.asset_id}</td>
-      <td>${fmt(band.target_quantity_kwh, ' kWh')}</td>
-      <td>${fmt(band.served_quantity_kwh, ' kWh')}</td>
-      <td>${fmt(band.shortfall_kwh, ' kWh')}</td>
-      <td>${band.deadline_index}</td>
-      <td>${band.confidence !== null ? `${Math.round(band.confidence * 100)}% (${band.confidence_source})` : '—'}</td>
-    `;
-    tbody.appendChild(row);
-  });
+
+function renderTeslaSummary(days) {
+  const nextExplicit = days.find((day) => day.mode === "explicit_departure");
+  const nextFallback = days.find((day) => day.mode === "no_departure");
+  document.getElementById("tesla-summary").innerHTML = `
+    <p><strong>Default days</strong> use the recurring weekday pattern with low confidence. They are meant as a hint, not a promise.</p>
+    <p><strong>Explicit departure days</strong> override the default schedule and are taken at 90% confidence.</p>
+    <p><strong>No departure days</strong> still keep a 10% fallback default scenario, so the planner stays a little conservative.</p>
+    <div class="band-meta">
+      <span class="pill">${nextExplicit ? `Next explicit: ${nextExplicit.date}` : "No explicit departures yet"}</span>
+      <span class="pill muted">${nextFallback ? `No-departure fallback set on ${nextFallback.date}` : "No no-departure overrides"}</span>
+    </div>
+  `;
 }
-async function saveCalendarDay(day, row) {
+
+async function saveCalendarDay(day, card) {
   const payload = {
-    mode: row.querySelector('[data-field="mode"]').value,
-    departure_time: row.querySelector('[data-field="departure_time"]').value || null,
-    target_soc_pct: row.querySelector('[data-field="target_soc_pct"]').value || null,
+    mode: card.querySelector('[data-field="mode"]').value,
+    departure_time: card.querySelector('[data-field="departure_time"]').value || null,
+    target_soc_pct: card.querySelector('[data-field="target_soc_pct"]').value || null,
   };
-  await fetchJson(`/api/tesla/calendar/${day.date}`, { method: 'PUT', body: JSON.stringify(payload) });
+  await fetchJson(`/api/tesla/calendar/${day.date}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
   await boot();
 }
+
 function renderCalendar(days) {
-  const tbody = document.querySelector('#calendar-table tbody');
-  tbody.innerHTML = '';
-  days.forEach(day => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${day.date}</td>
-      <td>
-        <select data-field="mode">
-          <option value="default" ${day.mode === 'default' ? 'selected' : ''}>default</option>
-          <option value="explicit_departure" ${day.mode === 'explicit_departure' ? 'selected' : ''}>explicit_departure</option>
-          <option value="no_departure" ${day.mode === 'no_departure' ? 'selected' : ''}>no_departure</option>
-        </select>
-      </td>
-      <td><input data-field="departure_time" type="time" value="${day.departure_time || ''}"></td>
-      <td><input data-field="target_soc_pct" type="number" min="0" max="100" value="${day.target_soc_pct ?? ''}"></td>
-      <td>${Math.round((day.confidence || 0) * 100)}%</td>
-      <td><button>Save</button></td>
+  const container = document.getElementById("calendar-grid");
+  container.innerHTML = "";
+  days.forEach((day) => {
+    const card = document.createElement("article");
+    card.className = "calendar-card";
+    card.innerHTML = `
+      <header>
+        <div>
+          <span class="mini-label">Date</span>
+          <div class="date">${day.date}</div>
+        </div>
+        <span class="pill ${day.mode === "explicit_departure" ? "" : "muted"}">${Math.round((day.confidence || 0) * 100)}%</span>
+      </header>
+      <div class="field-grid">
+        <div class="field-row">
+          <label>Mode</label>
+          <select data-field="mode">
+            <option value="default" ${day.mode === "default" ? "selected" : ""}>Default schedule</option>
+            <option value="explicit_departure" ${day.mode === "explicit_departure" ? "selected" : ""}>Explicit departure</option>
+            <option value="no_departure" ${day.mode === "no_departure" ? "selected" : ""}>No departure</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <label>Departure time</label>
+          <input data-field="departure_time" type="time" value="${day.departure_time || ""}">
+        </div>
+        <div class="field-row">
+          <label>Target SoC</label>
+          <input data-field="target_soc_pct" type="number" min="0" max="100" value="${day.target_soc_pct ?? ""}">
+        </div>
+        <button class="ghost">Save day</button>
+      </div>
     `;
-    row.querySelector('button').addEventListener('click', () => saveCalendarDay(day, row));
-    tbody.appendChild(row);
+    card.querySelector("button").addEventListener("click", () => saveCalendarDay(day, card));
+    container.appendChild(card);
   });
+  renderTeslaSummary(days);
 }
-function renderPresets(presets) {
-  const container = document.getElementById('preset-list');
-  const output = document.getElementById('simulation-output');
-  container.innerHTML = '';
-  presets.forEach(preset => {
-    const card = document.createElement('div');
-    card.className = 'preset-card';
-    const button = document.createElement('button');
-    button.className = 'secondary';
-    button.textContent = 'Run preset';
-    button.addEventListener('click', async () => {
-      output.textContent = 'Running…';
-      const result = await fetchJson(`/api/scenarios/${preset.id}/run`, { method: 'POST', body: '{}' });
-      output.textContent = JSON.stringify(result.summary, null, 2);
-    });
-    card.innerHTML = `<h3>${preset.name}</h3><p>${preset.description}</p>`;
-    card.appendChild(button);
+
+function renderPresetCards(presets) {
+  const container = document.getElementById("preset-list");
+  container.innerHTML = "";
+  presets.forEach((preset) => {
+    const card = document.createElement("article");
+    card.className = "preset-card";
+    card.innerHTML = `
+      <div>
+        <span class="mini-label">Preset</span>
+        <h3>${preset.name}</h3>
+      </div>
+      <p>${preset.description}</p>
+      <button class="secondary">Run preset</button>
+    `;
+    card.querySelector("button").addEventListener("click", () => runPreset(preset.id));
     container.appendChild(card);
   });
 }
-async function boot() {
-  const [summaryPayload, bandsPayload, telemetryPayload, calendarPayload, presets] = await Promise.all([
-    fetchJson('/api/live/summary'),
-    fetchJson('/api/live/bands'),
-    fetchJson('/api/live/telemetry'),
-    fetchJson('/api/tesla/calendar'),
-    fetchJson('/api/scenarios'),
-  ]);
-  renderSummary(summaryPayload.summary);
-  renderDecisionCards(summaryPayload.decision_cards || []);
-  drawTimelineChart(telemetryPayload.telemetry_timeline || []);
-  renderBands(bandsPayload.bands || []);
-  renderCalendar(calendarPayload.days || []);
-  renderPresets(presets.presets || []);
+
+function renderSimulation(result) {
+  const empty = document.getElementById("simulation-empty");
+  const panel = document.getElementById("simulation-result");
+  if (!result) {
+    empty.classList.remove("hidden");
+    panel.classList.add("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  panel.classList.remove("hidden");
+
+  const summaryGrid = document.getElementById("simulation-summary");
+  summaryGrid.innerHTML = [
+    ["Objective", fmtShort(result.summary.objective_value_czk, " CZK")],
+    ["Battery SoC", fmtShort(result.summary.battery_soc_kwh, " kWh")],
+    ["Grid import", fmtShort(result.summary.current_import_kwh, " kWh")],
+    ["Grid export", fmtShort(result.summary.current_export_kwh, " kWh")],
+  ].map(([label, value]) => `
+    <div class="summary-card">
+      <span>${label}</span>
+      <strong>${value}</strong>
+    </div>
+  `).join("");
+
+  renderDecisionCards(result.decision_cards || [], "simulation-cards");
+  renderLegend("simulation-legend", FLOW_SERIES);
+  drawChart(
+    "simulation-chart",
+    result.telemetry_timeline || [],
+    FLOW_SERIES,
+    result.summary.bucket_minutes || 15,
+    { title: "Preset energy flow" },
+  );
 }
-boot().catch(error => {
-  document.getElementById('app').innerHTML = `<div class="panel"><h2>UI Error</h2><p>${error.message}</p></div>`;
+
+async function runPreset(presetId) {
+  const result = await fetchJson(`/api/scenarios/${presetId}/run`, {
+    method: "POST",
+    body: "{}",
+  });
+  appState.simulation = result;
+  renderSimulation(appState.simulation);
+}
+
+function renderLivePlan() {
+  const livePlan = appState.livePlan;
+  const summary = livePlan.summary || {};
+  renderStatus(summary);
+  renderHeadline(summary);
+  renderSummary(summary);
+  renderDecisionCards(livePlan.decision_cards || []);
+  renderBandCards(livePlan.bands || []);
+  renderLegend("flow-legend", FLOW_SERIES);
+  renderLegend("battery-legend", BATTERY_SERIES);
+  drawChart("flow-chart", livePlan.telemetry_timeline || [], FLOW_SERIES, summary.bucket_minutes || 15, { title: "Expected energy flow" });
+  drawChart("battery-chart", livePlan.telemetry_timeline || [], BATTERY_SERIES, summary.bucket_minutes || 15, { title: "Expected battery behavior" });
+}
+
+async function boot() {
+  const [livePlan, calendar, presets] = await Promise.all([
+    fetchJson("/api/live/plan"),
+    fetchJson("/api/tesla/calendar"),
+    fetchJson("/api/scenarios"),
+  ]);
+  appState.livePlan = livePlan;
+  appState.calendar = calendar;
+  appState.presets = presets.presets || [];
+  renderNav();
+  renderLivePlan();
+  renderCalendar(appState.calendar.days || []);
+  renderPresetCards(appState.presets);
+  renderSimulation(appState.simulation);
+}
+
+function handleNavigation(event) {
+  const link = event.target.closest("[data-route]");
+  if (!link) return;
+  event.preventDefault();
+  history.pushState({}, "", link.getAttribute("href"));
+  renderNav();
+}
+
+document.addEventListener("click", handleNavigation);
+window.addEventListener("popstate", renderNav);
+
+boot().catch((error) => {
+  document.body.innerHTML = `<main class="main-shell"><section class="panel"><h2>UI Error</h2><p>${error.message}</p></section></main>`;
 });
 """
 
@@ -342,7 +1037,7 @@ class UIRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         path = urlparse(self.path).path
         try:
-            if path == "/":
+            if path in {"/", "/timeline", "/tesla", "/scenarios"}:
                 self._text(INDEX_HTML, "text/html; charset=utf-8")
             elif path == "/styles.css":
                 self._text(APP_CSS, "text/css; charset=utf-8")
@@ -360,7 +1055,12 @@ class UIRequestHandler(BaseHTTPRequestHandler):
             elif path == "/api/tesla/calendar":
                 self._json(self.ui.get_calendar())
             elif path == "/api/scenarios":
-                self._json({"presets": [{"id": preset["id"], "name": preset["name"], "description": preset["description"]} for preset in PRESETS]})
+                self._json({
+                    "presets": [
+                        {"id": preset["id"], "name": preset["name"], "description": preset["description"]}
+                        for preset in PRESETS
+                    ]
+                })
             else:
                 self.send_error(HTTPStatus.NOT_FOUND)
         except Exception as exc:  # noqa: BLE001
@@ -411,3 +1111,7 @@ def main() -> int:
     httpd.ui_server = ui_server  # type: ignore[attr-defined]
     httpd.serve_forever()
     return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
