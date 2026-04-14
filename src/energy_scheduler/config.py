@@ -27,6 +27,10 @@ class RuntimeConfig:
     def runtime(self) -> dict[str, Any]:
         return self.raw.get("runtime", {})
 
+    @property
+    def runtime_path(self) -> Path:
+        return Path(self.runtime.get("state_dir", "/var/lib/energy-scheduler"))
+
 
 def load_config(path: str | Path) -> RuntimeConfig:
     config_path = Path(path)

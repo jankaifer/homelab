@@ -10,6 +10,10 @@ result-*
 # macOS
 .DS_Store
 
+# Python caches
+__pycache__/
+*.pyc
+
 # Secrets (encrypted files are OK, but don't commit decrypted)
 secrets/*.txt
 secrets/*.key

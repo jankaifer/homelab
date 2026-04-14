@@ -25,6 +25,7 @@ in
     ../../modules/services/zigbee2mqtt.nix
     ../../modules/services/homeassistant.nix
     ../../modules/services/energy-scheduler.nix
+    ../../modules/services/energy-scheduler-ui.nix
     ../../modules/services/frigate.nix
     ../../modules/services/mock-rtsp-camera.nix
   ];

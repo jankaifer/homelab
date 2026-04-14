@@ -70,6 +70,10 @@ class DemandBand:
     unmet_penalty_czk_per_kwh: float
     required_level: bool
     quantity_unit: DemandUnit = DemandUnit.KWH
+    display_name: str | None = None
+    confidence: float | None = None
+    confidence_source: str | None = None
+    metadata: dict[str, str] = field(default_factory=dict)
     scenario_id: str | None = None
 
 
@@ -77,6 +81,9 @@ class DemandBand:
 class DemandPlanInput:
     demand_bands: list[DemandBand]
     fixed_demand_kwh: list[float]
+    scenario_weights: dict[str, float] = field(default_factory=dict)
+    scenario_labels: dict[str, dict[str, str]] = field(default_factory=dict)
+    tesla_calendar_summary: list[dict[str, object]] = field(default_factory=list)
 
 
 @dataclass

@@ -71,6 +71,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Zigbee2MQTT | 8080 (internal) | https://zigbee.frame1.hobitin.eu | [docs/services/zigbee2mqtt.md](services/zigbee2mqtt.md) |
 | Home Assistant | 8123 (internal) | https://home.frame1.hobitin.eu | [docs/services/homeassistant.md](services/homeassistant.md) |
 | Energy Scheduler | systemd only | (no UI yet) | [docs/services/energy-scheduler.md](services/energy-scheduler.md) |
+| Energy Scheduler UI | 8787 (internal) | https://energy.frame1.hobitin.eu | [docs/services/energy-scheduler.md](services/energy-scheduler.md) |
 | Frigate NVR | internal via nginx | https://frigate.frame1.hobitin.eu | [docs/services/frigate.md](services/frigate.md) |
 | Tailscale | 41641 (UDP) | (VPN mesh network) | [docs/services/tailscale.md](services/tailscale.md) |
 | NAS | SMB/NFS | `/nas` exported over LAN + Tailscale | [docs/services/nas.md](services/nas.md) |
@@ -133,6 +134,7 @@ homelab/
 │       ├── caddy.nix
 │       ├── cert-monitoring.nix
 │       ├── energy-scheduler.nix
+│       ├── energy-scheduler-ui.nix
 │       ├── frigate.nix
 │       ├── grafana.nix
 │       ├── homeassistant.nix

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from energy_scheduler.domain import BatteryState, DemandPlanInput, PriceSeries, ProducerForecast
 
@@ -25,5 +26,5 @@ class BatteryAdapter(ABC):
 
 class DemandAdapter(ABC):
     @abstractmethod
-    def get_demand(self, horizon_buckets: int, bucket_minutes: int) -> DemandPlanInput:
+    def get_demand(self, horizon_buckets: int, bucket_minutes: int, start_at: datetime) -> DemandPlanInput:
         raise NotImplementedError

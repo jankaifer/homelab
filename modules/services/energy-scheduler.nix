@@ -89,10 +89,6 @@ in
           };
         };
         assets = {
-          scenario_weights = {
-            car-departure = 0.7;
-            car-home = 0.3;
-          };
           battery = {
             asset_id = "home-battery";
             capacity_kwh = 10.0;
@@ -110,42 +106,53 @@ in
             reserve_target_kwh = builtins.genList (_: 3.0) 192;
             reserve_value_czk_per_kwh = builtins.genList (_: 0.02) 192;
           };
+          tesla = {
+            asset_id = "tesla-model-3";
+            battery_capacity_kwh = 57.5;
+            current_soc_pct = 40.0;
+            default_start_soc_pct = 20.0;
+            charge_power_kw = 11.0;
+            required_marginal_value_czk_per_kwh = 5.0;
+            required_unmet_penalty_czk_per_kwh = 30.0;
+            opportunistic_target_soc_pct = 80.0;
+            opportunistic_marginal_value_czk_per_kwh = 2.0;
+            recurring_schedule = [
+              {
+                weekday = 0;
+                departure_time = "07:00";
+                target_soc_pct = 60.0;
+                confidence = 0.35;
+              }
+              {
+                weekday = 1;
+                departure_time = "07:00";
+                target_soc_pct = 60.0;
+                confidence = 0.35;
+              }
+              {
+                weekday = 2;
+                departure_time = "07:00";
+                target_soc_pct = 60.0;
+                confidence = 0.35;
+              }
+              {
+                weekday = 3;
+                departure_time = "07:00";
+                target_soc_pct = 60.0;
+                confidence = 0.35;
+              }
+              {
+                weekday = 4;
+                departure_time = "07:00";
+                target_soc_pct = 60.0;
+                confidence = 0.35;
+              }
+            ];
+          };
           base_load = {
             fixed_demand_kwh = builtins.genList (_: 0.4) 192;
           };
-          demands = [
-            {
-              asset_id = "tesla-model-3";
-              bands = [
-                {
-                  id = "tesla-required";
-                  scenario_ids = [ "car-departure" ];
-                  start_index = 0;
-                  deadline_index = 32;
-                  earliest_start_index = 0;
-                  latest_finish_index = 32;
-                  target_quantity_kwh = 10.0;
-                  max_power_kw = 11.0;
-                  marginal_value_czk_per_kwh = 5.0;
-                  unmet_penalty_czk_per_kwh = 30.0;
-                  required_level = true;
-                }
-                {
-                  id = "tesla-extra";
-                  scenario_ids = [ "car-departure" "car-home" ];
-                  start_index = 0;
-                  deadline_index = 64;
-                  earliest_start_index = 0;
-                  latest_finish_index = 64;
-                  target_quantity_kwh = 8.0;
-                  max_power_kw = 11.0;
-                  marginal_value_czk_per_kwh = 2.0;
-                  unmet_penalty_czk_per_kwh = 0.0;
-                  required_level = false;
-                }
-              ];
-            }
-          ];
+          demands = [ ];
         };
       };
       description = "JSON configuration for the energy scheduler.";

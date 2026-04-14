@@ -26,6 +26,17 @@ Local-first energy scheduling daemon for solar production, battery storage, and 
 - Re-solves the horizon every 60 seconds by default
 - Uses 15-minute buckets over a multi-day horizon by default
 - Writes latest plan and timestamped plan history into `/var/lib/energy-scheduler`
+- Seeds and reads a shared Tesla 14-day planning calendar at `/var/lib/energy-scheduler/tesla-calendar.json`
+
+## Explainability UI
+
+An optional separate service exposes the scheduler behind Caddy:
+
+- Domain: `https://energy.frame1.hobitin.eu`
+- Binary: `energy-scheduler-ui`
+- Reads planner state from `/var/lib/energy-scheduler/latest-plan.json`
+- Lets you update Tesla departure time / target SoC for the next 14 days
+- Runs repo-defined preset simulations without mutating the live scheduler state
 
 ## Planner Model
 
@@ -48,6 +59,7 @@ Key assumptions:
 - State directory: `/var/lib/energy-scheduler`
 - Latest plan: `/var/lib/energy-scheduler/latest-plan.json`
 - Plan history: `/var/lib/energy-scheduler/history/*.json`
+- Tesla calendar: `/var/lib/energy-scheduler/tesla-calendar.json`
 
 ## Example
 
