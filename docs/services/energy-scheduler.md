@@ -39,6 +39,8 @@ An optional separate service exposes the scheduler behind Caddy:
   - `Overview` for the current plan headline, summary cards, and deduplicated demand bands
   - `Timeline` for a 24-hour energy-balance chart and battery SoC chart
   - `Tesla Plan` for the Tesla charging chart and the 14-day planning calendar
+- Includes a source switcher with one `Real-time` plan and four prepared seasonal demos: `Winter`, `Spring`, `Summer`, and `Autumn`
+- Fake seasonal demos reuse the live Tesla planning hints but make the Tesla calendar read-only to avoid mutating real runtime state while previewing synthetic data
 - Lets you update Tesla departure planning for the next 14 days through a calendar day modal
 - Rolls the Tesla planning window forward automatically so the calendar always covers the next 14 days
 

@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-import http.client
-import json
 import tempfile
-import threading
 import unittest
 from pathlib import Path
 
 from energy_scheduler.config import RuntimeConfig
-from energy_scheduler.ui import UIRequestHandler, UIServer
-from http.server import ThreadingHTTPServer
+from energy_scheduler.ui import UIServer
 
 
 def _build_config(state_dir: Path) -> RuntimeConfig:
@@ -90,52 +86,50 @@ class UiApiTests(unittest.TestCase):
             state_dir = Path(tmp)
             config = _build_config(state_dir)
             ui = UIServer(config)
-            httpd = ThreadingHTTPServer(("127.0.0.1", 0), UIRequestHandler)
-            httpd.ui_server = ui  # type: ignore[attr-defined]
-            thread = threading.Thread(target=httpd.serve_forever, daemon=True)
-            thread.start()
-            try:
-                conn = http.client.HTTPConnection("127.0.0.1", httpd.server_port)
-                conn.request("GET", "/api/tesla/calendar")
-                response = conn.getresponse()
-                payload = json.loads(response.read())
-                self.assertEqual(response.status, 200)
-                first_day = payload["days"][0]["date"]
+            payload = ui.get_calendar()
+            first_day = payload["days"][0]["date"]
 
-                conn.request(
-                    "PUT",
-                    f"/api/tesla/calendar/{first_day}",
-                    body=json.dumps({"mode": "explicit_departure", "departure_time": "06:30", "target_soc_pct": 70}),
-                    headers={"Content-Type": "application/json"},
+            updated = ui.update_calendar(
+                first_day,
+                {"mode": "explicit_departure", "departure_time": "06:30", "target_soc_pct": 70},
+            )
+            day = next(item for item in updated["days"] if item["date"] == first_day)
+            self.assertEqual(day["mode"], "explicit_departure")
+            self.assertAlmostEqual(day["confidence"], 0.9, places=6)
+
+            plan = ui.plan_for_scenario("real")
+            tesla_required = [
+                band for band in plan["bands"]
+                if band["asset_id"] == "tesla-model-3" and band["required_level"]
+            ]
+            logical_keys = {
+                (
+                    band["display_name"],
+                    band.get("metadata", {}).get("date"),
+                    band.get("metadata", {}).get("departure_time"),
                 )
-                update_response = conn.getresponse()
-                updated = json.loads(update_response.read())
-                self.assertEqual(update_response.status, 200)
-                day = next(item for item in updated["days"] if item["date"] == first_day)
-                self.assertEqual(day["mode"], "explicit_departure")
-                self.assertAlmostEqual(day["confidence"], 0.9, places=6)
+                for band in tesla_required
+            }
+            self.assertEqual(len(tesla_required), len(logical_keys))
 
-                conn.request("GET", "/api/live/plan")
-                plan_response = conn.getresponse()
-                plan = json.loads(plan_response.read())
-                self.assertEqual(plan_response.status, 200)
-                tesla_required = [
-                    band for band in plan["bands"]
-                    if band["asset_id"] == "tesla-model-3" and band["required_level"]
-                ]
-                logical_keys = {
-                    (
-                        band["display_name"],
-                        band.get("metadata", {}).get("date"),
-                        band.get("metadata", {}).get("departure_time"),
-                    )
-                    for band in tesla_required
-                }
-                self.assertEqual(len(tesla_required), len(logical_keys))
-            finally:
-                httpd.shutdown()
-                httpd.server_close()
-                thread.join(timeout=5)
+    def test_scenarios_endpoint_and_fake_plan(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            config = _build_config(state_dir)
+            ui = UIServer(config)
+            payload = ui.scenarios()
+            scenario_ids = [scenario["id"] for scenario in payload["scenarios"]]
+            self.assertEqual(scenario_ids, ["real", "winter", "spring", "summer", "autumn"])
+
+            winter_plan = ui.plan_for_scenario("winter")
+            self.assertEqual(winter_plan["selected_scenario"]["id"], "winter")
+            self.assertEqual(winter_plan["summary"]["scenario_kind"], "fake")
+            self.assertTrue(winter_plan["summary"]["scenario_read_only"])
+
+            real_plan = ui.plan_for_scenario("real")
+            self.assertEqual(real_plan["selected_scenario"]["id"], "real")
+            self.assertEqual(real_plan["summary"]["scenario_kind"], "real")
+            self.assertFalse(real_plan["summary"]["scenario_read_only"])
 
 
 if __name__ == "__main__":

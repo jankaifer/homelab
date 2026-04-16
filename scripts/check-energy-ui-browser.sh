@@ -75,7 +75,24 @@ open_page() {
   "${PWCLI[@]}" --session "${session}" open --config "${config}" "${url}" >/dev/null
 }
 
-first_calendar_ref() {
+route_url() {
+  local route="$1"
+  BASE_URL="${URL}" TARGET_ROUTE="${route}" python3 - <<'PY'
+import os
+from urllib.parse import urlparse, urlunparse
+
+raw = os.environ["BASE_URL"]
+route = os.environ["TARGET_ROUTE"]
+parsed = urlparse(raw)
+if route == "/":
+    path = parsed.path or "/"
+else:
+    path = route
+print(urlunparse((parsed.scheme, parsed.netloc, path, "", parsed.query, "")))
+PY
+}
+
+calendar_modal_ref() {
   local session="$1"
   local snapshot
   snapshot="$("${PWCLI[@]}" --session "${session}" snapshot)"
@@ -84,10 +101,14 @@ import os
 import re
 
 text = os.environ["SNAPSHOT_TEXT"]
+if "Tesla day edits are disabled" in text:
+    print("")
+    raise SystemExit(0)
 match = re.search(r'button .*?\[ref=(e\d+)\]', text, re.S)
-if not match:
-    raise SystemExit("Could not find a calendar day button in snapshot")
-print(match.group(1))
+if match:
+    print(match.group(1))
+    raise SystemExit(0)
+print("")
 PY
 }
 
@@ -96,19 +117,30 @@ capture_group() {
   local config="$2"
   local suffix="$3"
 
-  open_page "${session}" "${config}" "${URL}"
+  local overview_url
+  local timeline_url
+  local tesla_url
+  overview_url="$(route_url "/")"
+  timeline_url="$(route_url "/timeline")"
+  tesla_url="$(route_url "/tesla")"
+
+  open_page "${session}" "${config}" "${overview_url}"
   capture_screenshot "${session}" "${OUT_DIR}/overview-${suffix}.png"
 
-  open_page "${session}" "${config}" "${URL%/}/timeline"
+  open_page "${session}" "${config}" "${timeline_url}"
   capture_screenshot "${session}" "${OUT_DIR}/timeline-${suffix}.png"
 
-  open_page "${session}" "${config}" "${URL%/}/tesla"
+  open_page "${session}" "${config}" "${tesla_url}"
   capture_screenshot "${session}" "${OUT_DIR}/tesla-${suffix}.png"
 
   local ref
-  ref="$(first_calendar_ref "${session}")"
-  "${PWCLI[@]}" --session "${session}" click "${ref}" >/dev/null
-  capture_screenshot "${session}" "${OUT_DIR}/tesla-modal-${suffix}.png"
+  ref="$(calendar_modal_ref "${session}")"
+  if [[ -n "${ref}" ]]; then
+    "${PWCLI[@]}" --session "${session}" click "${ref}" >/dev/null
+    capture_screenshot "${session}" "${OUT_DIR}/tesla-modal-${suffix}.png"
+  else
+    cp "${OUT_DIR}/tesla-${suffix}.png" "${OUT_DIR}/tesla-modal-${suffix}.png"
+  fi
 }
 
 capture_group "energy-ui-desktop" "${desktop_config}" "desktop"

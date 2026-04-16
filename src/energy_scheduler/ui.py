@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from energy_scheduler.calendar import load_or_create_calendar, update_calendar_day
 from energy_scheduler.config import RuntimeConfig, load_config
+from energy_scheduler.scenario_catalog import build_scenario_overrides, scenario_catalog, scenario_metadata
 from energy_scheduler.service import SchedulerService
 
 
@@ -33,7 +35,22 @@ INDEX_HTML = """<!doctype html>
         <a href="/timeline" data-route="timeline">Timeline</a>
         <a href="/tesla" data-route="tesla">Tesla Plan</a>
       </nav>
+      <section class="source-card">
+        <p class="eyebrow">Plan Source</p>
+        <div class="field-row">
+          <label for="scenario-select">Scenario</label>
+          <select id="scenario-select"></select>
+        </div>
+        <p class="source-copy" id="scenario-description">Loading scenario sources…</p>
+        <div class="band-meta">
+          <span class="pill muted" id="scenario-kind-pill">—</span>
+        </div>
+      </section>
       <div class="status-stack">
+        <div class="status-card">
+          <span>Source</span>
+          <strong id="scenario-status">—</strong>
+        </div>
         <div class="status-card">
           <span>Planner</span>
           <strong id="planner-status">Loading…</strong>
@@ -46,6 +63,7 @@ INDEX_HTML = """<!doctype html>
     </aside>
 
     <main class="main-shell">
+      <section class="source-banner hidden" id="source-banner"></section>
       <section class="page active" id="page-overview">
         <header class="page-header">
           <div>
@@ -149,6 +167,7 @@ INDEX_HTML = """<!doctype html>
                 <h3>Departure Calendar</h3>
               </div>
             </div>
+            <div class="calendar-notice hidden" id="calendar-readonly-note"></div>
             <div class="calendar-shell">
               <div class="calendar-weekdays">
                 <span>Mon</span>
@@ -301,6 +320,26 @@ p { margin: 0; }
   background: var(--accent-soft);
   border-color: rgba(37, 93, 73, 0.16);
 }
+.source-card {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+}
+.source-card .field-row {
+  gap: 0.25rem;
+}
+.source-card .band-meta {
+  margin-top: 0;
+}
+.source-copy {
+  color: var(--muted);
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
 .status-stack {
   margin-top: auto;
   display: grid;
@@ -350,6 +389,17 @@ p { margin: 0; }
 .page.active {
   display: grid;
   gap: 1.15rem;
+}
+.source-banner {
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(37, 93, 73, 0.16);
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(37, 93, 73, 0.08), rgba(255, 252, 246, 0.92));
+  color: var(--muted);
+  line-height: 1.5;
+}
+.source-banner strong {
+  color: var(--ink);
 }
 .page-header {
   display: flex;
@@ -658,6 +708,15 @@ p { margin: 0; }
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0.75rem;
 }
+.calendar-notice {
+  margin-bottom: 0.85rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 16px;
+  border: 1px solid rgba(216, 209, 194, 0.92);
+  background: rgba(37, 93, 73, 0.06);
+  color: var(--muted);
+  line-height: 1.5;
+}
 .calendar-shell {
   display: grid;
   gap: 0.75rem;
@@ -693,6 +752,12 @@ p { margin: 0; }
 .calendar-day:hover {
   border-color: rgba(37, 93, 73, 0.35);
   background: rgba(255, 252, 246, 0.98);
+}
+.calendar-day:disabled {
+  cursor: default;
+}
+.calendar-day:disabled:hover {
+  border-color: var(--border);
 }
 .calendar-day.today {
   outline: 2px solid rgba(37, 93, 73, 0.22);
@@ -964,7 +1029,7 @@ button.ghost {
   }
   .status-stack {
     margin-top: 0;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .status-card {
     padding: 0.9rem 1rem;
@@ -1031,7 +1096,7 @@ button.ghost {
     display: none;
   }
   .status-stack {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
   .band-topline,
   .band-stats {
@@ -1067,6 +1132,8 @@ const appState = {
   livePlan: null,
   calendar: null,
   modalDay: null,
+  scenarios: [],
+  selectedScenarioId: "real",
 };
 
 const ROUTES = {
@@ -1074,6 +1141,8 @@ const ROUTES = {
   "/timeline": "timeline",
   "/tesla": "tesla",
 };
+
+const SCENARIO_STORAGE_KEY = "energySchedulerScenarioId";
 
 const FLOW_SUPPLY_SERIES = [
   { key: "solar_kwh", label: "Solar", color: "#d08b3c" },
@@ -1101,6 +1170,51 @@ const TESLA_LEGEND = [
 
 function routeName() {
   return ROUTES[window.location.pathname] || "overview";
+}
+
+function selectedScenario() {
+  return appState.scenarios.find((scenario) => scenario.id === appState.selectedScenarioId) || null;
+}
+
+function isReadOnlyScenario() {
+  return Boolean(selectedScenario()?.read_only);
+}
+
+function scenarioApiPath(path) {
+  const params = new URLSearchParams();
+  params.set("scenario", appState.selectedScenarioId || "real");
+  const query = params.toString();
+  return `${path}${query ? `?${query}` : ""}`;
+}
+
+function normalizeScenarioId(requested) {
+  if (!requested) return "real";
+  return appState.scenarios.some((scenario) => scenario.id === requested) ? requested : "real";
+}
+
+function readScenarioIdFromLocation() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("scenario");
+}
+
+function persistScenarioSelection(replace = false) {
+  try {
+    window.localStorage.setItem(SCENARIO_STORAGE_KEY, appState.selectedScenarioId || "real");
+  } catch (_error) {
+    // Ignore localStorage failures in locked-down browsers.
+  }
+  const url = new URL(window.location.href);
+  if (!appState.selectedScenarioId || appState.selectedScenarioId === "real") {
+    url.searchParams.delete("scenario");
+  } else {
+    url.searchParams.set("scenario", appState.selectedScenarioId);
+  }
+  const next = `${url.pathname}${url.search}`;
+  if (replace) {
+    history.replaceState({}, "", next);
+  } else {
+    history.pushState({}, "", next);
+  }
 }
 
 async function fetchJson(path, options = {}, attempt = 0) {
@@ -1247,6 +1361,52 @@ function renderStatus(summary) {
   document.getElementById("planner-timestamp").textContent = summary.planner_timestamp
     ? formatDateTime(summary.planner_timestamp, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
     : "—";
+}
+
+function renderScenarioPicker() {
+  const select = document.getElementById("scenario-select");
+  select.innerHTML = appState.scenarios.map((scenario) => `
+    <option value="${escapeHtml(scenario.id)}">${escapeHtml(scenario.name)}</option>
+  `).join("");
+  select.value = appState.selectedScenarioId || "real";
+}
+
+function renderScenarioChrome() {
+  const scenario = selectedScenario();
+  const description = document.getElementById("scenario-description");
+  const pill = document.getElementById("scenario-kind-pill");
+  const status = document.getElementById("scenario-status");
+  const banner = document.getElementById("source-banner");
+  const readonlyNote = document.getElementById("calendar-readonly-note");
+
+  if (!scenario) {
+    description.textContent = "Scenario source is unavailable.";
+    pill.textContent = "Unknown";
+    status.textContent = "Unknown";
+    banner.classList.add("hidden");
+    readonlyNote.classList.add("hidden");
+    return;
+  }
+
+  description.textContent = scenario.description || "";
+  pill.textContent = scenario.kind === "real" ? "Live source" : "Seasonal demo";
+  pill.className = `pill ${scenario.kind === "real" ? "" : "muted"}`;
+  status.textContent = scenario.kind === "real" ? scenario.name : `${scenario.name} demo`;
+
+  if (scenario.kind === "real") {
+    banner.classList.add("hidden");
+  } else {
+    banner.classList.remove("hidden");
+    banner.innerHTML = `<strong>${escapeHtml(scenario.name)} demo.</strong> This plan is synthetic seasonal data layered on top of your current Tesla planning hints. Calendar edits stay locked until you switch back to real-time mode.`;
+  }
+
+  if (isReadOnlyScenario()) {
+    readonlyNote.classList.remove("hidden");
+    readonlyNote.textContent = "Tesla day edits are disabled while you are previewing a fake seasonal scenario. Switch back to Real-time to change the live Tesla calendar.";
+  } else {
+    readonlyNote.classList.add("hidden");
+    readonlyNote.textContent = "";
+  }
 }
 
 function renderHeadline(summary) {
@@ -1997,6 +2157,9 @@ function syncCalendarModal() {
 }
 
 function openCalendarModal(day) {
+  if (isReadOnlyScenario()) {
+    return;
+  }
   appState.modalDay = day;
   const { dialog, title, copy, time, soc } = modalElements();
   title.textContent = formatDateTime(`${day.date}T12:00:00`, { weekday: "long", day: "numeric", month: "long" });
@@ -2020,6 +2183,10 @@ function closeCalendarModal() {
 async function saveModalDay(event) {
   event.preventDefault();
   if (!appState.modalDay) return;
+  if (isReadOnlyScenario()) {
+    closeCalendarModal();
+    return;
+  }
   const { time, soc } = modalElements();
   const payload = {
     mode: selectedModalMode(),
@@ -2052,6 +2219,7 @@ function renderCalendar(days) {
     const isToday = day.date === new Date().toISOString().slice(0, 10);
     button.className = `calendar-day ${day.mode === "explicit_departure" ? "explicit" : ""} ${day.mode === "no_departure" ? "no-departure" : ""} ${isToday ? "today" : ""}`.trim();
     button.type = "button";
+    button.disabled = isReadOnlyScenario();
     button.innerHTML = `
       <div class="calendar-day-header">
         <div>
@@ -2068,7 +2236,9 @@ function renderCalendar(days) {
         <span class="pill muted">${day.mode === "explicit_departure" ? "Departure set" : day.mode === "no_departure" ? "Staying home" : "Default rule"}</span>
       </div>
     `;
-    button.addEventListener("click", () => openCalendarModal(day));
+    if (!button.disabled) {
+      button.addEventListener("click", () => openCalendarModal(day));
+    }
     container.appendChild(button);
   });
   renderTeslaSummary(days);
@@ -2079,6 +2249,7 @@ function renderLivePlan() {
   const summary = livePlan.summary || {};
   const timeline = livePlan.telemetry_timeline || [];
   const hourly = aggregateTimeline(timeline, summary.bucket_minutes || 15, 60, 24);
+  renderScenarioChrome();
   renderStatus(summary);
   renderHeadline(summary);
   renderSummary(summary);
@@ -2094,32 +2265,67 @@ function renderLivePlan() {
   renderTeslaChart(timeline, summary);
 }
 
-async function boot() {
+async function refreshPlanAndCalendar() {
   const [livePlan, calendar] = await Promise.all([
-    fetchJson("/api/live/plan"),
+    fetchJson(scenarioApiPath("/api/live/plan")),
     fetchJson("/api/tesla/calendar"),
   ]);
   appState.livePlan = livePlan;
   appState.calendar = calendar;
-  renderNav();
   renderLivePlan();
   renderCalendar(appState.calendar.days || []);
+}
+
+async function boot() {
+  const scenarioPayload = await fetchJson("/api/scenarios");
+  appState.scenarios = scenarioPayload.scenarios || [];
+  let requestedScenario = readScenarioIdFromLocation();
+  if (!requestedScenario) {
+    try {
+      requestedScenario = window.localStorage.getItem(SCENARIO_STORAGE_KEY);
+    } catch (_error) {
+      requestedScenario = null;
+    }
+  }
+  appState.selectedScenarioId = normalizeScenarioId(requestedScenario);
+  renderScenarioPicker();
+  persistScenarioSelection(true);
+  renderNav();
+  renderScenarioChrome();
+  await refreshPlanAndCalendar();
 }
 
 function handleNavigation(event) {
   const link = event.target.closest("[data-route]");
   if (!link) return;
   event.preventDefault();
-  history.pushState({}, "", link.getAttribute("href"));
+  const url = new URL(link.getAttribute("href"), window.location.origin);
+  if (window.location.search) {
+    url.search = window.location.search;
+  }
+  history.pushState({}, "", `${url.pathname}${url.search}`);
   renderNav();
 }
 
 document.addEventListener("click", handleNavigation);
-window.addEventListener("popstate", renderNav);
+window.addEventListener("popstate", async () => {
+  appState.selectedScenarioId = normalizeScenarioId(readScenarioIdFromLocation() || "real");
+  renderScenarioPicker();
+  renderNav();
+  renderScenarioChrome();
+  await refreshPlanAndCalendar();
+});
 document.addEventListener("change", (event) => {
   if (event.target.matches('input[name="mode"]')) {
     syncCalendarModal();
   }
+});
+document.getElementById("scenario-select").addEventListener("change", async (event) => {
+  appState.selectedScenarioId = normalizeScenarioId(event.target.value);
+  persistScenarioSelection();
+  renderScenarioPicker();
+  renderScenarioChrome();
+  await refreshPlanAndCalendar();
 });
 document.getElementById("calendar-modal-form").addEventListener("submit", saveModalDay);
 document.getElementById("calendar-modal-cancel").addEventListener("click", closeCalendarModal);
@@ -2143,6 +2349,24 @@ class UIServer:
             return self.scheduler.run_once(persist=False)
         with latest.open("r", encoding="utf-8") as handle:
             return json.load(handle)
+
+    def scenarios(self) -> dict[str, object]:
+        return {"scenarios": scenario_catalog()}
+
+    def plan_for_scenario(self, scenario_id: str) -> dict[str, object]:
+        metadata = scenario_metadata(scenario_id)
+        if scenario_id == "real":
+            plan = dict(self.latest_plan())
+        else:
+            plan = self.scheduler.simulate(build_scenario_overrides(self.config, scenario_id, datetime.now().astimezone()))
+        summary = dict(plan.get("summary", {}))
+        summary["scenario_id"] = metadata["id"]
+        summary["scenario_name"] = metadata["name"]
+        summary["scenario_kind"] = metadata["kind"]
+        summary["scenario_read_only"] = bool(metadata.get("read_only", False))
+        plan["summary"] = summary
+        plan["selected_scenario"] = metadata
+        return plan
 
     def get_calendar(self) -> dict[str, object]:
         tesla = self.config.assets.get("tesla", {})
@@ -2177,7 +2401,10 @@ class UIRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(encoded)
 
     def do_GET(self) -> None:
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        params = parse_qs(parsed.query)
+        scenario_id = params.get("scenario", ["real"])[0]
         try:
             if path in {"/", "/timeline", "/tesla"}:
                 self._text(INDEX_HTML, "text/html; charset=utf-8")
@@ -2188,15 +2415,17 @@ class UIRequestHandler(BaseHTTPRequestHandler):
                 self._text(APP_CSS, "text/css; charset=utf-8")
             elif path == "/app.js":
                 self._text(APP_JS, "application/javascript; charset=utf-8")
+            elif path == "/api/scenarios":
+                self._json(self.ui.scenarios())
             elif path == "/api/live/summary":
-                latest = self.ui.latest_plan()
+                latest = self.ui.plan_for_scenario(scenario_id)
                 self._json({"summary": latest["summary"]})
             elif path == "/api/live/plan":
-                self._json(self.ui.latest_plan())
+                self._json(self.ui.plan_for_scenario(scenario_id))
             elif path == "/api/live/bands":
-                self._json({"bands": self.ui.latest_plan().get("bands", [])})
+                self._json({"bands": self.ui.plan_for_scenario(scenario_id).get("bands", [])})
             elif path == "/api/live/telemetry":
-                self._json({"telemetry_timeline": self.ui.latest_plan().get("telemetry_timeline", [])})
+                self._json({"telemetry_timeline": self.ui.plan_for_scenario(scenario_id).get("telemetry_timeline", [])})
             elif path == "/api/tesla/calendar":
                 self._json(self.ui.get_calendar())
             else:
