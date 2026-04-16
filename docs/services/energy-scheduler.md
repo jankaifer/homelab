@@ -35,8 +35,12 @@ An optional separate service exposes the scheduler behind Caddy:
 - Domain: `https://energy.frame1.hobitin.eu`
 - Binary: `energy-scheduler-ui`
 - Reads planner state from `/var/lib/energy-scheduler/latest-plan.json`
-- Lets you update Tesla departure time / target SoC for the next 14 days
-- Runs repo-defined preset simulations without mutating the live scheduler state
+- Shows three pages:
+  - `Overview` for the current plan headline, summary cards, and deduplicated demand bands
+  - `Timeline` for a 24-hour energy-balance chart and battery SoC chart
+  - `Tesla Plan` for the Tesla charging chart and the 14-day planning calendar
+- Lets you update Tesla departure planning for the next 14 days through a calendar day modal
+- Rolls the Tesla planning window forward automatically so the calendar always covers the next 14 days
 
 ## Planner Model
 
@@ -85,6 +89,13 @@ One-shot planner run after enabling:
 sudo systemctl start energy-scheduler.service
 sudo journalctl -u energy-scheduler -n 200 --no-pager
 sudo cat /var/lib/energy-scheduler/latest-plan.json
+```
+
+Browser regression pass against a local demo:
+
+```bash
+./scripts/run-energy-ui-demo.sh --port 8790
+./scripts/check-energy-ui-browser.sh --url http://127.0.0.1:8790/
 ```
 
 ## Next Integrations

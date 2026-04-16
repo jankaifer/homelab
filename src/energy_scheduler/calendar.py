@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import json
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
 
@@ -28,8 +28,8 @@ def _parse_date(value: str) -> date:
     return date.fromisoformat(value)
 
 
-def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+def _local_now() -> datetime:
+    return datetime.now().astimezone()
 
 
 def _normalize_day(entry: dict[str, object], recurring: dict[str, dict[str, object]]) -> dict[str, object]:
@@ -66,7 +66,7 @@ def _normalize_day(entry: dict[str, object], recurring: dict[str, dict[str, obje
 
 
 def build_default_calendar(recurring_schedule: list[dict[str, object]], days: int = DEFAULT_CALENDAR_DAYS, today: date | None = None) -> dict[str, object]:
-    today = today or _utc_now().date()
+    today = today or _local_now().date()
     recurring = {
         str(int(item["weekday"])): {
             "departure_time": item["departure_time"],
@@ -103,12 +103,38 @@ def normalize_calendar(calendar: dict[str, object], recurring_schedule: list[dic
     return {"days": normalized}
 
 
+def refresh_calendar_window(
+    calendar: dict[str, object],
+    recurring_schedule: list[dict[str, object]],
+    days: int = DEFAULT_CALENDAR_DAYS,
+    today: date | None = None,
+) -> dict[str, object]:
+    today = today or _local_now().date()
+    normalized = normalize_calendar(calendar, recurring_schedule)
+    defaults = build_default_calendar(recurring_schedule, days=days, today=today)
+    existing_days = {entry["date"]: entry for entry in normalized["days"]}
+
+    merged_days = []
+    for default_day in defaults["days"]:
+        existing = existing_days.get(default_day["date"])
+        if existing is None:
+            merged_days.append(default_day)
+        elif existing["mode"] == "default":
+            merged_days.append(default_day)
+        else:
+            merged_days.append(existing)
+    return normalize_calendar({"days": merged_days}, recurring_schedule)
+
+
 def load_or_create_calendar(state_dir: Path, recurring_schedule: list[dict[str, object]], persist: bool = True) -> dict[str, object]:
     path = calendar_path(state_dir)
     if path.exists():
         with path.open("r", encoding="utf-8") as handle:
             raw = json.load(handle)
-        return normalize_calendar(raw, recurring_schedule)
+        calendar = refresh_calendar_window(raw, recurring_schedule)
+        if persist:
+            path.write_text(json.dumps(calendar, indent=2, sort_keys=True), encoding="utf-8")
+        return calendar
     calendar = build_default_calendar(recurring_schedule)
     if persist:
         path.write_text(json.dumps(calendar, indent=2, sort_keys=True), encoding="utf-8")
@@ -118,7 +144,7 @@ def load_or_create_calendar(state_dir: Path, recurring_schedule: list[dict[str, 
 def update_calendar_day(state_dir: Path, recurring_schedule: list[dict[str, object]], day_date: str, payload: dict[str, object]) -> dict[str, object]:
     calendar = load_or_create_calendar(state_dir, recurring_schedule, persist=True)
     days = copy.deepcopy(calendar["days"])
-    min_date = _utc_now().date()
+    min_date = _local_now().date()
     max_date = min_date + timedelta(days=DEFAULT_CALENDAR_DAYS - 1)
     target_date = _parse_date(day_date)
     if not (min_date <= target_date <= max_date):
@@ -147,7 +173,7 @@ def update_calendar_day(state_dir: Path, recurring_schedule: list[dict[str, obje
                 "mode": mode,
                 "departure_time": departure_time,
                 "target_soc_pct": target_soc_pct,
-                "updated_at": _utc_now().isoformat(),
+                "updated_at": _local_now().isoformat(),
             }
             break
     else:

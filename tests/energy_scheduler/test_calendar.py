@@ -5,7 +5,13 @@ import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from energy_scheduler.calendar import build_default_calendar, build_tesla_scenarios, load_or_create_calendar, update_calendar_day
+from energy_scheduler.calendar import (
+    build_default_calendar,
+    build_tesla_scenarios,
+    load_or_create_calendar,
+    refresh_calendar_window,
+    update_calendar_day,
+)
 
 
 class TeslaCalendarTests(unittest.TestCase):
@@ -60,6 +66,22 @@ class TeslaCalendarTests(unittest.TestCase):
             self.assertTrue(any("home" in key for key in scenario_weights))
             self.assertAlmostEqual(sum(scenario_weights.values()), 1.0, places=6)
             self.assertEqual(set(scenario_weights), set(scenario_labels))
+
+    def test_refresh_calendar_window_rolls_forward_and_keeps_future_overrides(self) -> None:
+        old_calendar = build_default_calendar(self.recurring, days=14, today=self.monday)
+        old_calendar["days"][1] = {
+            "date": "2026-04-14",
+            "mode": "explicit_departure",
+            "departure_time": "06:45",
+            "target_soc_pct": 72.0,
+            "confidence": 0.9,
+            "updated_at": "2026-04-13T12:00:00+00:00",
+        }
+
+        refreshed = refresh_calendar_window(old_calendar, self.recurring, today=date(2026, 4, 14))
+        self.assertEqual(refreshed["days"][0]["date"], "2026-04-14")
+        self.assertEqual(refreshed["days"][0]["mode"], "explicit_departure")
+        self.assertEqual(refreshed["days"][-1]["date"], "2026-04-27")
 
 
 if __name__ == "__main__":

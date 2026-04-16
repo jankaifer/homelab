@@ -4,7 +4,7 @@ import json
 import time
 from collections import defaultdict
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -51,7 +51,7 @@ class SchedulerService:
         )
 
     def build_input(self) -> PlannerInput:
-        now = datetime.now(timezone.utc)
+        now = datetime.now().astimezone()
         prices = self.price_adapter.get_prices(self.horizon_buckets)
         producer = self.solar_adapter.get_forecast(self.horizon_buckets)
         battery = self.battery_adapter.get_battery(self.horizon_buckets)
@@ -130,7 +130,7 @@ class SchedulerService:
         if persist:
             latest = self.state_dir / "latest-plan.json"
             latest.write_text(json.dumps(snapshot, indent=2, sort_keys=True), encoding="utf-8")
-            history_path = self.history_dir / f"{plan_input.created_at.strftime('%Y%m%dT%H%M%SZ')}.json"
+            history_path = self.history_dir / f"{plan_input.created_at.strftime('%Y%m%dT%H%M%S%z')}.json"
             history_path.write_text(json.dumps(snapshot, indent=2, sort_keys=True), encoding="utf-8")
         return snapshot
 
@@ -153,17 +153,21 @@ class SchedulerService:
             "battery_soc_kwh": 0.0,
             "battery_charge_kwh": 0.0,
             "battery_discharge_kwh": 0.0,
+            "reserve_target_kwh": 0.0,
+            "emergency_floor_kwh": plan_input.battery.emergency_floor_kwh,
             "import_kwh": 0.0,
             "export_kwh": 0.0,
             "curtail_kwh": 0.0,
             "solar_kwh": 0.0,
             "fixed_load_kwh": 0.0,
+            "flexible_load_kwh": 0.0,
             "tesla_kwh": 0.0,
         })
         for scenario in plan_input.producer.scenarios:
             for bucket_index, solar_kwh in enumerate(scenario.solar_generation_kwh):
                 expected_buckets[bucket_index]["solar_kwh"] += scenario.probability * solar_kwh
                 expected_buckets[bucket_index]["fixed_load_kwh"] += scenario.probability * plan_input.demand.fixed_demand_kwh[bucket_index]
+                expected_buckets[bucket_index]["reserve_target_kwh"] = plan_input.battery.reserve_target_kwh[bucket_index]
         for bucket in result.battery_plan:
             probability = probability_map[bucket.scenario_id]
             row = expected_buckets[bucket.bucket_index]
@@ -174,34 +178,76 @@ class SchedulerService:
             row["export_kwh"] += probability * bucket.export_kwh
             row["curtail_kwh"] += probability * bucket.curtail_kwh
 
-        band_lookup = {(band.band_id, band.scenario_id): band for band in plan_input.demand.demand_bands}
+        scenario_band_lookup = {
+            (band.band_id, band.scenario_id): band
+            for band in plan_input.demand.demand_bands
+            if band.scenario_id is not None
+        }
+        generic_band_lookup = {
+            band.band_id: band
+            for band in plan_input.demand.demand_bands
+            if band.scenario_id is None
+        }
+
+        def resolve_band(band_id: str, scenario_id: str):
+            return scenario_band_lookup.get((band_id, scenario_id)) or generic_band_lookup.get(band_id)
+
         band_served: dict[tuple[str, str], float] = defaultdict(float)
         for allocation in result.band_allocations:
             band_served[(allocation.band_id, allocation.scenario_id)] += allocation.served_kwh
-            band = band_lookup.get((allocation.band_id, allocation.scenario_id))
-            if band is not None and band.asset_id.startswith("tesla"):
-                expected_buckets[allocation.bucket_index]["tesla_kwh"] += probability_map.get(allocation.scenario_id, 0.0) * allocation.served_kwh
-
-        bands = []
-        for shortfall in result.shortfalls:
-            band = band_lookup.get((shortfall.band_id, shortfall.scenario_id))
+            band = resolve_band(allocation.band_id, allocation.scenario_id)
             if band is None:
                 continue
-            bands.append({
-                "band_id": shortfall.band_id,
-                "scenario_id": shortfall.scenario_id,
-                "asset_id": band.asset_id,
-                "display_name": band.display_name or shortfall.band_id,
-                "required_level": band.required_level,
-                "target_quantity_kwh": band.target_quantity_kwh,
-                "served_quantity_kwh": band_served[(shortfall.band_id, shortfall.scenario_id)],
-                "shortfall_kwh": shortfall.unmet_kwh,
-                "deadline_index": band.deadline_index,
-                "marginal_value_czk_per_kwh": band.marginal_value_czk_per_kwh,
-                "confidence": band.confidence,
-                "confidence_source": band.confidence_source,
-                "metadata": band.metadata,
-            })
+            probability = probability_map.get(allocation.scenario_id, 0.0)
+            expected_buckets[allocation.bucket_index]["flexible_load_kwh"] += probability * allocation.served_kwh
+            if band.asset_id.startswith("tesla"):
+                expected_buckets[allocation.bucket_index]["tesla_kwh"] += probability * allocation.served_kwh
+
+        grouped_bands: dict[str, dict[str, object]] = {}
+        for shortfall in result.shortfalls:
+            band = resolve_band(shortfall.band_id, shortfall.scenario_id)
+            if band is None:
+                continue
+            probability = probability_map.get(shortfall.scenario_id, 0.0)
+            group = grouped_bands.setdefault(
+                band.band_id,
+                {
+                    "band_id": band.band_id,
+                    "asset_id": band.asset_id,
+                    "display_name": band.display_name or band.band_id,
+                    "required_level": band.required_level,
+                    "deadline_index": band.deadline_index,
+                    "marginal_value_czk_per_kwh": band.marginal_value_czk_per_kwh,
+                    "confidence": band.confidence,
+                    "confidence_source": band.confidence_source or "all_scenarios",
+                    "metadata": band.metadata,
+                    "applicable_probability": 0.0,
+                    "weighted_target_quantity_kwh": 0.0,
+                    "weighted_served_quantity_kwh": 0.0,
+                    "weighted_shortfall_kwh": 0.0,
+                },
+            )
+            group["applicable_probability"] = float(group["applicable_probability"]) + probability
+            group["weighted_target_quantity_kwh"] = float(group["weighted_target_quantity_kwh"]) + probability * band.target_quantity_kwh
+            group["weighted_served_quantity_kwh"] = float(group["weighted_served_quantity_kwh"]) + probability * band_served[(shortfall.band_id, shortfall.scenario_id)]
+            group["weighted_shortfall_kwh"] = float(group["weighted_shortfall_kwh"]) + probability * shortfall.unmet_kwh
+
+        bands = []
+        for band in grouped_bands.values():
+            applicable_probability = max(float(band.pop("applicable_probability")), 1e-9)
+            weighted_target_quantity = float(band.pop("weighted_target_quantity_kwh"))
+            weighted_served_quantity = float(band.pop("weighted_served_quantity_kwh"))
+            weighted_shortfall = float(band.pop("weighted_shortfall_kwh"))
+            bands.append(
+                {
+                    **band,
+                    "scenario_probability": applicable_probability,
+                    "target_quantity_kwh": weighted_target_quantity / applicable_probability,
+                    "served_quantity_kwh": weighted_served_quantity / applicable_probability,
+                    "shortfall_kwh": weighted_shortfall / applicable_probability,
+                }
+            )
+        bands.sort(key=lambda item: (-int(bool(item["required_level"])), int(item["deadline_index"]), item["display_name"]))
 
         telemetry_timeline = [
             {"bucket_index": bucket_index, **values}
@@ -215,8 +261,13 @@ class SchedulerService:
             "bucket_minutes": plan_input.bucket_minutes,
             "horizon_buckets": plan_input.horizon_buckets,
             "battery_soc_kwh": telemetry_timeline[0]["battery_soc_kwh"] if telemetry_timeline else plan_input.battery.initial_soc_kwh,
+            "battery_capacity_kwh": plan_input.battery.max_soc_kwh,
+            "battery_reserve_kwh": telemetry_timeline[0]["reserve_target_kwh"] if telemetry_timeline else plan_input.battery.reserve_target_kwh[0],
+            "battery_emergency_floor_kwh": plan_input.battery.emergency_floor_kwh,
             "current_import_kwh": telemetry_timeline[0]["import_kwh"] if telemetry_timeline else 0.0,
             "current_export_kwh": telemetry_timeline[0]["export_kwh"] if telemetry_timeline else 0.0,
+            "current_flexible_load_kwh": telemetry_timeline[0]["flexible_load_kwh"] if telemetry_timeline else 0.0,
+            "current_tesla_kwh": telemetry_timeline[0]["tesla_kwh"] if telemetry_timeline else 0.0,
             "grid_available": plan_input.grid_available,
             "next_tesla_day": next((entry for entry in plan_input.demand.tesla_calendar_summary if entry["departure_time"] is not None), None),
         }
@@ -224,7 +275,6 @@ class SchedulerService:
             "created_at": plan_input.created_at.isoformat(),
             "summary": summary,
             "telemetry_timeline": telemetry_timeline,
-            "decision_cards": self._build_decision_cards(telemetry_timeline, bands),
             "bands": bands,
             "scenario_summary": [
                 {"scenario_id": scenario.scenario_id, "probability": scenario.probability, "labels": scenario.labels}
@@ -235,27 +285,6 @@ class SchedulerService:
             "battery_plan": [asdict(item) for item in result.battery_plan[: min(96, len(result.battery_plan))]],
             "band_allocations": [asdict(item) for item in result.band_allocations[:300]],
         }
-
-    def _build_decision_cards(self, telemetry_timeline: list[dict[str, float]], bands: list[dict[str, object]]) -> list[dict[str, str]]:
-        cards = []
-        if telemetry_timeline:
-            current = telemetry_timeline[0]
-            if current["export_kwh"] > 0.05:
-                cards.append({"title": "Exporting Right Now", "body": "The current plan expects exporting energy now because export value beats the lowest-value flexible uses in this bucket."})
-            elif current["battery_charge_kwh"] > 0.05:
-                cards.append({"title": "Charging the Battery", "body": "The optimizer is carrying more energy forward because future demand or prices make stored energy valuable."})
-            elif current["battery_discharge_kwh"] > 0.05:
-                cards.append({"title": "Using Battery Energy", "body": "The current bucket favors using stored energy instead of importing from the grid."})
-        tesla_bands = [band for band in bands if band["asset_id"].startswith("tesla") and band["required_level"]]
-        if tesla_bands:
-            next_band = sorted(tesla_bands, key=lambda item: item["deadline_index"])[0]
-            cards.append({"title": "Tesla Departure Planning", "body": f"The next Tesla departure band targets {next_band['target_quantity_kwh']:.1f} kWh by bucket {next_band['deadline_index']} with confidence source '{next_band['confidence_source']}'."})
-        if any(band["shortfall_kwh"] > 0.01 for band in bands):
-            cards.append({"title": "Shortfall Detected", "body": "At least one demand band is not fully satisfied in some scenarios, so the plan is choosing the least-bad outcome."})
-        if not cards:
-            cards.append({"title": "Plan Stable", "body": "No exceptional tradeoff dominates the current bucket; the scheduler is following a balanced economic plan."})
-        return cards[:3]
-
 
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     for key, value in override.items():
