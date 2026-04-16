@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 import unittest
 from datetime import datetime, timezone
 
@@ -148,6 +149,25 @@ class OptimizerTests(unittest.TestCase):
         result = solve_plan(self._build_input(grid_available=False))
         imported = sum(item.import_kwh for item in result.battery_plan)
         self.assertAlmostEqual(imported, 0.0, places=6)
+
+    def test_solution_respects_energy_balance_per_scenario_bucket(self) -> None:
+        plan = self._build_input()
+        result = solve_plan(plan)
+        allocations = defaultdict(float)
+        for item in result.band_allocations:
+            allocations[(item.scenario_id, item.bucket_index)] += item.served_kwh
+
+        solar_lookup = {scenario.scenario_id: scenario.solar_generation_kwh for scenario in plan.producer.scenarios}
+        for bucket in result.battery_plan:
+            supply = solar_lookup[bucket.scenario_id][bucket.bucket_index] + bucket.import_kwh + bucket.discharge_kwh
+            use = (
+                plan.demand.fixed_demand_kwh[bucket.bucket_index]
+                + allocations[(bucket.scenario_id, bucket.bucket_index)]
+                + bucket.charge_kwh
+                + bucket.export_kwh
+                + bucket.curtail_kwh
+            )
+            self.assertAlmostEqual(supply, use, places=6)
 
 
 if __name__ == "__main__":

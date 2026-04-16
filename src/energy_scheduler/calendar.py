@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from pathlib import Path
 
+from energy_scheduler.files import write_json_atomic
+
 
 DEFAULT_CALENDAR_DAYS = 14
 TESLA_CALENDAR_FILENAME = "tesla-calendar.json"
@@ -133,11 +135,11 @@ def load_or_create_calendar(state_dir: Path, recurring_schedule: list[dict[str, 
             raw = json.load(handle)
         calendar = refresh_calendar_window(raw, recurring_schedule)
         if persist:
-            path.write_text(json.dumps(calendar, indent=2, sort_keys=True), encoding="utf-8")
+            write_json_atomic(path, calendar)
         return calendar
     calendar = build_default_calendar(recurring_schedule)
     if persist:
-        path.write_text(json.dumps(calendar, indent=2, sort_keys=True), encoding="utf-8")
+        write_json_atomic(path, calendar)
     return calendar
 
 
@@ -180,7 +182,7 @@ def update_calendar_day(state_dir: Path, recurring_schedule: list[dict[str, obje
         raise ValueError("calendar date not found")
 
     normalized = normalize_calendar({"days": days}, recurring_schedule)
-    calendar_path(state_dir).write_text(json.dumps(normalized, indent=2, sort_keys=True), encoding="utf-8")
+    write_json_atomic(calendar_path(state_dir), normalized)
     return normalized
 
 

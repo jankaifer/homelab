@@ -4,7 +4,7 @@ import json
 import time
 from collections import defaultdict
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, time
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +12,7 @@ from energy_scheduler.calendar import load_or_create_calendar
 from energy_scheduler.adapters.config import ConfigBatteryAdapter, ConfigDemandAdapter, ConfigPriceAdapter, ConfigSolarAdapter, validate_scenario_coverage
 from energy_scheduler.config import RuntimeConfig
 from energy_scheduler.domain import PlannerInput, PlannerResult
+from energy_scheduler.files import write_json_atomic
 from energy_scheduler.planner.optimizer import solve_plan
 
 
@@ -112,9 +113,11 @@ class SchedulerService:
             if not matching_joint_ids:
                 raise ValueError(f"no joint scenarios found for demand scenario '{band.scenario_id}'")
             for joint_id in matching_joint_ids:
+                logical_band_id = band.logical_band_id or band.band_id
                 clone = type(band)(**{
                     **band.__dict__,
                     "band_id": f"{band.band_id}@{joint_id}",
+                    "logical_band_id": logical_band_id,
                     "scenario_id": joint_id,
                 })
                 expanded.append(clone)
@@ -129,9 +132,9 @@ class SchedulerService:
         snapshot = self._build_snapshot(plan_input, result)
         if persist:
             latest = self.state_dir / "latest-plan.json"
-            latest.write_text(json.dumps(snapshot, indent=2, sort_keys=True), encoding="utf-8")
+            write_json_atomic(latest, snapshot)
             history_path = self.history_dir / f"{plan_input.created_at.strftime('%Y%m%dT%H%M%S%z')}.json"
-            history_path.write_text(json.dumps(snapshot, indent=2, sort_keys=True), encoding="utf-8")
+            write_json_atomic(history_path, snapshot)
         return snapshot
 
     def serve_forever(self) -> None:
@@ -162,12 +165,16 @@ class SchedulerService:
             "fixed_load_kwh": 0.0,
             "flexible_load_kwh": 0.0,
             "tesla_kwh": 0.0,
+            "import_price_czk_per_kwh": 0.0,
+            "export_price_czk_per_kwh": 0.0,
         })
         for scenario in plan_input.producer.scenarios:
             for bucket_index, solar_kwh in enumerate(scenario.solar_generation_kwh):
                 expected_buckets[bucket_index]["solar_kwh"] += scenario.probability * solar_kwh
                 expected_buckets[bucket_index]["fixed_load_kwh"] += scenario.probability * plan_input.demand.fixed_demand_kwh[bucket_index]
                 expected_buckets[bucket_index]["reserve_target_kwh"] = plan_input.battery.reserve_target_kwh[bucket_index]
+                expected_buckets[bucket_index]["import_price_czk_per_kwh"] = plan_input.prices.import_prices[bucket_index]
+                expected_buckets[bucket_index]["export_price_czk_per_kwh"] = plan_input.prices.export_prices[bucket_index]
         for bucket in result.battery_plan:
             probability = probability_map[bucket.scenario_id]
             row = expected_buckets[bucket.bucket_index]
@@ -208,11 +215,12 @@ class SchedulerService:
             band = resolve_band(shortfall.band_id, shortfall.scenario_id)
             if band is None:
                 continue
+            group_band_id = band.logical_band_id or band.band_id
             probability = probability_map.get(shortfall.scenario_id, 0.0)
             group = grouped_bands.setdefault(
-                band.band_id,
+                group_band_id,
                 {
-                    "band_id": band.band_id,
+                    "band_id": group_band_id,
                     "asset_id": band.asset_id,
                     "display_name": band.display_name or band.band_id,
                     "required_level": band.required_level,
@@ -254,6 +262,22 @@ class SchedulerService:
             for bucket_index, values in sorted(expected_buckets.items())
             if bucket_index < min(96, plan_input.horizon_buckets)
         ]
+        next_tesla_day = None
+        for entry in plan_input.demand.tesla_calendar_summary:
+            departure_time = entry.get("departure_time")
+            if departure_time is None:
+                continue
+            departure_at = datetime.combine(
+                datetime.fromisoformat(str(entry["date"])).date(),
+                time.fromisoformat(str(departure_time)),
+                tzinfo=plan_input.created_at.tzinfo,
+            )
+            if departure_at >= plan_input.created_at:
+                next_tesla_day = entry
+                break
+        if next_tesla_day is None:
+            next_tesla_day = next((entry for entry in plan_input.demand.tesla_calendar_summary if entry["departure_time"] is not None), None)
+
         summary = {
             "planner_status": "ok",
             "planner_timestamp": plan_input.created_at.isoformat(),
@@ -269,7 +293,7 @@ class SchedulerService:
             "current_flexible_load_kwh": telemetry_timeline[0]["flexible_load_kwh"] if telemetry_timeline else 0.0,
             "current_tesla_kwh": telemetry_timeline[0]["tesla_kwh"] if telemetry_timeline else 0.0,
             "grid_available": plan_input.grid_available,
-            "next_tesla_day": next((entry for entry in plan_input.demand.tesla_calendar_summary if entry["departure_time"] is not None), None),
+            "next_tesla_day": next_tesla_day,
         }
         return {
             "created_at": plan_input.created_at.isoformat(),

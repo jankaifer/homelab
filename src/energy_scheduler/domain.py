@@ -71,6 +71,7 @@ class DemandBand:
     required_level: bool
     quantity_unit: DemandUnit = DemandUnit.KWH
     display_name: str | None = None
+    logical_band_id: str | None = None
     confidence: float | None = None
     confidence_source: str | None = None
     metadata: dict[str, str] = field(default_factory=dict)

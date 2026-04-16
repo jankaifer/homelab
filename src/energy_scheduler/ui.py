@@ -60,7 +60,7 @@ INDEX_HTML = """<!doctype html>
           <div class="summary-grid" id="summary-grid"></div>
         </section>
 
-        <section class="content-grid">
+        <section class="content-grid single-column">
           <article class="panel">
             <div class="panel-header">
               <div>
@@ -79,7 +79,7 @@ INDEX_HTML = """<!doctype html>
             <p class="eyebrow">Expected behavior</p>
             <h2>Timeline</h2>
           </div>
-          <p class="page-copy">These charts only show the first 24 hours and they are aggregated to one-hour steps. The first chart balances sources against uses. The second shows how much battery state the optimizer wants to carry forward.</p>
+          <p class="page-copy">These charts show the next part of the planning horizon, up to 24 hours, and they are aggregated to one-hour steps. The first chart balances sources against uses. The second shows how much battery state the optimizer wants to carry forward.</p>
         </header>
 
         <article class="panel panel-chart">
@@ -90,6 +90,7 @@ INDEX_HTML = """<!doctype html>
             </div>
             <div class="legend" id="flow-legend"></div>
           </div>
+          <div class="chart-metrics" id="flow-metrics"></div>
           <div class="chart-frame" id="flow-chart"></div>
           <p class="chart-note">Above zero = energy sources. Below zero = energy uses. If the chart is honest, every hour balances.</p>
         </article>
@@ -102,6 +103,7 @@ INDEX_HTML = """<!doctype html>
             </div>
             <div class="legend" id="battery-legend"></div>
           </div>
+          <div class="chart-metrics" id="battery-metrics"></div>
           <div class="chart-frame" id="battery-chart"></div>
         </article>
       </section>
@@ -129,13 +131,14 @@ INDEX_HTML = """<!doctype html>
           <article class="panel panel-chart">
             <div class="panel-header">
               <div>
-                <p class="eyebrow">Next 24 hours</p>
-                <h3>Planned Tesla Charging</h3>
-              </div>
-              <div class="legend" id="tesla-legend"></div>
+              <p class="eyebrow">Next 24 hours</p>
+              <h3>Planned Tesla Charging</h3>
             </div>
-            <div class="chart-frame" id="tesla-chart"></div>
-          </article>
+            <div class="legend" id="tesla-legend"></div>
+          </div>
+          <div class="chart-metrics" id="tesla-metrics"></div>
+          <div class="chart-frame" id="tesla-chart"></div>
+        </article>
         </section>
 
         <section class="content-grid single-column">
@@ -390,6 +393,7 @@ p { margin: 0; }
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+  align-items: start;
 }
 .single-column {
   grid-template-columns: 1fr;
@@ -476,18 +480,62 @@ p { margin: 0; }
   height: 0.85rem;
   border-radius: 999px;
 }
+.chart-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+.metric-card {
+  padding: 0.8rem 0.9rem;
+  border-radius: 18px;
+  border: 1px solid rgba(216, 209, 194, 0.9);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 240, 232, 0.9));
+}
+.metric-label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.35rem;
+}
+.metric-value {
+  display: block;
+  font-size: 1.12rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.metric-foot {
+  display: block;
+  margin-top: 0.28rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+.metric-card.warning .metric-value,
+.metric-card.warning .metric-foot {
+  color: var(--accent-danger);
+}
+.metric-card.ok .metric-value {
+  color: var(--accent);
+}
 .chart-frame {
+  position: relative;
   width: 100%;
   min-height: 360px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(37, 93, 73, 0.06), rgba(255, 250, 242, 0.86));
-  border: 1px solid rgba(217, 211, 198, 0.85);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(37, 93, 73, 0.08), rgba(255, 250, 242, 0.95)),
+    linear-gradient(90deg, rgba(37, 93, 73, 0.02), rgba(255, 255, 255, 0));
+  border: 1px solid rgba(217, 211, 198, 0.92);
   overflow: hidden;
 }
 .chart-frame svg {
   display: block;
   width: 100%;
   height: auto;
+  cursor: crosshair;
 }
 .chart-note {
   margin-top: 0.8rem;
@@ -511,6 +559,22 @@ p { margin: 0; }
   stroke: rgba(97, 113, 102, 0.9);
   stroke-width: 1.2;
 }
+.chart-hover-band {
+  fill: rgba(37, 93, 73, 0.08);
+  opacity: 0;
+}
+.chart-hover-line {
+  stroke: rgba(37, 93, 73, 0.55);
+  stroke-dasharray: 5 5;
+  stroke-width: 1.5;
+  opacity: 0;
+}
+.chart-hover-dot {
+  fill: var(--accent);
+  stroke: rgba(255, 252, 246, 0.98);
+  stroke-width: 3;
+  opacity: 0;
+}
 .chart-line-primary {
   fill: none;
   stroke: var(--accent);
@@ -530,6 +594,64 @@ p { margin: 0; }
 }
 .chart-area {
   fill: rgba(37, 93, 73, 0.14);
+}
+.chart-tooltip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 0.85rem 0.95rem;
+  border-radius: 16px;
+  border: 1px solid rgba(216, 209, 194, 0.92);
+  background: rgba(255, 252, 246, 0.98);
+  box-shadow: 0 18px 44px rgba(21, 33, 25, 0.16);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, calc(-100% - 14px));
+  transition: opacity 120ms ease;
+}
+.chart-tooltip.visible {
+  opacity: 1;
+}
+.chart-tooltip h4 {
+  margin: 0 0 0.6rem;
+  font-size: 0.98rem;
+}
+.chart-tooltip-list {
+  display: grid;
+  gap: 0.38rem;
+}
+.chart-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: center;
+  font-size: 0.88rem;
+}
+.chart-tooltip-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+}
+.chart-tooltip-value {
+  font-weight: 700;
+}
+.chart-tooltip-swatch {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+.chart-tooltip-foot {
+  margin-top: 0.7rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(216, 209, 194, 0.86);
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 .calendar-grid {
   display: grid;
@@ -852,6 +974,16 @@ button.ghost {
     text-align: center;
   }
   .chart-frame { min-height: 280px; }
+  .chart-metrics {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+  }
+  .metric-card {
+    padding: 0.7rem 0.75rem;
+  }
+  .metric-value {
+    font-size: 1rem;
+  }
   .calendar-shell {
     gap: 0.55rem;
   }
@@ -905,6 +1037,9 @@ button.ghost {
   .band-stats {
     flex-direction: column;
     align-items: start;
+  }
+  .chart-metrics {
+    grid-template-columns: 1fr;
   }
   .calendar-modal {
     width: calc(100vw - 1rem);
@@ -968,32 +1103,76 @@ function routeName() {
   return ROUTES[window.location.pathname] || "overview";
 }
 
-async function fetchJson(path, options = {}) {
+async function fetchJson(path, options = {}, attempt = 0) {
   const response = await fetch(path, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
+  const text = await response.text();
   if (!response.ok) {
-    const text = await response.text();
     throw new Error(text || response.statusText);
   }
-  return response.json();
+  if (!text.trim()) {
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 120 * (attempt + 1)));
+      return fetchJson(path, options, attempt + 1);
+    }
+    throw new Error(`Empty JSON response from ${path}`);
+  }
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    if (attempt < 2) {
+      await new Promise((resolve) => setTimeout(resolve, 120 * (attempt + 1)));
+      return fetchJson(path, options, attempt + 1);
+    }
+    throw error;
+  }
+}
+
+function cleanNumber(value, epsilon = 1e-9) {
+  return Math.abs(Number(value || 0)) < epsilon ? 0 : Number(value);
 }
 
 function fmt(value, suffix = "") {
   if (value === null || value === undefined) return "—";
-  if (typeof value === "number") return `${value.toFixed(2)}${suffix}`;
+  if (typeof value === "number") return `${cleanNumber(value).toFixed(2)}${suffix}`;
   return String(value);
 }
 
 function fmtShort(value, suffix = "") {
   if (value === null || value === undefined) return "—";
-  if (typeof value === "number") return `${value.toFixed(1)}${suffix}`;
+  if (typeof value === "number") return `${cleanNumber(value).toFixed(1)}${suffix}`;
+  return String(value);
+}
+
+function fmtPrice(value) {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "number") return `${cleanNumber(value).toFixed(2)} CZK/kWh`;
+  return String(value);
+}
+
+function fmtMoney(value) {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "number") return `${cleanNumber(value).toFixed(2)} CZK`;
   return String(value);
 }
 
 function sumKey(items, key) {
   return items.reduce((total, item) => total + Number(item[key] || 0), 0);
+}
+
+function averageKey(items, key) {
+  if (!items.length) return 0;
+  return sumKey(items, key) / items.length;
+}
+
+function maxBy(items, selector) {
+  return items.reduce((best, item) => (best === null || selector(item) > selector(best) ? item : best), null);
+}
+
+function minBy(items, selector) {
+  return items.reduce((best, item) => (best === null || selector(item) < selector(best) ? item : best), null);
 }
 
 function escapeHtml(value) {
@@ -1028,7 +1207,7 @@ function aggregateTimeline(points, bucketMinutes, targetMinutes = 60, limitBucke
   for (let index = 0; index < points.length && groups.length < limitBuckets; index += bucketsPerGroup) {
     const chunk = points.slice(index, index + bucketsPerGroup);
     if (!chunk.length) continue;
-    groups.push({
+    const group = {
       bucket_index: chunk[0].bucket_index,
       solar_kwh: sumKey(chunk, "solar_kwh"),
       import_kwh: sumKey(chunk, "import_kwh"),
@@ -1042,7 +1221,13 @@ function aggregateTimeline(points, bucketMinutes, targetMinutes = 60, limitBucke
       battery_soc_kwh: Number(chunk[chunk.length - 1].battery_soc_kwh || 0),
       reserve_target_kwh: Number(chunk[chunk.length - 1].reserve_target_kwh || 0),
       emergency_floor_kwh: Number(chunk[chunk.length - 1].emergency_floor_kwh || 0),
-    });
+      import_price_czk_per_kwh: averageKey(chunk, "import_price_czk_per_kwh"),
+      export_price_czk_per_kwh: averageKey(chunk, "export_price_czk_per_kwh"),
+    };
+    group.supply_kwh = group.solar_kwh + group.import_kwh + group.battery_discharge_kwh;
+    group.use_kwh = group.fixed_load_kwh + group.flexible_load_kwh + group.battery_charge_kwh + group.export_kwh + group.curtail_kwh;
+    group.net_balance_kwh = group.supply_kwh - group.use_kwh;
+    groups.push(group);
   }
   return groups;
 }
@@ -1107,6 +1292,120 @@ function renderSummary(summary) {
       <strong>${value}</strong>
     </div>
   `).join("");
+}
+
+function renderMetricCards(targetId, items) {
+  const target = document.getElementById(targetId);
+  target.innerHTML = items.map((item) => `
+    <article class="metric-card ${item.tone || ""}">
+      <span class="metric-label">${escapeHtml(item.label)}</span>
+      <strong class="metric-value">${escapeHtml(item.value)}</strong>
+      <span class="metric-foot">${escapeHtml(item.foot || "")}</span>
+    </article>
+  `).join("");
+}
+
+function renderFlowMetrics(data, summary) {
+  const totalSolar = sumKey(data, "solar_kwh");
+  const totalImport = sumKey(data, "import_kwh");
+  const totalExport = sumKey(data, "export_kwh");
+  const totalFlexible = sumKey(data, "flexible_load_kwh");
+  const totalTesla = sumKey(data, "tesla_kwh");
+  const drift = sumKey(data, "net_balance_kwh");
+  const peakImport = maxBy(data, (point) => Number(point.import_kwh || 0));
+  renderMetricCards("flow-metrics", [
+    {
+      label: "Solar total",
+      value: fmtShort(totalSolar, " kWh"),
+      foot: "Expected generation over the next 24h.",
+      tone: "ok",
+    },
+    {
+      label: "Grid import",
+      value: fmtShort(totalImport, " kWh"),
+      foot: peakImport && peakImport.import_kwh > 0.01
+        ? `Peak ${fmtShort(peakImport.import_kwh, " kWh")} around ${formatBucketTime(summary, peakImport.bucket_index)}.`
+        : "No notable imports expected.",
+    },
+    {
+      label: "Grid export",
+      value: fmtShort(totalExport, " kWh"),
+      foot: totalExport > 0.01 ? "Energy the model expects to sell." : "No export expected in the next 24h.",
+    },
+    {
+      label: "Flexible demand",
+      value: fmtShort(totalFlexible, " kWh"),
+      foot: totalTesla > 0.01 ? `${fmtShort(totalTesla, " kWh")} of that is Tesla charging.` : "No Tesla charging is planned yet.",
+    },
+    {
+      label: "Balance drift",
+      value: fmtShort(drift, " kWh"),
+      foot: Math.abs(drift) < 0.05 ? "This should stay near zero if the chart is honest." : "Non-zero means the chart aggregation is wrong.",
+      tone: Math.abs(drift) < 0.05 ? "ok" : "warning",
+    },
+  ]);
+}
+
+function renderBatteryMetrics(data, summary) {
+  const start = data[0];
+  const end = data[data.length - 1];
+  const peak = maxBy(data, (point) => Number(point.battery_soc_kwh || 0));
+  const trough = minBy(data, (point) => Number(point.battery_soc_kwh || 0));
+  const margin = minBy(data, (point) => Number(point.battery_soc_kwh || 0) - Number(point.emergency_floor_kwh || 0));
+  renderMetricCards("battery-metrics", [
+    {
+      label: "Starts at",
+      value: fmtShort(start?.battery_soc_kwh, " kWh"),
+      foot: `Current battery state against a ${fmtShort(summary.battery_capacity_kwh, " kWh")} pack.`,
+      tone: "ok",
+    },
+    {
+      label: "Peaks at",
+      value: fmtShort(peak?.battery_soc_kwh, " kWh"),
+      foot: peak ? `Around ${formatBucketTime(summary, peak.bucket_index)}.` : "No peak yet.",
+    },
+    {
+      label: "Ends at",
+      value: fmtShort(end?.battery_soc_kwh, " kWh"),
+      foot: "Expected battery state 24 hours from now.",
+    },
+    {
+      label: "Lowest margin",
+      value: fmtShort((margin?.battery_soc_kwh || 0) - (margin?.emergency_floor_kwh || 0), " kWh"),
+      foot: trough ? `Lowest SoC is ${fmtShort(trough.battery_soc_kwh, " kWh")} around ${formatBucketTime(summary, trough.bucket_index)}.` : "No battery activity.",
+      tone: (margin && ((margin.battery_soc_kwh || 0) - (margin.emergency_floor_kwh || 0) < 0.5)) ? "warning" : "",
+    },
+  ]);
+}
+
+function renderTeslaMetrics(data, summary) {
+  const totalTesla = sumKey(data, "tesla_kwh");
+  const firstCharge = data.find((point) => Number(point.tesla_kwh || 0) > 0.01);
+  const lastCharge = [...data].reverse().find((point) => Number(point.tesla_kwh || 0) > 0.01);
+  const nextTesla = summary.next_tesla_day;
+  renderMetricCards("tesla-metrics", [
+    {
+      label: "Planned charge",
+      value: fmtShort(totalTesla, " kWh"),
+      foot: totalTesla > 0.01 ? "Energy the model wants to put into the car in the next 24h." : "No Tesla energy is scheduled in the next 24h.",
+      tone: totalTesla > 0.01 ? "ok" : "",
+    },
+    {
+      label: "First charge hour",
+      value: firstCharge ? formatBucketTime(summary, firstCharge.bucket_index, { hour: "2-digit", minute: "2-digit" }) : "—",
+      foot: firstCharge ? "When the next charging window starts." : "No charging window is active.",
+    },
+    {
+      label: "Last charge hour",
+      value: lastCharge ? formatBucketTime(summary, lastCharge.bucket_index, { hour: "2-digit", minute: "2-digit" }) : "—",
+      foot: lastCharge ? "When the current charging plan tapers off." : "No charging window is active.",
+    },
+    {
+      label: "Next departure",
+      value: nextTesla ? `${formatDayLabel(nextTesla.date)} ${nextTesla.departure_time || ""}`.trim() : "Not set",
+      foot: nextTesla ? `${Math.round((nextTesla.confidence || 0) * 100)}% confidence, target ${nextTesla.target_soc_pct || "—"}%.` : "Only default Tesla rules are active.",
+    },
+  ]);
 }
 
 function renderBandCards(bands) {
@@ -1207,6 +1506,141 @@ function bandStatusTone(band) {
   return shortfall > 0.01 ? "muted" : "ok";
 }
 
+function fmtDetailed(value, suffix = " kWh") {
+  return `${cleanNumber(value).toFixed(2)}${suffix}`;
+}
+
+function formatHourRange(summary, bucketIndex, windowMinutes = 60) {
+  if (!summary.planner_timestamp) return `Hour starting at bucket ${bucketIndex}`;
+  const base = new Date(summary.planner_timestamp);
+  const start = new Date(base.getTime() + bucketIndex * (summary.bucket_minutes || 15) * 60000);
+  const end = new Date(start.getTime() + windowMinutes * 60000);
+  const date = new Intl.DateTimeFormat([], { weekday: "short", month: "short", day: "numeric" }).format(start);
+  const time = new Intl.DateTimeFormat([], { hour: "2-digit", minute: "2-digit" });
+  return `${date}, ${time.format(start)}-${time.format(end)}`;
+}
+
+function renderChartTooltip(title, rows, footer = "") {
+  return `
+    <h4>${escapeHtml(title)}</h4>
+    <div class="chart-tooltip-list">
+      ${rows.map((row) => `
+        <div class="chart-tooltip-row">
+          <span class="chart-tooltip-key">
+            <span class="chart-tooltip-swatch" style="background:${row.color}"></span>
+            ${escapeHtml(row.label)}
+          </span>
+          <span class="chart-tooltip-value">${escapeHtml(row.value)}</span>
+        </div>
+      `).join("")}
+    </div>
+    ${footer ? `<div class="chart-tooltip-foot">${escapeHtml(footer)}</div>` : ""}
+  `;
+}
+
+function attachChartHover(target, options) {
+  const svg = target.querySelector("svg");
+  if (!svg || !options.data.length) return;
+
+  let tooltip = target.querySelector(".chart-tooltip");
+  if (!tooltip) {
+    tooltip = document.createElement("div");
+    tooltip.className = "chart-tooltip";
+    target.appendChild(tooltip);
+  }
+
+  const hoverBand = svg.querySelector("[data-hover-band]");
+  const hoverLine = svg.querySelector("[data-hover-line]");
+  const hoverDot = svg.querySelector("[data-hover-dot]");
+
+  function indexAt(clientX) {
+    const rect = svg.getBoundingClientRect();
+    const localX = clientX - rect.left;
+    let bestIndex = 0;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    options.centers.forEach((center, index) => {
+      const px = center * (rect.width / options.viewWidth);
+      const distance = Math.abs(px - localX);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    });
+    return bestIndex;
+  }
+
+  function hide() {
+    tooltip.classList.remove("visible");
+    if (hoverBand) hoverBand.style.opacity = "0";
+    if (hoverLine) hoverLine.style.opacity = "0";
+    if (hoverDot) hoverDot.style.opacity = "0";
+  }
+
+  function show(index, clientX, clientY) {
+    const point = options.data[index];
+    const frameRect = target.getBoundingClientRect();
+    const svgRect = svg.getBoundingClientRect();
+    const scaleX = svgRect.width / options.viewWidth;
+    const scaleY = svgRect.height / options.viewHeight;
+    const centerX = options.centers[index];
+
+    tooltip.innerHTML = options.tooltip(point, index);
+    tooltip.classList.add("visible");
+
+    if (hoverBand) {
+      hoverBand.setAttribute("x", String(centerX - options.hoverBandWidth / 2));
+      hoverBand.style.opacity = "1";
+    }
+    if (hoverLine) {
+      hoverLine.setAttribute("x1", String(centerX));
+      hoverLine.setAttribute("x2", String(centerX));
+      hoverLine.style.opacity = "1";
+    }
+    if (hoverDot && typeof options.hoverDotY === "function") {
+      hoverDot.setAttribute("cx", String(centerX));
+      hoverDot.setAttribute("cy", String(options.hoverDotY(point, index)));
+      hoverDot.style.opacity = "1";
+    }
+
+    requestAnimationFrame(() => {
+      const tooltipRect = tooltip.getBoundingClientRect();
+      let left = centerX * scaleX;
+      left = Math.max((tooltipRect.width / 2) + 12, Math.min(frameRect.width - (tooltipRect.width / 2) - 12, left));
+
+      const cursorY = clientY - frameRect.top;
+      const showAbove = cursorY > (tooltipRect.height + 28);
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${showAbove ? cursorY : cursorY + 18}px`;
+      tooltip.style.transform = showAbove ? "translate(-50%, -100%)" : "translate(-50%, 0%)";
+    });
+  }
+
+  function handlePointer(event) {
+    const bounds = svg.getBoundingClientRect();
+    if (
+      event.clientX < bounds.left ||
+      event.clientX > bounds.right ||
+      event.clientY < bounds.top ||
+      event.clientY > bounds.bottom
+    ) {
+      hide();
+      return;
+    }
+    const index = indexAt(event.clientX);
+    show(index, event.clientX, event.clientY);
+  }
+
+  svg.addEventListener("mousemove", handlePointer);
+  svg.addEventListener("mouseleave", hide);
+  svg.addEventListener("click", handlePointer);
+  svg.addEventListener("touchstart", (event) => {
+    const touch = event.touches[0];
+    if (!touch) return;
+    handlePointer(touch);
+  }, { passive: true });
+  target.addEventListener("mouseleave", hide);
+}
+
 function renderEmptyChart(targetId, message) {
   const target = document.getElementById(targetId);
   target.innerHTML = `
@@ -1237,16 +1671,14 @@ function renderFlowChart(points, summary) {
   const barWidth = Math.max(14, step * 0.66);
   const maxAbs = Math.max(
     0.5,
-    ...data.map((point) => Math.max(
-      sumKey(FLOW_SUPPLY_SERIES.map((series) => ({ value: point[series.key] || 0 })), "value"),
-      sumKey(FLOW_USE_SERIES.map((series) => ({ value: point[series.key] || 0 })), "value"),
-    )),
+    ...data.map((point) => Math.max(point.supply_kwh || 0, point.use_kwh || 0)),
   );
   const scale = ((plotHeight / 2) - 18) / maxAbs;
 
   const xFor = (index) => left + index * step + (step - barWidth) / 2;
   const yTopFor = (value) => zeroY - value * scale;
   const yBottomFor = (value) => zeroY + value * scale;
+  const centers = data.map((_, index) => xFor(index) + barWidth / 2);
 
   const gridLevels = [maxAbs, maxAbs / 2, 0, -maxAbs / 2, -maxAbs];
   const grid = gridLevels.map((level) => {
@@ -1293,11 +1725,39 @@ function renderFlowChart(points, summary) {
   target.innerHTML = `
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Hourly energy balance">
       ${grid}
+      <rect data-hover-band class="chart-hover-band" x="${left}" y="${top}" width="${Math.max(step * 0.92, barWidth + 8)}" height="${plotHeight}" rx="12"></rect>
       <line x1="${left}" y1="${zeroY}" x2="${left + plotWidth}" y2="${zeroY}" class="chart-axis" />
       ${bars}
       ${ticks}
     </svg>
   `;
+  attachChartHover(target, {
+    data,
+    centers,
+    viewWidth: width,
+    viewHeight: height,
+    hoverBandWidth: Math.max(step * 0.92, barWidth + 8),
+    tooltip: (point) => {
+      const importCost = Number(point.import_kwh || 0) * Number(point.import_price_czk_per_kwh || 0);
+      const exportRevenue = Number(point.export_kwh || 0) * Number(point.export_price_czk_per_kwh || 0);
+      return renderChartTooltip(
+        formatHourRange(summary, point.bucket_index),
+        [
+          { label: "Solar", value: fmtDetailed(point.solar_kwh), color: "#d08b3c" },
+          { label: "Grid import", value: fmtDetailed(point.import_kwh), color: "#4168ad" },
+          { label: "Battery discharge", value: fmtDetailed(point.battery_discharge_kwh), color: "#255d49" },
+          { label: "Base load", value: fmtDetailed(point.fixed_load_kwh), color: "#33483b" },
+          { label: "Flexible load", value: fmtDetailed(point.flexible_load_kwh), color: "#111111" },
+          { label: "Battery charge", value: fmtDetailed(point.battery_charge_kwh), color: "#b96a31" },
+          { label: "Grid export", value: fmtDetailed(point.export_kwh), color: "#a5481f" },
+          { label: "Curtailment", value: fmtDetailed(point.curtail_kwh), color: "#a8a18f" },
+          { label: "Import price", value: fmtPrice(point.import_price_czk_per_kwh), color: "#d8d1c2" },
+          { label: "Export price", value: fmtPrice(point.export_price_czk_per_kwh), color: "#d8d1c2" },
+        ],
+        `Supply ${fmtDetailed(point.supply_kwh)} vs use ${fmtDetailed(point.use_kwh)}. Drift ${fmtDetailed(point.net_balance_kwh)}. Market delta ${fmtMoney(exportRevenue - importCost)} for this hour.`
+      );
+    },
+  });
 }
 
 function buildLinePath(points, xFor, yFor) {
@@ -1328,6 +1788,7 @@ function renderBatteryChart(points, summary) {
   const step = plotWidth / Math.max(1, data.length - 1);
   const xFor = (index) => left + step * index;
   const yFor = (value) => top + plotHeight - (Math.max(0, value) / maxY) * plotHeight;
+  const centers = data.map((_, index) => xFor(index));
 
   const areaPath = [
     `M ${xFor(0)} ${top + plotHeight}`,
@@ -1354,13 +1815,40 @@ function renderBatteryChart(points, summary) {
   target.innerHTML = `
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Battery state of charge">
       ${grid}
+      <line data-hover-line class="chart-hover-line" x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}"></line>
       <path d="${areaPath}" class="chart-area" />
       <path d="${socPath}" class="chart-line-primary" />
       <path d="${reservePath}" class="chart-line-secondary" />
       <path d="${emergencyPath}" class="chart-line-danger" />
+      <circle data-hover-dot class="chart-hover-dot" cx="${left}" cy="${top + plotHeight}" r="6"></circle>
       ${ticks}
     </svg>
   `;
+  attachChartHover(target, {
+    data,
+    centers,
+    viewWidth: width,
+    viewHeight: height,
+    hoverBandWidth: step,
+    hoverDotY: (point) => yFor(point.battery_soc_kwh || 0),
+    tooltip: (point) => {
+      const reserveMargin = Number(point.battery_soc_kwh || 0) - Number(point.reserve_target_kwh || 0);
+      const emergencyMargin = Number(point.battery_soc_kwh || 0) - Number(point.emergency_floor_kwh || 0);
+      return renderChartTooltip(
+        formatHourRange(summary, point.bucket_index),
+        [
+          { label: "Battery SoC", value: fmtDetailed(point.battery_soc_kwh), color: "#255d49" },
+          { label: "Reserve target", value: fmtDetailed(point.reserve_target_kwh), color: "#b96a31" },
+          { label: "Emergency floor", value: fmtDetailed(point.emergency_floor_kwh), color: "#a5481f" },
+          { label: "Battery charge", value: fmtDetailed(point.battery_charge_kwh), color: "#b96a31" },
+          { label: "Battery discharge", value: fmtDetailed(point.battery_discharge_kwh), color: "#4168ad" },
+          { label: "Import price", value: fmtPrice(point.import_price_czk_per_kwh), color: "#d8d1c2" },
+          { label: "Export price", value: fmtPrice(point.export_price_czk_per_kwh), color: "#d8d1c2" },
+        ],
+        `${fmtDetailed(point.battery_soc_kwh)} stored at the end of this hour. Reserve margin ${fmtDetailed(reserveMargin)}. Emergency margin ${fmtDetailed(emergencyMargin)}.`
+      );
+    },
+  });
 }
 
 function renderTeslaChart(points, summary) {
@@ -1383,6 +1871,7 @@ function renderTeslaChart(points, summary) {
   const step = plotWidth / data.length;
   const barWidth = Math.max(14, step * 0.66);
   const yFor = (value) => top + plotHeight - (value / maxY) * plotHeight;
+  const centers = data.map((_, index) => left + index * step + barWidth / 2);
 
   const gridValues = [maxY, maxY / 2, 0];
   const grid = gridValues.map((value) => `
@@ -1405,10 +1894,36 @@ function renderTeslaChart(points, summary) {
   target.innerHTML = `
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Planned Tesla charging">
       ${grid}
+      <rect data-hover-band class="chart-hover-band" x="${left}" y="${top}" width="${Math.max(step * 0.92, barWidth + 8)}" height="${plotHeight}" rx="12"></rect>
       ${bars}
       ${ticks}
     </svg>
   `;
+  attachChartHover(target, {
+    data,
+    centers,
+    viewWidth: width,
+    viewHeight: height,
+    hoverBandWidth: Math.max(step * 0.92, barWidth + 8),
+    tooltip: (point) => {
+      const flexibleLoad = Number(point.flexible_load_kwh || 0);
+      const teslaLoad = Number(point.tesla_kwh || 0);
+      const teslaShare = flexibleLoad > 0 ? (teslaLoad / flexibleLoad) * 100 : 0;
+      return renderChartTooltip(
+        formatHourRange(summary, point.bucket_index),
+        [
+          { label: "Tesla charging", value: fmtDetailed(point.tesla_kwh), color: "#111111" },
+          { label: "Flexible load total", value: fmtDetailed(point.flexible_load_kwh), color: "#111111" },
+          { label: "Solar", value: fmtDetailed(point.solar_kwh), color: "#d08b3c" },
+          { label: "Grid import", value: fmtDetailed(point.import_kwh), color: "#4168ad" },
+          { label: "Battery discharge", value: fmtDetailed(point.battery_discharge_kwh), color: "#255d49" },
+          { label: "Import price", value: fmtPrice(point.import_price_czk_per_kwh), color: "#d8d1c2" },
+          { label: "Export price", value: fmtPrice(point.export_price_czk_per_kwh), color: "#d8d1c2" },
+        ],
+        `Tesla is ${teslaShare.toFixed(0)}% of flexible demand in this hour. Importing this hour costs about ${fmtMoney(Number(point.tesla_kwh || 0) * Number(point.import_price_czk_per_kwh || 0))} if it all comes from the grid.`
+      );
+    },
+  });
 }
 
 function renderTeslaSummary(days) {
@@ -1562,6 +2077,8 @@ function renderCalendar(days) {
 function renderLivePlan() {
   const livePlan = appState.livePlan;
   const summary = livePlan.summary || {};
+  const timeline = livePlan.telemetry_timeline || [];
+  const hourly = aggregateTimeline(timeline, summary.bucket_minutes || 15, 60, 24);
   renderStatus(summary);
   renderHeadline(summary);
   renderSummary(summary);
@@ -1569,9 +2086,12 @@ function renderLivePlan() {
   renderLegend("flow-legend", [...FLOW_SUPPLY_SERIES, ...FLOW_USE_SERIES]);
   renderLegend("battery-legend", BATTERY_LEGEND);
   renderLegend("tesla-legend", TESLA_LEGEND);
-  renderFlowChart(livePlan.telemetry_timeline || [], summary);
-  renderBatteryChart(livePlan.telemetry_timeline || [], summary);
-  renderTeslaChart(livePlan.telemetry_timeline || [], summary);
+  renderFlowMetrics(hourly, summary);
+  renderBatteryMetrics(hourly, summary);
+  renderTeslaMetrics(hourly, summary);
+  renderFlowChart(timeline, summary);
+  renderBatteryChart(timeline, summary);
+  renderTeslaChart(timeline, summary);
 }
 
 async function boot() {

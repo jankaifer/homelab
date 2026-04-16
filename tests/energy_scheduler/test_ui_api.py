@@ -114,6 +114,24 @@ class UiApiTests(unittest.TestCase):
                 day = next(item for item in updated["days"] if item["date"] == first_day)
                 self.assertEqual(day["mode"], "explicit_departure")
                 self.assertAlmostEqual(day["confidence"], 0.9, places=6)
+
+                conn.request("GET", "/api/live/plan")
+                plan_response = conn.getresponse()
+                plan = json.loads(plan_response.read())
+                self.assertEqual(plan_response.status, 200)
+                tesla_required = [
+                    band for band in plan["bands"]
+                    if band["asset_id"] == "tesla-model-3" and band["required_level"]
+                ]
+                logical_keys = {
+                    (
+                        band["display_name"],
+                        band.get("metadata", {}).get("date"),
+                        band.get("metadata", {}).get("departure_time"),
+                    )
+                    for band in tesla_required
+                }
+                self.assertEqual(len(tesla_required), len(logical_keys))
             finally:
                 httpd.shutdown()
                 httpd.server_close()

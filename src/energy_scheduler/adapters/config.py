@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, date, time
 
 from energy_scheduler.adapters.base import BatteryAdapter, DemandAdapter, PriceAdapter, ProducerAdapter
 from energy_scheduler.calendar import build_tesla_scenarios, load_or_create_calendar
@@ -131,6 +131,7 @@ class ConfigDemandAdapter(DemandAdapter):
                             required_level=bool(band.get("required_level", False)),
                             quantity_unit=DemandUnit(band.get("quantity_unit", "kwh")),
                             display_name=band.get("display_name"),
+                            logical_band_id=band.get("id"),
                             scenario_id=scenario_id,
                         )
                     )
@@ -202,6 +203,7 @@ class ConfigDemandAdapter(DemandAdapter):
                     unmet_penalty_czk_per_kwh=0.0,
                     required_level=False,
                     display_name="Tesla extra charge",
+                    logical_band_id="tesla-extra",
                     confidence=1.0,
                     confidence_source="always_available",
                 )
@@ -217,7 +219,11 @@ class ConfigDemandAdapter(DemandAdapter):
                 day_entry = calendar_map.get(day_date)
                 if day_entry is None or day_entry["departure_time"] is None or day_entry["target_soc_pct"] is None:
                     continue
-                departure_dt = datetime.fromisoformat(f"{day_date}T{day_entry['departure_time']}:00+00:00")
+                departure_dt = datetime.combine(
+                    date.fromisoformat(day_date),
+                    time.fromisoformat(str(day_entry["departure_time"])),
+                    tzinfo=start_at.tzinfo,
+                )
                 deadline_index = int((departure_dt - start_at).total_seconds() // (bucket_minutes * 60))
                 if deadline_index < 0 or deadline_index >= horizon_buckets:
                     continue
@@ -242,6 +248,7 @@ class ConfigDemandAdapter(DemandAdapter):
                         unmet_penalty_czk_per_kwh=required_penalty,
                         required_level=True,
                         display_name=f"Tesla departure {day_date}",
+                        logical_band_id=f"tesla-required:{day_date}",
                         confidence=float(day_entry["confidence"]),
                         confidence_source=str(day_entry["mode"]),
                         metadata={

@@ -16,6 +16,7 @@ def solve_plan(plan: PlannerInput) -> PlannerResult:
     problem = pulp.LpProblem("energy_scheduler", pulp.LpMaximize)
 
     scenario_ids = [scenario.scenario_id for scenario in plan.producer.scenarios]
+    scenario_tokens = {scenario_id: f"s{index}" for index, scenario_id in enumerate(scenario_ids)}
     scenario_probability = {scenario.scenario_id: scenario.probability for scenario in plan.producer.scenarios}
     solar_by_scenario = {scenario.scenario_id: scenario.solar_generation_kwh for scenario in plan.producer.scenarios}
     bucket_range = range(plan.horizon_buckets)
@@ -29,47 +30,51 @@ def solve_plan(plan: PlannerInput) -> PlannerResult:
     reserve_shortfall: dict[tuple[str, int], pulp.LpVariable] = {}
 
     for scenario_id in scenario_ids:
+        scenario_token = scenario_tokens[scenario_id]
         for bucket in bucket_range:
-            import_energy[(scenario_id, bucket)] = pulp.LpVariable(f"import_{scenario_id}_{bucket}", lowBound=0)
-            export_energy[(scenario_id, bucket)] = pulp.LpVariable(f"export_{scenario_id}_{bucket}", lowBound=0)
-            curtail_energy[(scenario_id, bucket)] = pulp.LpVariable(f"curtail_{scenario_id}_{bucket}", lowBound=0)
+            import_energy[(scenario_id, bucket)] = pulp.LpVariable(f"import_{scenario_token}_{bucket}", lowBound=0)
+            export_energy[(scenario_id, bucket)] = pulp.LpVariable(f"export_{scenario_token}_{bucket}", lowBound=0)
+            curtail_energy[(scenario_id, bucket)] = pulp.LpVariable(f"curtail_{scenario_token}_{bucket}", lowBound=0)
             charge_limit = plan.battery.max_charge_kw * hours
             discharge_limit = plan.battery.max_discharge_kw * hours
             battery_charge[(scenario_id, bucket)] = pulp.LpVariable(
-                f"battery_charge_{scenario_id}_{bucket}",
+                f"battery_charge_{scenario_token}_{bucket}",
                 lowBound=0,
                 upBound=charge_limit,
             )
             battery_discharge[(scenario_id, bucket)] = pulp.LpVariable(
-                f"battery_discharge_{scenario_id}_{bucket}",
+                f"battery_discharge_{scenario_token}_{bucket}",
                 lowBound=0,
                 upBound=discharge_limit,
             )
             battery_soc[(scenario_id, bucket)] = pulp.LpVariable(
-                f"battery_soc_{scenario_id}_{bucket}",
+                f"battery_soc_{scenario_token}_{bucket}",
                 lowBound=plan.battery.min_soc_kwh,
                 upBound=plan.battery.max_soc_kwh,
             )
             reserve_shortfall[(scenario_id, bucket)] = pulp.LpVariable(
-                f"reserve_shortfall_{scenario_id}_{bucket}",
+                f"reserve_shortfall_{scenario_token}_{bucket}",
                 lowBound=0,
             )
 
     band_energy: dict[tuple[str, str, int], pulp.LpVariable] = {}
     band_shortfall: dict[tuple[str, str], pulp.LpVariable] = {}
+    band_tokens = {id(band): f"b{index}" for index, band in enumerate(plan.demand.demand_bands)}
 
     for band in plan.demand.demand_bands:
+        band_token = band_tokens[id(band)]
         active_scenarios = scenario_ids if band.scenario_id is None else [band.scenario_id]
         max_band_energy = band.max_power_kw * hours
         for scenario_id in active_scenarios:
+            scenario_token = scenario_tokens[scenario_id]
             band_shortfall[(band.band_id, scenario_id)] = pulp.LpVariable(
-                f"band_shortfall_{band.band_id}_{scenario_id}",
+                f"band_shortfall_{band_token}_{scenario_token}",
                 lowBound=0,
             )
             for bucket in bucket_range:
                 if band.earliest_start_index <= bucket <= band.latest_finish_index:
                     band_energy[(band.band_id, scenario_id, bucket)] = pulp.LpVariable(
-                        f"band_energy_{band.band_id}_{scenario_id}_{bucket}",
+                        f"band_energy_{band_token}_{scenario_token}_{bucket}",
                         lowBound=0,
                         upBound=max_band_energy,
                     )
@@ -155,7 +160,7 @@ def solve_plan(plan: PlannerInput) -> PlannerResult:
     problem += pulp.lpSum(objective_terms)
     solver = pulp.PULP_CBC_CMD(msg=False)
     status = problem.solve(solver)
-    if pulp.LpStatus[status] not in {"Optimal", "Not Solved", "Undefined", "Integer Feasible"}:
+    if pulp.LpStatus[status] != "Optimal":
         raise RuntimeError(f"planner failed with status {pulp.LpStatus[status]}")
 
     allocations: list[BandAllocation] = []
@@ -206,6 +211,22 @@ def solve_plan(plan: PlannerInput) -> PlannerResult:
                         )
                     )
                     summary[f"{band.band_id}.served_kwh"] += served
+
+    served_by_bucket = defaultdict(float)
+    for allocation in allocations:
+        served_by_bucket[(allocation.scenario_id, allocation.bucket_index)] += allocation.served_kwh
+
+    for bucket_plan in battery_plan:
+        solar = solar_by_scenario[bucket_plan.scenario_id][bucket_plan.bucket_index]
+        fixed = plan.demand.fixed_demand_kwh[bucket_plan.bucket_index]
+        served = served_by_bucket[(bucket_plan.scenario_id, bucket_plan.bucket_index)]
+        supply = solar + bucket_plan.import_kwh + bucket_plan.discharge_kwh
+        use = fixed + served + bucket_plan.charge_kwh + bucket_plan.export_kwh + bucket_plan.curtail_kwh
+        if abs(supply - use) > 1e-6:
+            raise RuntimeError(
+                f"planner produced imbalanced energy flow for {bucket_plan.scenario_id} bucket {bucket_plan.bucket_index}: "
+                f"{supply:.6f} != {use:.6f}"
+            )
 
     return PlannerResult(
         objective_value_czk=float(pulp.value(problem.objective) or 0.0),
