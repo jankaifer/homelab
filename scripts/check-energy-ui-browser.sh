@@ -68,6 +68,35 @@ capture_screenshot() {
   cp "${after}" "${destination}"
 }
 
+session_eval() {
+  local session="$1"
+  local expr="$2"
+  "${PWCLI[@]}" --session "${session}" eval "${expr}"
+}
+
+assert_session_path() {
+  local session="$1"
+  local expected="$2"
+  local output
+  output="$(session_eval "${session}" '() => window.location.pathname')"
+  local actual
+  actual="$(RESULT_TEXT="${output}" python3 - <<'PY'
+import os
+import re
+
+text = os.environ["RESULT_TEXT"]
+match = re.search(r'### Result\s+"([^"]+)"', text, re.S)
+if not match:
+    raise SystemExit(1)
+print(match.group(1))
+PY
+)"
+  if [[ "${actual}" != "${expected}" ]]; then
+    echo "Unexpected route for session ${session}: expected ${expected}, got ${actual}" >&2
+    exit 1
+  fi
+}
+
 open_page() {
   local session="$1"
   local config="$2"
@@ -135,6 +164,42 @@ capture_group() {
   open_page "${session}" "${config}" "${tesla_url}"
   capture_screenshot "${session}" "${OUT_DIR}/tesla-${suffix}.png"
 
+  open_page "${session}" "${config}" "${workbench_url}"
+  local workbench_snapshot
+  workbench_snapshot="$("${PWCLI[@]}" --session "${session}" snapshot)"
+  local prices_ref
+  prices_ref="$(SNAPSHOT_TEXT="${workbench_snapshot}" python3 - <<'PY'
+import os
+import re
+
+text = os.environ["SNAPSHOT_TEXT"]
+match = re.search(r'button "Prices" \[ref=(e\d+)\]', text)
+print(match.group(1) if match else "")
+PY
+)"
+  if [[ -z "${prices_ref}" ]]; then
+    echo "Failed to locate workbench Prices tab ref for ${session}" >&2
+    exit 1
+  fi
+  "${PWCLI[@]}" --session "${session}" click "${prices_ref}" >/dev/null
+  assert_session_path "${session}" "/workbench"
+  workbench_snapshot="$("${PWCLI[@]}" --session "${session}" snapshot)"
+  local results_ref
+  results_ref="$(SNAPSHOT_TEXT="${workbench_snapshot}" python3 - <<'PY'
+import os
+import re
+
+text = os.environ["SNAPSHOT_TEXT"]
+match = re.search(r'button "Results" \[ref=(e\d+)\]', text)
+print(match.group(1) if match else "")
+PY
+)"
+  if [[ -z "${results_ref}" ]]; then
+    echo "Failed to locate workbench Results tab ref for ${session}" >&2
+    exit 1
+  fi
+  "${PWCLI[@]}" --session "${session}" click "${results_ref}" >/dev/null
+  assert_session_path "${session}" "/workbench"
   open_page "${session}" "${config}" "${workbench_url}"
   capture_screenshot "${session}" "${OUT_DIR}/workbench-${suffix}.png"
 

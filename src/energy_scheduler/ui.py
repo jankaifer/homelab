@@ -3115,7 +3115,7 @@ function hydrateWorkbenchPanel() {
 function renderNav() {
   const active = routeName();
   document.body.dataset.route = active;
-  document.querySelectorAll("[data-route]").forEach((link) => {
+  document.querySelectorAll("a[data-route]").forEach((link) => {
     link.classList.toggle("active", link.dataset.route === active);
   });
   document.querySelectorAll(".page").forEach((page) => {
@@ -4194,7 +4194,7 @@ async function boot() {
 }
 
 function handleNavigation(event) {
-  const link = event.target.closest("[data-route]");
+  const link = event.target.closest("a[data-route]");
   if (!link) return;
   event.preventDefault();
   const url = new URL(link.getAttribute("href"), window.location.origin);
