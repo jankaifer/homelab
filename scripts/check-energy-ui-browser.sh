@@ -76,8 +76,8 @@ session_eval() {
 
 assert_workbench_series_editor() {
   local session="$1"
-  local output
-  output="$(session_eval "${session}" '() => {
+  local metrics_output
+  metrics_output="$(session_eval "${session}" '() => {
     const clickTab = (label) => {
       const button = Array.from(document.querySelectorAll("#workbench-tabs [data-workbench-tab]"))
         .find((item) => item.textContent.trim() === label);
@@ -91,88 +91,107 @@ assert_workbench_series_editor() {
     if (!svg) {
       return { path: window.location.pathname, error: "missing-series-chart" };
     }
-    const metricsFor = (node) => {
-      const rect = node.getBoundingClientRect();
-      const plotLeft = rect.width * (64 / 1100);
-      const plotTop = rect.height * (24 / 240);
-      const plotBottom = rect.height * ((24 + 168) / 240);
-      const firstBucketX = plotLeft + 2;
-      const dragEndX = Math.min(rect.width - 12, firstBucketX + rect.width * (260 / 1100));
-      return { rect, plotTop, plotBottom, firstBucketX, dragEndX };
-    };
-    const dispatchFor = (node) => {
-      const rect = node.getBoundingClientRect();
-      return (type, x, y, pointerId) => node.dispatchEvent(new PointerEvent(type, {
-      bubbles: true,
-      clientX: rect.left + x,
-      clientY: rect.top + y,
-      pointerId,
-      pointerType: "mouse",
-      isPrimary: true,
-      }));
-    };
-
-    const beforeClick = readSeries();
-    const lerp = (start, end, ratio) => start + (end - start) * ratio;
-    const clickMetrics = metricsFor(svg);
-    const clickY = beforeClick[0] > 1.5 ? clickMetrics.plotBottom - 6 : clickMetrics.plotTop + 6;
-    const clickDispatch = dispatchFor(svg);
-
-    clickDispatch("pointerdown", clickMetrics.firstBucketX, clickY, 11);
-    clickDispatch("pointerup", clickMetrics.firstBucketX, clickY, 11);
-    const afterClick = readSeries();
-
-    clickTab("General");
-    clickTab("Prices");
-    const dragSvg = document.querySelector("#workbench-panel .series-chart svg");
-    const beforeDrag = readSeries();
-    const dragMetrics = metricsFor(dragSvg);
-    const dragStartY = beforeDrag[0] > 1.5 ? dragMetrics.plotBottom - 10 : dragMetrics.plotTop + 10;
-    const dragEndY = beforeDrag[0] > 1.5 ? dragMetrics.plotTop + 10 : dragMetrics.plotBottom - 10;
-    const dragDispatch = dispatchFor(dragSvg);
-
-    dragDispatch("pointerdown", dragMetrics.firstBucketX, dragStartY, 12);
-    dragDispatch("pointermove", lerp(dragMetrics.firstBucketX, dragMetrics.dragEndX, 0.25), lerp(dragStartY, dragEndY, 0.25), 12);
-    dragDispatch("pointermove", lerp(dragMetrics.firstBucketX, dragMetrics.dragEndX, 0.5), lerp(dragStartY, dragEndY, 0.5), 12);
-    dragDispatch("pointermove", lerp(dragMetrics.firstBucketX, dragMetrics.dragEndX, 0.75), lerp(dragStartY, dragEndY, 0.75), 12);
-    dragDispatch("pointermove", dragMetrics.dragEndX, dragEndY, 12);
-    dragDispatch("pointerup", dragMetrics.dragEndX, dragEndY, 12);
-    const afterDrag = readSeries();
-
-    const clickChanged = afterClick
-      .map((value, index) => Math.abs(value - beforeClick[index]) > 0.001 ? index : null)
-      .filter((value) => value !== null);
-    const dragChanged = afterDrag
-      .map((value, index) => Math.abs(value - beforeDrag[index]) > 0.001 ? index : null)
-      .filter((value) => value !== null);
-
+    const rect = svg.getBoundingClientRect();
+    const plotLeft = rect.left + rect.width * (64 / 1100);
+    const plotTop = rect.top + rect.height * (24 / 240);
+    const plotBottom = rect.top + rect.height * ((24 + 168) / 240);
+    const firstBucketX = Math.round(plotLeft + 2);
+    const dragEndX = Math.round(Math.min(rect.right - 12, plotLeft + rect.width * (260 / 1100)));
+    const before = readSeries();
+    const clickY = Math.round(before[0] > 1.5 ? plotBottom - 6 : plotTop + 6);
+    const dragStartY = Math.round(before[0] > 1.5 ? plotBottom - 10 : plotTop + 10);
+    const dragEndY = Math.round(before[0] > 1.5 ? plotTop + 10 : plotBottom - 10);
     return {
       path: window.location.pathname,
-      clickChanged,
-      dragChanged,
+      before,
+      firstBucketX,
+      clickY,
+      dragStartY,
+      dragEndX,
+      dragEndY,
     };
   }')"
-  RESULT_TEXT="${output}" python3 - <<'PY'
+  eval "$(RESULT_TEXT="${metrics_output}" python3 - <<'PY'
 import json
 import os
 import re
-import sys
 
 text = os.environ["RESULT_TEXT"]
 match = re.search(r'### Result\s*(.*?)\s*### Ran', text, re.S)
 if not match:
-    raise SystemExit("Missing Playwright eval result for workbench series editor assertion")
+    raise SystemExit("Missing Playwright eval result for workbench series editor metrics")
 data = json.loads(match.group(1))
 if data.get("path") != "/workbench":
     raise SystemExit(f"Workbench series editor left the route: {data.get('path')}")
 if data.get("error"):
     raise SystemExit(f"Workbench series editor assertion failed: {data['error']}")
-click_changed = data.get("clickChanged") or []
-drag_changed = data.get("dragChanged") or []
+for key in ("firstBucketX", "clickY", "dragStartY", "dragEndX", "dragEndY"):
+    print(f"{key}={int(round(float(data[key])))}")
+PY
+)"
+
+  "${PWCLI[@]}" --session "${session}" mousemove "${firstBucketX}" "${clickY}" >/dev/null
+  "${PWCLI[@]}" --session "${session}" mousedown >/dev/null
+  "${PWCLI[@]}" --session "${session}" mouseup >/dev/null
+
+  local after_click_output
+  after_click_output="$(session_eval "${session}" '() => ({
+    path: window.location.pathname,
+    values: Array.from(
+      document.querySelectorAll("#workbench-panel [data-workbench-series-path=\"config.forecasts.prices.import_czk_per_kwh\"]")
+    ).slice(0, 16).map((input) => Number(input.value))
+  })')"
+
+  "${PWCLI[@]}" --session "${session}" mousemove "${firstBucketX}" "${dragStartY}" >/dev/null
+  "${PWCLI[@]}" --session "${session}" mousedown >/dev/null
+  "${PWCLI[@]}" --session "${session}" mousemove "$(( firstBucketX + (dragEndX - firstBucketX) / 3 ))" "$(( dragStartY + (dragEndY - dragStartY) / 3 ))" >/dev/null
+  "${PWCLI[@]}" --session "${session}" mousemove "$(( firstBucketX + (dragEndX - firstBucketX) * 2 / 3 ))" "$(( dragStartY + (dragEndY - dragStartY) * 2 / 3 ))" >/dev/null
+  "${PWCLI[@]}" --session "${session}" mousemove "${dragEndX}" "${dragEndY}" >/dev/null
+  "${PWCLI[@]}" --session "${session}" mouseup >/dev/null
+
+  local after_drag_output
+  after_drag_output="$(session_eval "${session}" '() => ({
+    path: window.location.pathname,
+    values: Array.from(
+      document.querySelectorAll("#workbench-panel [data-workbench-series-path=\"config.forecasts.prices.import_czk_per_kwh\"]")
+    ).slice(0, 16).map((input) => Number(input.value)),
+    selection: String(window.getSelection())
+  })')"
+
+  BEFORE_OUTPUT="${metrics_output}" AFTER_CLICK_OUTPUT="${after_click_output}" AFTER_DRAG_OUTPUT="${after_drag_output}" python3 - <<'PY'
+import json
+import os
+import re
+
+def parse_result(name: str):
+    text = os.environ[name]
+    match = re.search(r'### Result\s*(.*?)\s*### Ran', text, re.S)
+    if not match:
+        raise SystemExit(f"Missing Playwright eval result for {name}")
+    return json.loads(match.group(1))
+
+before = parse_result("BEFORE_OUTPUT")
+after_click = parse_result("AFTER_CLICK_OUTPUT")
+after_drag = parse_result("AFTER_DRAG_OUTPUT")
+
+if after_click.get("path") != "/workbench":
+    raise SystemExit(f"Workbench series editor left the route after click: {after_click.get('path')}")
+if after_drag.get("path") != "/workbench":
+    raise SystemExit(f"Workbench series editor left the route after drag: {after_drag.get('path')}")
+
+before_values = before.get("before") or []
+after_click_values = after_click.get("values") or []
+after_drag_values = after_drag.get("values") or []
+
+click_changed = [index for index, (old, new) in enumerate(zip(before_values, after_click_values)) if abs(old - new) > 0.001]
+drag_changed = [index for index, (old, new) in enumerate(zip(after_click_values, after_drag_values)) if abs(old - new) > 0.001]
+
 if not click_changed or click_changed[0] != 0:
-    raise SystemExit(f"Expected the first bucket to change on a near-left click, got {click_changed}")
+    raise SystemExit(f"Expected the first bucket to change on a real click, got {click_changed}")
 if len(drag_changed) < 4:
-    raise SystemExit(f"Expected dragging to update several buckets, got {drag_changed}")
+    raise SystemExit(f"Expected real dragging to update several buckets, got {drag_changed}")
+if after_drag.get("selection"):
+    raise SystemExit(f"Dragging should not leave selected text, got {after_drag.get('selection')!r}")
 PY
 }
 

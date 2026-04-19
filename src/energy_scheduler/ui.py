@@ -1190,6 +1190,17 @@ button.ghost {
 }
 .series-chart {
   min-height: 240px;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: crosshair;
+}
+.series-chart svg,
+.series-chart svg * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.series-chart svg {
+  touch-action: none;
 }
 .series-table {
   overflow-x: auto;
@@ -2336,13 +2347,10 @@ function formatWorkbenchBucketLabel(scenario, bucketIndex) {
   return new Intl.DateTimeFormat([], { weekday: "short", hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
-function renderSeriesPreviewChart(targetId, values, options = {}) {
-  const target = document.getElementById(targetId);
-  if (!target) return;
+function buildSeriesPreviewGeometry(values, options = {}) {
   const data = (values || []).map((value, index) => ({ index, value: Number(value || 0) }));
   if (!data.length) {
-    target.innerHTML = `<div class="empty-state">No series data yet.</div>`;
-    return;
+    return null;
   }
   const width = 1100;
   const height = 240;
@@ -2376,12 +2384,72 @@ function renderSeriesPreviewChart(targetId, values, options = {}) {
     <line x1="${left}" y1="${yFor(value)}" x2="${left + plotWidth}" y2="${yFor(value)}" class="chart-grid" />
     <text x="${left - 10}" y="${yFor(value) + 4}" text-anchor="end" class="axis-label">${cleanNumber(value).toFixed(1)}</text>
   `).join("");
+  return {
+    data,
+    width,
+    height,
+    left,
+    right,
+    top,
+    bottom,
+    plotWidth,
+    plotHeight,
+    minValue,
+    maxValue,
+    range,
+    centers,
+    path,
+    areaPath,
+    ticks,
+    grid,
+    yFor,
+    hoverBandWidth: Math.max(step, 12),
+  };
+}
+
+function updateSeriesPreviewSvg(target, values, options = {}) {
+  const geometry = buildSeriesPreviewGeometry(values, options);
+  const svg = target?.querySelector("svg");
+  if (!geometry || !svg) return;
+  const line = svg.querySelector("[data-series-line]");
+  const area = svg.querySelector("[data-series-area]");
+  if (!line || !area) return;
+  line.setAttribute("d", geometry.path);
+  area.setAttribute("d", geometry.areaPath);
+}
+
+function renderSeriesPreviewChart(targetId, values, options = {}) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  const geometry = buildSeriesPreviewGeometry(values, options);
+  if (!geometry) {
+    target.innerHTML = `<div class="empty-state">No series data yet.</div>`;
+    return;
+  }
+  const {
+    data,
+    width,
+    height,
+    left,
+    top,
+    plotWidth,
+    plotHeight,
+    minValue,
+    maxValue,
+    centers,
+    areaPath,
+    path,
+    ticks,
+    grid,
+    yFor,
+    hoverBandWidth,
+  } = geometry;
   target.innerHTML = `
     <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(options.title || "Series preview")}">
       ${grid}
       <line data-hover-line class="chart-hover-line" x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}"></line>
-      <path d="${areaPath}" class="chart-area" />
-      <path d="${path}" class="chart-line-primary" />
+      <path data-series-area d="${areaPath}" class="chart-area" />
+      <path data-series-line d="${path}" class="chart-line-primary" />
       <circle data-hover-dot class="chart-hover-dot" cx="${left}" cy="${yFor(data[0].value)}" r="5"></circle>
       ${ticks}
     </svg>
@@ -2391,7 +2459,7 @@ function renderSeriesPreviewChart(targetId, values, options = {}) {
     centers,
     viewWidth: width,
     viewHeight: height,
-    hoverBandWidth: Math.max(step, 12),
+    hoverBandWidth,
     hoverDotY: (point) => yFor(point.value),
     tooltip: (point) => renderChartTooltip(
       options.labelForIndex ? options.labelForIndex(point.index) : `Bucket ${point.index + 1}`,
@@ -2431,6 +2499,7 @@ function attachSeriesEditorPointer(target, options) {
   const svg = target.querySelector("svg");
   if (!svg) return;
   let dragging = false;
+  let activeInput = null;
   let lastPoint = null;
   const lastIndex = Math.max(0, options.length - 1);
   const step = options.plotWidth / Math.max(1, lastIndex);
@@ -2453,21 +2522,8 @@ function attachSeriesEditorPointer(target, options) {
     };
   }
 
-  function renderUpdatedSeries(series) {
-    renderSeriesPreviewChart(options.targetId, series, {
-      path: options.path,
-      editable: true,
-      minValue: options.minValue,
-      maxValue: options.maxValue,
-      labelForIndex: options.labelForIndex,
-      title: options.title,
-      unit: options.unit,
-      valueLabel: options.valueLabel,
-      color: options.color,
-    });
-  }
-
   function updateFromPointer(event) {
+    event.preventDefault();
     const point = pointerToSeriesPoint(event);
     const nextSeries = applyWorkbenchSeriesSegment(
       options.path,
@@ -2476,36 +2532,70 @@ function attachSeriesEditorPointer(target, options) {
       point,
     );
     lastPoint = point;
-    renderUpdatedSeries(nextSeries);
+    updateSeriesPreviewSvg(target, nextSeries, {
+      minValue: options.minValue,
+      maxValue: options.maxValue,
+    });
   }
 
-  svg.addEventListener("pointerdown", (event) => {
+  function startDrag(event, inputType) {
+    if (inputType === "mouse" && activeInput === "pointer") return;
+    if (inputType === "mouse" && event.button !== 0) return;
+    event.preventDefault();
     dragging = true;
-    try {
-      svg.setPointerCapture(event.pointerId);
-    } catch (_error) {
-      // Some synthetic pointer events used in browser automation do not create capturable pointers.
+    activeInput = inputType;
+    if (inputType === "pointer") {
+      try {
+        svg.setPointerCapture(event.pointerId);
+      } catch (_error) {
+        // Some synthetic pointer events used in browser automation do not create capturable pointers.
+      }
+    } else {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
     }
     lastPoint = null;
     updateFromPointer(event);
-  });
-  svg.addEventListener("pointermove", (event) => {
+  }
+
+  function stop(event) {
     if (!dragging) return;
-    updateFromPointer(event);
-  });
-  const stop = (event) => {
-    if (!dragging) return;
-    dragging = false;
-    lastPoint = null;
-    if (event?.pointerId !== undefined && svg.hasPointerCapture?.(event.pointerId)) {
+    if (activeInput === "pointer" && event?.pointerId !== undefined && svg.hasPointerCapture?.(event.pointerId)) {
       try {
         svg.releasePointerCapture(event.pointerId);
       } catch (_error) {
         // Ignore pointer capture races when the chart is re-rendered during editing.
       }
     }
+    if (activeInput === "mouse") {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    }
+    dragging = false;
+    activeInput = null;
+    lastPoint = null;
     renderWorkbench();
-  };
+  }
+
+  function handleMouseMove(event) {
+    if (!dragging || activeInput !== "mouse") return;
+    event.preventDefault();
+    updateFromPointer(event);
+  }
+
+  function handleMouseUp(event) {
+    if (activeInput !== "mouse") return;
+    event.preventDefault();
+    stop(event);
+  }
+
+  svg.addEventListener("pointerdown", (event) => startDrag(event, "pointer"));
+  svg.addEventListener("pointermove", (event) => {
+    if (!dragging || activeInput !== "pointer") return;
+    event.preventDefault();
+    updateFromPointer(event);
+  });
+  svg.addEventListener("mousedown", (event) => startDrag(event, "mouse"));
   svg.addEventListener("pointerup", stop);
   svg.addEventListener("pointercancel", stop);
 }
