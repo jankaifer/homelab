@@ -12,6 +12,7 @@ from energy_scheduler.calendar import load_or_create_calendar, update_calendar_d
 from energy_scheduler.config import RuntimeConfig, load_config
 from energy_scheduler.scenario_catalog import build_scenario_overrides, scenario_catalog, scenario_metadata
 from energy_scheduler.service import SchedulerService
+from energy_scheduler.workbench import WorkbenchStore
 
 
 INDEX_HTML = """<!doctype html>
@@ -2342,6 +2343,7 @@ class UIServer:
         self.config = config
         self.scheduler = SchedulerService(config, persist_runtime_state=False)
         self.state_dir = Path(config.runtime.get("state_dir", "/var/lib/energy-scheduler"))
+        self.workbench = WorkbenchStore(self.state_dir, config, self.get_calendar)
 
     def latest_plan(self) -> dict[str, object]:
         latest = self.state_dir / "latest-plan.json"
@@ -2376,6 +2378,35 @@ class UIServer:
         tesla = self.config.assets.get("tesla", {})
         return update_calendar_day(self.state_dir, tesla.get("recurring_schedule", []), day_date, payload)
 
+    def list_workbench_scenarios(self) -> dict[str, object]:
+        return {"scenarios": self.workbench.list_scenarios()}
+
+    def create_workbench_scenario(self, payload: dict[str, object] | None = None) -> dict[str, object]:
+        name = None if payload is None else payload.get("name")
+        return self.workbench.create_scenario(str(name) if name else None)
+
+    def get_workbench_scenario(self, scenario_id: str) -> dict[str, object]:
+        return self.workbench.get_scenario(scenario_id)
+
+    def save_workbench_scenario(self, scenario_id: str, payload: dict[str, object]) -> dict[str, object]:
+        return self.workbench.save_scenario(scenario_id, payload)
+
+    def delete_workbench_scenario(self, scenario_id: str) -> dict[str, object]:
+        self.workbench.delete_scenario(scenario_id)
+        return {"deleted": True, "scenario_id": scenario_id}
+
+    def clone_workbench_scenario(self, scenario_id: str) -> dict[str, object]:
+        return self.workbench.clone_scenario(scenario_id)
+
+    def run_workbench_scenario(self, scenario_id: str) -> dict[str, object]:
+        return self.workbench.run_scenario(scenario_id)
+
+    def get_workbench_result(self, scenario_id: str) -> dict[str, object]:
+        result = self.workbench.get_result(scenario_id)
+        if result is None:
+            raise FileNotFoundError("scenario result not found")
+        return result
+
 
 class UIRequestHandler(BaseHTTPRequestHandler):
     server_version = "EnergySchedulerUI/0.1"
@@ -2400,13 +2431,19 @@ class UIRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(encoded)
 
+    def _request_json(self) -> dict[str, object]:
+        content_length = int(self.headers.get("Content-Length", "0"))
+        if content_length <= 0:
+            return {}
+        return json.loads(self.rfile.read(content_length) or b"{}")
+
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
         params = parse_qs(parsed.query)
         scenario_id = params.get("scenario", ["real"])[0]
         try:
-            if path in {"/", "/timeline", "/tesla"}:
+            if path in {"/", "/timeline", "/tesla", "/workbench"}:
                 self._text(INDEX_HTML, "text/html; charset=utf-8")
             elif path == "/favicon.ico":
                 self.send_response(HTTPStatus.NO_CONTENT)
@@ -2428,21 +2465,83 @@ class UIRequestHandler(BaseHTTPRequestHandler):
                 self._json({"telemetry_timeline": self.ui.plan_for_scenario(scenario_id).get("telemetry_timeline", [])})
             elif path == "/api/tesla/calendar":
                 self._json(self.ui.get_calendar())
+            elif path == "/api/workbench/scenarios":
+                self._json(self.ui.list_workbench_scenarios())
+            elif path.startswith("/api/workbench/scenarios/"):
+                remainder = path.removeprefix("/api/workbench/scenarios/")
+                if remainder.endswith("/result"):
+                    scenario_id = remainder.removesuffix("/result")
+                    self._json(self.ui.get_workbench_result(scenario_id))
+                else:
+                    self._json(self.ui.get_workbench_scenario(remainder))
             else:
                 self.send_error(HTTPStatus.NOT_FOUND)
+        except FileNotFoundError as exc:
+            self._json({"error": str(exc)}, status=HTTPStatus.NOT_FOUND)
+        except ValueError as exc:
+            try:
+                self._json(json.loads(str(exc)), status=HTTPStatus.BAD_REQUEST)
+            except json.JSONDecodeError:
+                self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
         except Exception as exc:  # noqa: BLE001
             self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
 
     def do_PUT(self) -> None:
         path = urlparse(self.path).path
-        if not path.startswith("/api/tesla/calendar/"):
-            self.send_error(HTTPStatus.NOT_FOUND)
-            return
         try:
-            content_length = int(self.headers.get("Content-Length", "0"))
-            payload = json.loads(self.rfile.read(content_length) or b"{}")
-            day_date = path.rsplit("/", 1)[-1]
-            self._json(self.ui.update_calendar(day_date, payload))
+            payload = self._request_json()
+            if path.startswith("/api/tesla/calendar/"):
+                day_date = path.rsplit("/", 1)[-1]
+                self._json(self.ui.update_calendar(day_date, payload))
+            elif path.startswith("/api/workbench/scenarios/"):
+                scenario_id = path.rsplit("/", 1)[-1]
+                self._json(self.ui.save_workbench_scenario(scenario_id, payload))
+            else:
+                self.send_error(HTTPStatus.NOT_FOUND)
+        except FileNotFoundError as exc:
+            self._json({"error": str(exc)}, status=HTTPStatus.NOT_FOUND)
+        except ValueError as exc:
+            try:
+                self._json(json.loads(str(exc)), status=HTTPStatus.BAD_REQUEST)
+            except json.JSONDecodeError:
+                self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+        except Exception as exc:  # noqa: BLE001
+            self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+
+    def do_POST(self) -> None:
+        path = urlparse(self.path).path
+        try:
+            payload = self._request_json()
+            if path == "/api/workbench/scenarios":
+                self._json(self.ui.create_workbench_scenario(payload))
+            elif path.startswith("/api/workbench/scenarios/") and path.endswith("/clone"):
+                scenario_id = path.removeprefix("/api/workbench/scenarios/").removesuffix("/clone").rstrip("/")
+                self._json(self.ui.clone_workbench_scenario(scenario_id))
+            elif path.startswith("/api/workbench/scenarios/") and path.endswith("/run"):
+                scenario_id = path.removeprefix("/api/workbench/scenarios/").removesuffix("/run").rstrip("/")
+                self._json(self.ui.run_workbench_scenario(scenario_id))
+            else:
+                self.send_error(HTTPStatus.NOT_FOUND)
+        except FileNotFoundError as exc:
+            self._json({"error": str(exc)}, status=HTTPStatus.NOT_FOUND)
+        except ValueError as exc:
+            try:
+                self._json(json.loads(str(exc)), status=HTTPStatus.BAD_REQUEST)
+            except json.JSONDecodeError:
+                self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+        except Exception as exc:  # noqa: BLE001
+            self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+
+    def do_DELETE(self) -> None:
+        path = urlparse(self.path).path
+        try:
+            if path.startswith("/api/workbench/scenarios/"):
+                scenario_id = path.rsplit("/", 1)[-1]
+                self._json(self.ui.delete_workbench_scenario(scenario_id))
+            else:
+                self.send_error(HTTPStatus.NOT_FOUND)
+        except FileNotFoundError as exc:
+            self._json({"error": str(exc)}, status=HTTPStatus.NOT_FOUND)
         except Exception as exc:  # noqa: BLE001
             self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
 

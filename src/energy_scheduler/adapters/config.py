@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime, date, time
 
 from energy_scheduler.adapters.base import BatteryAdapter, DemandAdapter, PriceAdapter, ProducerAdapter
-from energy_scheduler.calendar import build_tesla_scenarios, load_or_create_calendar
+from energy_scheduler.calendar import build_tesla_scenarios, load_or_create_calendar, refresh_calendar_window
 from energy_scheduler.config import RuntimeConfig
 from energy_scheduler.domain import BatteryState, DemandBand, DemandPlanInput, DemandUnit, PriceSeries, ProducerForecast, Scenario
 
@@ -142,11 +142,19 @@ class ConfigDemandAdapter(DemandAdapter):
 
         tesla = assets.get("tesla")
         if tesla is not None:
-            calendar = load_or_create_calendar(
-                state_dir=self._config.runtime_path,
-                recurring_schedule=tesla.get("recurring_schedule", []),
-                persist=self._persist_runtime_state,
-            )
+            recurring_schedule = tesla.get("recurring_schedule", [])
+            if tesla.get("calendar") is not None:
+                calendar = refresh_calendar_window(
+                    tesla["calendar"],
+                    recurring_schedule,
+                    today=start_at.date(),
+                )
+            else:
+                calendar = load_or_create_calendar(
+                    state_dir=self._config.runtime_path,
+                    recurring_schedule=recurring_schedule,
+                    persist=self._persist_runtime_state,
+                )
             scenario_weights, scenario_labels, tesla_calendar_summary = build_tesla_scenarios(
                 calendar=calendar,
                 start_at=start_at,

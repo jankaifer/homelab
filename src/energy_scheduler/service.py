@@ -4,7 +4,7 @@ import json
 import time
 from collections import defaultdict
 from dataclasses import asdict
-from datetime import datetime, time
+from datetime import datetime, time as clock_time
 from pathlib import Path
 from typing import Any
 
@@ -45,14 +45,16 @@ class SchedulerService:
         tesla = self.config.assets.get("tesla")
         if tesla is None:
             return
+        if tesla.get("calendar") is not None:
+            return
         load_or_create_calendar(
             state_dir=self.state_dir,
             recurring_schedule=tesla.get("recurring_schedule", []),
             persist=self.persist_runtime_state,
         )
 
-    def build_input(self) -> PlannerInput:
-        now = datetime.now().astimezone()
+    def build_input(self, start_at: datetime | None = None) -> PlannerInput:
+        now = start_at or datetime.now().astimezone()
         prices = self.price_adapter.get_prices(self.horizon_buckets)
         producer = self.solar_adapter.get_forecast(self.horizon_buckets)
         battery = self.battery_adapter.get_battery(self.horizon_buckets)
@@ -124,10 +126,10 @@ class SchedulerService:
         demand.demand_bands = expanded
         return demand
 
-    def run_once(self, persist: bool | None = None) -> dict[str, object]:
+    def run_once(self, persist: bool | None = None, start_at: datetime | None = None) -> dict[str, object]:
         if persist is None:
             persist = self.persist_runtime_state
-        plan_input = self.build_input()
+        plan_input = self.build_input(start_at=start_at)
         result = solve_plan(plan_input)
         snapshot = self._build_snapshot(plan_input, result)
         if persist:
@@ -143,12 +145,12 @@ class SchedulerService:
             self.run_once()
             time.sleep(interval_s)
 
-    def simulate(self, raw_overrides: dict[str, Any]) -> dict[str, object]:
+    def simulate(self, raw_overrides: dict[str, Any], start_at: datetime | None = None) -> dict[str, object]:
         merged = _deep_merge(json.loads(json.dumps(self.config.raw)), raw_overrides)
         merged.setdefault("runtime", {})
         merged["runtime"]["state_dir"] = str(self.state_dir)
         simulation = SchedulerService(RuntimeConfig(raw=merged, path=self.config.path), persist_runtime_state=False)
-        return simulation.run_once(persist=False)
+        return simulation.run_once(persist=False, start_at=start_at)
 
     def _build_snapshot(self, plan_input: PlannerInput, result: PlannerResult) -> dict[str, object]:
         probability_map = {scenario.scenario_id: scenario.probability for scenario in plan_input.producer.scenarios}
@@ -269,7 +271,7 @@ class SchedulerService:
                 continue
             departure_at = datetime.combine(
                 datetime.fromisoformat(str(entry["date"])).date(),
-                time.fromisoformat(str(departure_time)),
+                clock_time.fromisoformat(str(departure_time)),
                 tzinfo=plan_input.created_at.tzinfo,
             )
             if departure_at >= plan_input.created_at:
