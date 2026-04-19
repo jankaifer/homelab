@@ -131,6 +131,36 @@ class UiApiTests(unittest.TestCase):
             self.assertEqual(real_plan["summary"]["scenario_kind"], "real")
             self.assertFalse(real_plan["summary"]["scenario_read_only"])
 
+    def test_workbench_crud_and_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            config = _build_config(state_dir)
+            ui = UIServer(config)
+
+            created = ui.create_workbench_scenario()
+            self.assertTrue(created["id"].startswith("scenario-"))
+
+            listed = ui.list_workbench_scenarios()["scenarios"]
+            self.assertEqual(len(listed), 1)
+            self.assertEqual(listed[0]["id"], created["id"])
+
+            created["name"] = "Planner stress test"
+            created["simulation_start_at"] = "2026-04-20T08:00:00+02:00"
+            created["config"]["scheduler"]["horizon_buckets"] = 24
+            saved = ui.save_workbench_scenario(created["id"], created)
+            self.assertEqual(saved["name"], "Planner stress test")
+            self.assertEqual(len(saved["config"]["forecasts"]["prices"]["import_czk_per_kwh"]), 24)
+
+            clone = ui.clone_workbench_scenario(created["id"])
+            self.assertNotEqual(clone["id"], created["id"])
+
+            result = ui.run_workbench_scenario(created["id"])
+            self.assertEqual(result["scenario_id"], created["id"])
+            self.assertEqual(result["snapshot"]["summary"]["planner_timestamp"], "2026-04-20T08:00:00+02:00")
+
+            fetched_result = ui.get_workbench_result(created["id"])
+            self.assertEqual(fetched_result["run_at"], result["run_at"])
+
 
 if __name__ == "__main__":
     unittest.main()

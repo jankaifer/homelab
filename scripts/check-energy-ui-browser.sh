@@ -120,9 +120,11 @@ capture_group() {
   local overview_url
   local timeline_url
   local tesla_url
+  local workbench_url
   overview_url="$(route_url "/")"
   timeline_url="$(route_url "/timeline")"
   tesla_url="$(route_url "/tesla")"
+  workbench_url="$(route_url "/workbench")"
 
   open_page "${session}" "${config}" "${overview_url}"
   capture_screenshot "${session}" "${OUT_DIR}/overview-${suffix}.png"
@@ -132,6 +134,9 @@ capture_group() {
 
   open_page "${session}" "${config}" "${tesla_url}"
   capture_screenshot "${session}" "${OUT_DIR}/tesla-${suffix}.png"
+
+  open_page "${session}" "${config}" "${workbench_url}"
+  capture_screenshot "${session}" "${OUT_DIR}/workbench-${suffix}.png"
 
   local ref
   ref="$(calendar_modal_ref "${session}")"
@@ -154,10 +159,12 @@ cat <<EOF
     "${OUT_DIR}/timeline-desktop.png",
     "${OUT_DIR}/tesla-desktop.png",
     "${OUT_DIR}/tesla-modal-desktop.png",
+    "${OUT_DIR}/workbench-desktop.png",
     "${OUT_DIR}/overview-mobile.png",
     "${OUT_DIR}/timeline-mobile.png",
     "${OUT_DIR}/tesla-mobile.png",
-    "${OUT_DIR}/tesla-modal-mobile.png"
+    "${OUT_DIR}/tesla-modal-mobile.png",
+    "${OUT_DIR}/workbench-mobile.png"
   ]
 }
 EOF

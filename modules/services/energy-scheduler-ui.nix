@@ -48,6 +48,10 @@ in
 
     systemd.tmpfiles.rules = [
       "f ${cfg.schedulerStateDir}/tesla-calendar.json 0660 energy-scheduler energy-scheduler - -"
+      "d ${cfg.schedulerStateDir}/workbench 0770 energy-scheduler energy-scheduler - -"
+      "d ${cfg.schedulerStateDir}/workbench/scenarios 0770 energy-scheduler energy-scheduler - -"
+      "d ${cfg.schedulerStateDir}/workbench/results 0770 energy-scheduler energy-scheduler - -"
+      "d ${cfg.schedulerStateDir}/workbench/runtime 0770 energy-scheduler energy-scheduler - -"
     ];
 
     systemd.services.energy-scheduler-ui = {
@@ -67,7 +71,10 @@ in
         ProtectHome = true;
         PrivateTmp = true;
         ReadOnlyPaths = [ cfg.schedulerStateDir ];
-        ReadWritePaths = [ "${cfg.schedulerStateDir}/tesla-calendar.json" ];
+        ReadWritePaths = [
+          "${cfg.schedulerStateDir}/tesla-calendar.json"
+          "${cfg.schedulerStateDir}/workbench"
+        ];
       };
     };
 

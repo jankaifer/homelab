@@ -35,6 +35,7 @@ INDEX_HTML = """<!doctype html>
         <a href="/" data-route="overview">Overview</a>
         <a href="/timeline" data-route="timeline">Timeline</a>
         <a href="/tesla" data-route="tesla">Tesla Plan</a>
+        <a href="/workbench" data-route="workbench">Workbench</a>
       </nav>
       <section class="source-card">
         <p class="eyebrow">Plan Source</p>
@@ -182,6 +183,55 @@ INDEX_HTML = """<!doctype html>
               <div class="calendar-grid" id="calendar-grid"></div>
             </div>
           </article>
+        </section>
+      </section>
+
+      <section class="page" id="page-workbench">
+        <header class="page-header">
+          <div>
+            <p class="eyebrow">Scenario editor</p>
+            <h2>Workbench</h2>
+          </div>
+          <p class="page-copy">Build full planner scenarios here. Saved workbench scenarios are local to the UI service, run only when you ask, and never mutate the live planner state.</p>
+        </header>
+
+        <section class="workbench-shell">
+          <aside class="panel workbench-rail">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Saved scenarios</p>
+                <h3>Scenario Library</h3>
+              </div>
+            </div>
+            <div class="workbench-rail-actions">
+              <button type="button" class="ghost" id="workbench-new">New</button>
+              <button type="button" class="ghost" id="workbench-clone">Clone</button>
+              <button type="button" class="ghost" id="workbench-rename">Rename</button>
+              <button type="button" class="ghost danger" id="workbench-delete">Delete</button>
+            </div>
+            <div class="workbench-scenario-list" id="workbench-scenario-list"></div>
+          </aside>
+
+          <section class="workbench-main">
+            <article class="panel">
+              <div class="workbench-header">
+                <div>
+                  <p class="eyebrow">Current scenario</p>
+                  <h3 id="workbench-title">Loading…</h3>
+                  <p class="workbench-copy" id="workbench-copy">Preparing the scenario editor.</p>
+                </div>
+                <div class="workbench-header-actions">
+                  <span class="pill muted hidden" id="workbench-dirty-pill">Unsaved changes</span>
+                  <button type="button" class="ghost" id="workbench-save">Save</button>
+                  <button type="button" id="workbench-run">Run</button>
+                </div>
+              </div>
+              <div class="workbench-meta" id="workbench-meta"></div>
+              <div class="workbench-tabs" id="workbench-tabs"></div>
+              <div class="workbench-errors hidden" id="workbench-errors"></div>
+              <div class="workbench-panel" id="workbench-panel"></div>
+            </article>
+          </section>
         </section>
       </section>
     </main>
@@ -986,6 +1036,227 @@ button.ghost {
   color: var(--muted);
   font-size: 0.92rem;
 }
+.danger {
+  background: rgba(165, 72, 31, 0.12);
+  color: var(--accent-danger);
+}
+.workbench-shell {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+.workbench-rail {
+  position: sticky;
+  top: 2rem;
+}
+.workbench-rail-actions,
+.workbench-header-actions,
+.workbench-tabs,
+.workbench-meta,
+.workbench-grid,
+.workbench-table-actions,
+.demand-actions,
+.series-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+.workbench-scenario-list,
+.results-grid,
+.series-editor-stack,
+.solar-editor-list,
+.demand-editor-list,
+.schedule-list,
+.validation-list,
+.workbench-panel {
+  display: grid;
+  gap: 0.85rem;
+}
+.workbench-item {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.76);
+  cursor: pointer;
+  text-align: left;
+}
+.workbench-item.active {
+  border-color: rgba(37, 93, 73, 0.28);
+  background: rgba(37, 93, 73, 0.08);
+}
+.workbench-item strong,
+.series-editor h4,
+.results-table h4,
+.demand-card h4,
+.solar-card h4 {
+  font-size: 1rem;
+  margin: 0;
+}
+.workbench-item p,
+.workbench-copy,
+.validation-item,
+.results-note,
+.series-help,
+.section-copy {
+  color: var(--muted);
+  line-height: 1.5;
+}
+.workbench-meta {
+  margin: 1rem 0 0.9rem;
+}
+.workbench-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+.workbench-tabs {
+  margin-bottom: 1rem;
+}
+.workbench-tab {
+  border-radius: 999px;
+  background: rgba(37, 93, 73, 0.08);
+  color: var(--accent);
+}
+.workbench-tab.active {
+  background: var(--accent);
+  color: white;
+}
+.workbench-errors {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(165, 72, 31, 0.18);
+  background: rgba(165, 72, 31, 0.08);
+}
+.workbench-errors h4 {
+  margin: 0 0 0.6rem;
+}
+.validation-list {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.workbench-grid.two-up,
+.results-grid.two-up {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.workbench-grid.three-up {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.workbench-card,
+.series-editor,
+.results-table,
+.demand-card,
+.solar-card,
+.schedule-card {
+  padding: 1rem;
+  border: 1px solid rgba(216, 209, 194, 0.9);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.76);
+}
+.series-editor textarea,
+.series-editor input[type="number"],
+.series-editor select,
+.demand-card input,
+.demand-card select,
+.demand-card textarea,
+.solar-card input,
+.solar-card textarea,
+.schedule-card input,
+.schedule-card select,
+.workbench-card input,
+.workbench-card textarea {
+  width: 100%;
+}
+.series-editor textarea,
+.demand-card textarea,
+.solar-card textarea,
+.workbench-card textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+.field-errors {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+}
+.field-error {
+  color: var(--accent-danger);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.series-chart {
+  min-height: 240px;
+}
+.series-table {
+  overflow-x: auto;
+}
+.series-table-grid,
+.results-grid-table {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 0.45rem;
+}
+.series-table-grid label,
+.results-grid-table label {
+  display: grid;
+  gap: 0.25rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.schedule-row,
+.demand-band-grid,
+.solar-scenario-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.demand-band-grid.wide {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.calendar-panel {
+  display: grid;
+  gap: 0.8rem;
+}
+.calendar-panel .calendar-grid {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.calendar-panel .calendar-day {
+  min-height: 136px;
+}
+.results-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+}
+.results-table th,
+.results-table td {
+  padding: 0.6rem 0.45rem;
+  border-bottom: 1px solid rgba(216, 209, 194, 0.72);
+  text-align: left;
+  font-size: 0.92rem;
+}
+.results-table th {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+}
+.assumption-list {
+  display: grid;
+  gap: 0.55rem;
+}
+.assumption-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 14px;
+  background: rgba(37, 93, 73, 0.05);
+}
 @media (max-width: 1180px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -999,8 +1270,19 @@ button.ghost {
   }
   .hero-strip,
   .content-grid,
-  .tesla-grid {
+  .tesla-grid,
+  .workbench-shell,
+  .workbench-grid.two-up,
+  .workbench-grid.three-up,
+  .results-grid.two-up,
+  .schedule-row,
+  .demand-band-grid,
+  .demand-band-grid.wide,
+  .solar-scenario-grid {
     grid-template-columns: 1fr;
+  }
+  .workbench-rail {
+    position: static;
   }
 }
 @media (max-width: 760px) {
@@ -1035,7 +1317,7 @@ button.ghost {
   .status-card {
     padding: 0.9rem 1rem;
   }
-  .nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .nav { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .nav a {
     text-align: center;
   }
@@ -1080,12 +1362,19 @@ button.ghost {
   .modal-fields {
     grid-template-columns: 1fr;
   }
+  body[data-route="workbench"] .source-card,
+  body[data-route="workbench"] .status-stack {
+    display: none;
+  }
+  body[data-route="workbench"] .sidebar {
+    padding-bottom: 0.2rem;
+  }
 }
 @media (max-width: 520px) {
   .summary-grid {
     grid-template-columns: 1fr;
   }
-  .nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .nav a {
     padding: 0.7rem 0.4rem;
     font-size: 0.95rem;
@@ -1106,6 +1395,11 @@ button.ghost {
   }
   .chart-metrics {
     grid-template-columns: 1fr;
+  }
+  .workbench-header,
+  .assumption-row {
+    flex-direction: column;
+    align-items: start;
   }
   .calendar-modal {
     width: calc(100vw - 1rem);
@@ -1133,17 +1427,39 @@ const appState = {
   livePlan: null,
   calendar: null,
   modalDay: null,
+  modalSource: "live",
   scenarios: [],
   selectedScenarioId: "real",
+  workbench: {
+    scenarios: [],
+    selectedId: null,
+    scenario: null,
+    result: null,
+    activeTab: "general",
+    dirty: false,
+    errors: [],
+  },
 };
 
 const ROUTES = {
   "/": "overview",
   "/timeline": "timeline",
   "/tesla": "tesla",
+  "/workbench": "workbench",
 };
 
 const SCENARIO_STORAGE_KEY = "energySchedulerScenarioId";
+const WORKBENCH_STORAGE_KEY = "energyWorkbenchScenarioId";
+const WORKBENCH_TABS = [
+  ["general", "General"],
+  ["prices", "Prices"],
+  ["solar", "Solar"],
+  ["battery", "Battery"],
+  ["base_load", "Base Load"],
+  ["tesla", "Tesla"],
+  ["demands", "Demands"],
+  ["results", "Results"],
+];
 
 const FLOW_SUPPLY_SERIES = [
   { key: "solar_kwh", label: "Solar", color: "#d08b3c" },
@@ -1225,7 +1541,21 @@ async function fetchJson(path, options = {}, attempt = 0) {
   });
   const text = await response.text();
   if (!response.ok) {
-    throw new Error(text || response.statusText);
+    let payload = null;
+    try {
+      payload = text ? JSON.parse(text) : null;
+    } catch (_error) {
+      payload = null;
+    }
+    const error = new Error(
+      payload?.error
+      || payload?.message
+      || text
+      || response.statusText
+    );
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
   }
   if (!text.trim()) {
     if (attempt < 2) {
@@ -1347,8 +1677,1444 @@ function aggregateTimeline(points, bucketMinutes, targetMinutes = 60, limitBucke
   return groups;
 }
 
+function deepCopy(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function workbenchState() {
+  return appState.workbench;
+}
+
+function selectedWorkbenchScenario() {
+  return workbenchState().scenario;
+}
+
+function workbenchHorizon(scenario = selectedWorkbenchScenario()) {
+  return Number(scenario?.config?.scheduler?.horizon_buckets || 48);
+}
+
+function workbenchBucketMinutes(scenario = selectedWorkbenchScenario()) {
+  return Number(scenario?.config?.scheduler?.bucket_minutes || 15);
+}
+
+function persistWorkbenchSelection() {
+  try {
+    if (workbenchState().selectedId) {
+      window.localStorage.setItem(WORKBENCH_STORAGE_KEY, workbenchState().selectedId);
+    }
+  } catch (_error) {
+    // Ignore local storage failures.
+  }
+}
+
+function dateKey(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date, count) {
+  const value = new Date(date);
+  value.setDate(value.getDate() + count);
+  return value;
+}
+
+function pathSegments(path) {
+  return String(path).split(".").map((segment) => (/^\\d+$/.test(segment) ? Number(segment) : segment));
+}
+
+function getPathValue(root, path) {
+  let current = root;
+  for (const segment of pathSegments(path)) {
+    if (current === null || current === undefined) return undefined;
+    current = current[segment];
+  }
+  return current;
+}
+
+function setPathValue(root, path, value) {
+  const segments = pathSegments(path);
+  let current = root;
+  for (let index = 0; index < segments.length - 1; index += 1) {
+    const segment = segments[index];
+    const nextSegment = segments[index + 1];
+    if (current[segment] === undefined) {
+      current[segment] = typeof nextSegment === "number" ? [] : {};
+    }
+    current = current[segment];
+  }
+  current[segments[segments.length - 1]] = value;
+}
+
+function fillOrTrimSeries(values, length, fillValue = 0) {
+  if (length <= 0) return [];
+  const normalized = Array.isArray(values) ? values.slice(0, length) : [];
+  while (normalized.length < length) {
+    normalized.push(normalized.length ? normalized[normalized.length - 1] : fillValue);
+  }
+  return normalized;
+}
+
+function recurringTeslaMap(schedule) {
+  const map = new Map();
+  (schedule || []).forEach((entry) => {
+    map.set(Number(entry.weekday), {
+      departure_time: entry.departure_time,
+      target_soc_pct: Number(entry.target_soc_pct),
+      confidence: Number(entry.confidence || 0.35),
+    });
+  });
+  return map;
+}
+
+function normalizeWorkbenchCalendarDay(day, recurringMap) {
+  const dateValue = String(day.date);
+  const localDate = new Date(`${dateValue}T12:00:00`);
+  const weekday = (localDate.getDay() + 6) % 7;
+  const fallback = recurringMap.get(weekday);
+  const fallbackDeparture = fallback?.departure_time || null;
+  const fallbackTarget = fallback ? Number(fallback.target_soc_pct) : null;
+  const fallbackConfidence = fallback ? Number(fallback.confidence || 0.35) : 0;
+  let mode = String(day.mode || "default");
+  let departureTime = null;
+  let targetSoc = null;
+  let confidence = 0;
+
+  if (mode === "explicit_departure") {
+    departureTime = day.departure_time || null;
+    targetSoc = day.target_soc_pct === null || day.target_soc_pct === undefined || day.target_soc_pct === "" ? null : Number(day.target_soc_pct);
+    confidence = departureTime && targetSoc !== null ? 0.9 : 0;
+  } else if (mode === "no_departure") {
+    departureTime = fallbackDeparture;
+    targetSoc = fallbackTarget;
+    confidence = departureTime && targetSoc !== null ? 0.1 : 0;
+  } else {
+    mode = "default";
+    departureTime = fallbackDeparture;
+    targetSoc = fallbackTarget;
+    confidence = departureTime && targetSoc !== null ? fallbackConfidence : 0;
+  }
+
+  return {
+    date: dateValue,
+    mode,
+    departure_time: departureTime,
+    target_soc_pct: targetSoc,
+    confidence,
+    updated_at: day.updated_at || null,
+  };
+}
+
+function refreshWorkbenchCalendar(calendar, schedule, simulationStartAt) {
+  const recurringMap = recurringTeslaMap(schedule);
+  const anchor = new Date(simulationStartAt || new Date().toISOString());
+  anchor.setHours(12, 0, 0, 0);
+  const normalizedExisting = new Map();
+  (calendar?.days || []).forEach((day) => {
+    const normalized = normalizeWorkbenchCalendarDay(day, recurringMap);
+    normalizedExisting.set(normalized.date, normalized);
+  });
+  const days = [];
+  for (let offset = 0; offset < 14; offset += 1) {
+    const dayDate = dateKey(addDays(anchor, offset));
+    const existing = normalizedExisting.get(dayDate);
+    const defaultDay = normalizeWorkbenchCalendarDay({ date: dayDate, mode: "default" }, recurringMap);
+    if (!existing) {
+      days.push(defaultDay);
+    } else if (existing.mode === "default") {
+      days.push(defaultDay);
+    } else {
+      days.push(existing);
+    }
+  }
+  return { days };
+}
+
+function ensureWorkbenchScenarioLocalState(scenario) {
+  if (!scenario) return scenario;
+  const next = deepCopy(scenario);
+  next.config = next.config || {};
+  next.config.scheduler = next.config.scheduler || {};
+  next.config.assets = next.config.assets || {};
+  next.config.forecasts = next.config.forecasts || {};
+  next.config.forecasts.prices = next.config.forecasts.prices || {};
+  next.config.forecasts.solar = next.config.forecasts.solar || { scenarios: [] };
+  next.config.assets.battery = next.config.assets.battery || {};
+  next.config.assets.base_load = next.config.assets.base_load || {};
+  next.config.assets.demands = next.config.assets.demands || [];
+  if (next.config.assets.tesla) {
+    next.config.assets.tesla.calendar = refreshWorkbenchCalendar(
+      next.config.assets.tesla.calendar || { days: [] },
+      next.config.assets.tesla.recurring_schedule || [],
+      next.simulation_start_at,
+    );
+  }
+  return next;
+}
+
+function resizeWorkbenchScenarioSeries(scenario, nextHorizon) {
+  const horizon = Math.max(1, Number(nextHorizon || 1));
+  scenario.config.scheduler.horizon_buckets = horizon;
+  scenario.config.forecasts.prices.import_czk_per_kwh = fillOrTrimSeries(scenario.config.forecasts.prices.import_czk_per_kwh, horizon, 0);
+  scenario.config.forecasts.prices.export_czk_per_kwh = fillOrTrimSeries(scenario.config.forecasts.prices.export_czk_per_kwh, horizon, 0);
+  (scenario.config.forecasts.solar.scenarios || []).forEach((solarScenario) => {
+    solarScenario.generation_kwh = fillOrTrimSeries(solarScenario.generation_kwh, horizon, 0);
+  });
+  const emergencyFloor = Number(scenario.config.assets.battery.emergency_floor_kwh || 0);
+  scenario.config.assets.battery.reserve_target_kwh = fillOrTrimSeries(scenario.config.assets.battery.reserve_target_kwh, horizon, emergencyFloor);
+  scenario.config.assets.battery.reserve_value_czk_per_kwh = fillOrTrimSeries(scenario.config.assets.battery.reserve_value_czk_per_kwh, horizon, 0);
+  scenario.config.assets.base_load.fixed_demand_kwh = fillOrTrimSeries(scenario.config.assets.base_load.fixed_demand_kwh, horizon, 0);
+}
+
+function setWorkbenchErrors(errors = []) {
+  workbenchState().errors = Array.isArray(errors) ? errors : [];
+  renderWorkbenchErrors();
+}
+
+function clearWorkbenchErrors() {
+  setWorkbenchErrors([]);
+}
+
+function markWorkbenchDirty() {
+  workbenchState().dirty = true;
+  renderWorkbenchHeader();
+}
+
+function clearWorkbenchDirty() {
+  workbenchState().dirty = false;
+  renderWorkbenchHeader();
+}
+
+async function fetchWorkbenchResult(scenarioId) {
+  try {
+    return await fetchJson(`/api/workbench/scenarios/${scenarioId}/result`);
+  } catch (error) {
+    if (error.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+async function refreshWorkbenchScenarios() {
+  const payload = await fetchJson("/api/workbench/scenarios");
+  workbenchState().scenarios = payload.scenarios || [];
+  if (!workbenchState().selectedId && workbenchState().scenarios.length) {
+    const stored = (() => {
+      try {
+        return window.localStorage.getItem(WORKBENCH_STORAGE_KEY);
+      } catch (_error) {
+        return null;
+      }
+    })();
+    workbenchState().selectedId = (workbenchState().scenarios.find((item) => item.id === stored) || workbenchState().scenarios[0]).id;
+  }
+}
+
+async function loadWorkbenchScenario(scenarioId) {
+  const known = (workbenchState().scenarios || []).find((item) => item.id === scenarioId);
+  const [scenario, result] = await Promise.all([
+    fetchJson(`/api/workbench/scenarios/${scenarioId}`),
+    known?.last_run_at ? fetchWorkbenchResult(scenarioId) : Promise.resolve(null),
+  ]);
+  workbenchState().selectedId = scenario.id;
+  workbenchState().scenario = ensureWorkbenchScenarioLocalState(scenario);
+  workbenchState().result = result;
+  persistWorkbenchSelection();
+  clearWorkbenchErrors();
+  clearWorkbenchDirty();
+  renderWorkbench();
+}
+
+async function ensureWorkbenchScenario() {
+  await refreshWorkbenchScenarios();
+  if (!workbenchState().scenarios.length) {
+    const scenario = await fetchJson("/api/workbench/scenarios", { method: "POST", body: JSON.stringify({}) });
+    workbenchState().scenarios = [scenario];
+    workbenchState().selectedId = scenario.id;
+    persistWorkbenchSelection();
+    await loadWorkbenchScenario(scenario.id);
+    return;
+  }
+  if (!workbenchState().selectedId) {
+    workbenchState().selectedId = workbenchState().scenarios[0].id;
+  }
+  await loadWorkbenchScenario(workbenchState().selectedId);
+}
+
+function parseWorkbenchError(error) {
+  if (error?.payload?.errors) {
+    return error.payload.errors;
+  }
+  return [{ path: "workbench", message: error.message || "Unknown workbench error." }];
+}
+
+async function saveWorkbenchScenario() {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  clearWorkbenchErrors();
+  try {
+    const saved = await fetchJson(`/api/workbench/scenarios/${scenario.id}`, {
+      method: "PUT",
+      body: JSON.stringify(scenario),
+    });
+    workbenchState().scenario = ensureWorkbenchScenarioLocalState(saved);
+    await refreshWorkbenchScenarios();
+    clearWorkbenchDirty();
+    renderWorkbench();
+  } catch (error) {
+    setWorkbenchErrors(parseWorkbenchError(error));
+    throw error;
+  }
+}
+
+async function runWorkbenchScenario() {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  try {
+    if (workbenchState().dirty) {
+      await saveWorkbenchScenario();
+    }
+    const result = await fetchJson(`/api/workbench/scenarios/${scenario.id}/run`, { method: "POST", body: JSON.stringify({}) });
+    workbenchState().result = result;
+    await refreshWorkbenchScenarios();
+    clearWorkbenchErrors();
+    workbenchState().activeTab = "results";
+    renderWorkbench();
+  } catch (error) {
+    setWorkbenchErrors(parseWorkbenchError(error));
+  }
+}
+
+async function createWorkbenchScenario() {
+  const scenario = await fetchJson("/api/workbench/scenarios", { method: "POST", body: JSON.stringify({}) });
+  await refreshWorkbenchScenarios();
+  await loadWorkbenchScenario(scenario.id);
+}
+
+async function cloneWorkbenchScenario() {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  const clone = await fetchJson(`/api/workbench/scenarios/${scenario.id}/clone`, { method: "POST", body: JSON.stringify({}) });
+  await refreshWorkbenchScenarios();
+  await loadWorkbenchScenario(clone.id);
+}
+
+async function deleteWorkbenchScenario() {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  if (!window.confirm(`Delete scenario "${scenario.name}"?`)) return;
+  await fetchJson(`/api/workbench/scenarios/${scenario.id}`, { method: "DELETE" });
+  workbenchState().selectedId = null;
+  workbenchState().scenario = null;
+  workbenchState().result = null;
+  await ensureWorkbenchScenario();
+}
+
+async function renameWorkbenchScenario() {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  const nextName = window.prompt("Scenario name", scenario.name);
+  if (!nextName) return;
+  scenario.name = nextName.trim() || scenario.name;
+  markWorkbenchDirty();
+  renderWorkbench();
+}
+
+function sanitizeDomId(value) {
+  return String(value).replace(/[^a-zA-Z0-9_-]+/g, "-");
+}
+
+function workbenchErrorsForPath(path) {
+  const normalized = String(path);
+  return workbenchState().errors.filter((error) => {
+    const errorPath = String(error.path || "");
+    return errorPath === normalized || errorPath.startsWith(`${normalized}.`) || errorPath.startsWith(`${normalized}[`);
+  });
+}
+
+function renderInlineErrors(path) {
+  const errors = workbenchErrorsForPath(path);
+  if (!errors.length) return "";
+  return `
+    <div class="field-errors">
+      ${errors.map((error) => `<div class="field-error">${escapeHtml(error.message || "Invalid value.")}</div>`).join("")}
+    </div>
+  `;
+}
+
+function boolAttr(value) {
+  return value ? "checked" : "";
+}
+
+function selectedAttr(current, expected) {
+  return String(current) === String(expected) ? "selected" : "";
+}
+
+function toDatetimeLocalValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function fromDatetimeLocalValue(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  const offsetMinutes = -date.getTimezoneOffset();
+  const sign = offsetMinutes >= 0 ? "+" : "-";
+  const absOffset = Math.abs(offsetMinutes);
+  const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, "0");
+  const offsetRemainder = String(absOffset % 60).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${sign}${offsetHours}:${offsetRemainder}`;
+}
+
+function horizonHoursValue(scenario = selectedWorkbenchScenario()) {
+  return Number((workbenchHorizon(scenario) * workbenchBucketMinutes(scenario)) / 60);
+}
+
+function pathLabel(path) {
+  return String(path).split(".").slice(-1)[0].replaceAll("_", " ");
+}
+
+function parseLabelsText(value) {
+  const labels = {};
+  String(value || "")
+    .split(/\\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((line) => {
+      const [key, ...rest] = line.split(":");
+      if (!key || !rest.length) return;
+      labels[key.trim()] = rest.join(":").trim();
+    });
+  return labels;
+}
+
+function labelsText(value) {
+  return Object.entries(value || {})
+    .map(([key, entry]) => `${key}: ${entry}`)
+    .join("\\n");
+}
+
+function coerceWorkbenchValue(element) {
+  const type = element.dataset.valueType || "string";
+  if (type === "bool") return element.checked;
+  if (type === "int") return Number.parseInt(element.value || "0", 10) || 0;
+  if (type === "float") return Number.parseFloat(element.value || "0") || 0;
+  if (type === "datetime-local") return fromDatetimeLocalValue(element.value);
+  if (type === "labels") return parseLabelsText(element.value);
+  return element.value;
+}
+
+function setWorkbenchValue(path, value, options = {}) {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  setPathValue(scenario, path, value);
+  if (options.refreshCalendar) {
+    scenario.config.assets.tesla.calendar = refreshWorkbenchCalendar(
+      scenario.config.assets.tesla.calendar || { days: [] },
+      scenario.config.assets.tesla.recurring_schedule || [],
+      scenario.simulation_start_at,
+    );
+  }
+  markWorkbenchDirty();
+}
+
+function updateWorkbenchField(path, value, options = {}) {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  if (path === "simulation_start_at") {
+    scenario.simulation_start_at = value;
+    scenario.config.assets.tesla.calendar = refreshWorkbenchCalendar(
+      scenario.config.assets.tesla.calendar || { days: [] },
+      scenario.config.assets.tesla.recurring_schedule || [],
+      scenario.simulation_start_at,
+    );
+    markWorkbenchDirty();
+    renderWorkbench();
+    return;
+  }
+  if (path === "config.scheduler.horizon_buckets") {
+    resizeWorkbenchScenarioSeries(scenario, value);
+    markWorkbenchDirty();
+    renderWorkbench();
+    return;
+  }
+  setWorkbenchValue(path, value, options);
+  if (options.rerender) {
+    renderWorkbench();
+  } else {
+    renderWorkbenchHeader();
+    renderWorkbenchErrors();
+  }
+}
+
+function addSolarScenario() {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  const horizon = workbenchHorizon(scenario);
+  scenario.config.forecasts.solar.scenarios.push({
+    id: `solar-${scenario.config.forecasts.solar.scenarios.length + 1}`,
+    probability: 0.2,
+    labels: { kind: "custom" },
+    generation_kwh: fillOrTrimSeries([], horizon, 0),
+  });
+  markWorkbenchDirty();
+  renderWorkbench();
+}
+
+function removeSolarScenario(index) {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  scenario.config.forecasts.solar.scenarios.splice(index, 1);
+  markWorkbenchDirty();
+  renderWorkbench();
+}
+
+function addDemandAsset() {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  scenario.config.assets.demands.push({
+    asset_id: `demand-${scenario.config.assets.demands.length + 1}`,
+    display_name: `Demand ${scenario.config.assets.demands.length + 1}`,
+    bands: [],
+  });
+  markWorkbenchDirty();
+  renderWorkbench();
+}
+
+function removeDemandAsset(index) {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  scenario.config.assets.demands.splice(index, 1);
+  markWorkbenchDirty();
+  renderWorkbench();
+}
+
+function addDemandBand(demandIndex) {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  const demand = scenario.config.assets.demands[demandIndex];
+  demand.bands.push({
+    id: `${demand.asset_id}-band-${demand.bands.length + 1}`,
+    display_name: `${demand.display_name || demand.asset_id} band ${demand.bands.length + 1}`,
+    start_index: 0,
+    deadline_index: Math.max(0, workbenchHorizon(scenario) - 1),
+    earliest_start_index: 0,
+    latest_finish_index: Math.max(0, workbenchHorizon(scenario) - 1),
+    target_quantity_kwh: 1,
+    min_power_kw: 0,
+    max_power_kw: 3,
+    interruptible: true,
+    preemptible: true,
+    marginal_value_czk_per_kwh: 2,
+    unmet_penalty_czk_per_kwh: 10,
+    required_level: false,
+    quantity_unit: "kwh",
+  });
+  markWorkbenchDirty();
+  renderWorkbench();
+}
+
+function removeDemandBand(demandIndex, bandIndex) {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  scenario.config.assets.demands[demandIndex].bands.splice(bandIndex, 1);
+  markWorkbenchDirty();
+  renderWorkbench();
+}
+
+function addRecurringScheduleEntry() {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario?.config?.assets?.tesla) return;
+  scenario.config.assets.tesla.recurring_schedule.push({
+    weekday: 0,
+    departure_time: "07:00",
+    target_soc_pct: 60,
+    confidence: 0.35,
+  });
+  scenario.config.assets.tesla.calendar = refreshWorkbenchCalendar(
+    scenario.config.assets.tesla.calendar || { days: [] },
+    scenario.config.assets.tesla.recurring_schedule || [],
+    scenario.simulation_start_at,
+  );
+  markWorkbenchDirty();
+  renderWorkbench();
+}
+
+function removeRecurringScheduleEntry(index) {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario?.config?.assets?.tesla) return;
+  scenario.config.assets.tesla.recurring_schedule.splice(index, 1);
+  scenario.config.assets.tesla.calendar = refreshWorkbenchCalendar(
+    scenario.config.assets.tesla.calendar || { days: [] },
+    scenario.config.assets.tesla.recurring_schedule || [],
+    scenario.simulation_start_at,
+  );
+  markWorkbenchDirty();
+  renderWorkbench();
+}
+
+function updateWorkbenchSeriesValue(path, index, rawValue) {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  const series = [...(getPathValue(scenario, path) || [])];
+  series[index] = Number.parseFloat(rawValue || "0") || 0;
+  setPathValue(scenario, path, series);
+  markWorkbenchDirty();
+}
+
+function applySeriesFill(path, fillValue) {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  const series = fillOrTrimSeries([], workbenchHorizon(scenario), Number.parseFloat(fillValue || "0") || 0);
+  setPathValue(scenario, path, series);
+  markWorkbenchDirty();
+  renderWorkbench();
+}
+
+function applySeriesPaste(path, rawText) {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  const values = String(rawText || "")
+    .split(/[\\s,;]+/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => Number.parseFloat(item))
+    .filter((item) => Number.isFinite(item));
+  if (!values.length) return;
+  const current = [...(getPathValue(scenario, path) || [])];
+  const next = fillOrTrimSeries(current, workbenchHorizon(scenario), 0);
+  values.slice(0, next.length).forEach((value, index) => {
+    next[index] = value;
+  });
+  setPathValue(scenario, path, next);
+  markWorkbenchDirty();
+  renderWorkbench();
+}
+
+function formatWorkbenchBucketLabel(scenario, bucketIndex) {
+  const start = scenario?.simulation_start_at;
+  if (!start) return `Bucket ${bucketIndex}`;
+  const base = new Date(start);
+  const date = new Date(base.getTime() + bucketIndex * workbenchBucketMinutes(scenario) * 60000);
+  return new Intl.DateTimeFormat([], { weekday: "short", hour: "2-digit", minute: "2-digit" }).format(date);
+}
+
+function renderSeriesPreviewChart(targetId, values, options = {}) {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  const data = (values || []).map((value, index) => ({ index, value: Number(value || 0) }));
+  if (!data.length) {
+    target.innerHTML = `<div class="empty-state">No series data yet.</div>`;
+    return;
+  }
+  const width = 1100;
+  const height = 240;
+  const left = 64;
+  const right = 24;
+  const top = 24;
+  const bottom = 48;
+  const plotWidth = width - left - right;
+  const plotHeight = height - top - bottom;
+  const minValue = Math.min(options.minValue ?? 0, ...data.map((point) => point.value));
+  const maxValue = Math.max(options.maxValue ?? 0, ...data.map((point) => point.value), minValue + 1);
+  const range = Math.max(0.001, maxValue - minValue);
+  const step = plotWidth / Math.max(1, data.length - 1);
+  const xFor = (index) => left + step * index;
+  const yFor = (value) => top + plotHeight - ((value - minValue) / range) * plotHeight;
+  const centers = data.map((point) => xFor(point.index));
+  const path = data.map((point, index) => `${index === 0 ? "M" : "L"} ${xFor(point.index)} ${yFor(point.value)}`).join(" ");
+  const areaPath = [
+    `M ${xFor(0)} ${top + plotHeight}`,
+    ...data.map((point) => `L ${xFor(point.index)} ${yFor(point.value)}`),
+    `L ${xFor(data.length - 1)} ${top + plotHeight}`,
+    "Z",
+  ].join(" ");
+  const tickEvery = data.length > 24 ? 8 : data.length > 12 ? 4 : 2;
+  const ticks = data.map((point) => {
+    if (point.index % tickEvery !== 0 && point.index !== data.length - 1) return "";
+    return `<text x="${xFor(point.index)}" y="${height - 16}" text-anchor="middle" class="axis-label">${escapeHtml(options.labelForIndex ? options.labelForIndex(point.index) : String(point.index + 1))}</text>`;
+  }).join("");
+  const midValue = (maxValue + minValue) / 2;
+  const grid = [maxValue, midValue, minValue].map((value) => `
+    <line x1="${left}" y1="${yFor(value)}" x2="${left + plotWidth}" y2="${yFor(value)}" class="chart-grid" />
+    <text x="${left - 10}" y="${yFor(value) + 4}" text-anchor="end" class="axis-label">${cleanNumber(value).toFixed(1)}</text>
+  `).join("");
+  target.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${escapeHtml(options.title || "Series preview")}">
+      ${grid}
+      <line data-hover-line class="chart-hover-line" x1="${left}" y1="${top}" x2="${left}" y2="${top + plotHeight}"></line>
+      <path d="${areaPath}" class="chart-area" />
+      <path d="${path}" class="chart-line-primary" />
+      <circle data-hover-dot class="chart-hover-dot" cx="${left}" cy="${yFor(data[0].value)}" r="5"></circle>
+      ${ticks}
+    </svg>
+  `;
+  attachChartHover(target, {
+    data,
+    centers,
+    viewWidth: width,
+    viewHeight: height,
+    hoverBandWidth: Math.max(step, 12),
+    hoverDotY: (point) => yFor(point.value),
+    tooltip: (point) => renderChartTooltip(
+      options.labelForIndex ? options.labelForIndex(point.index) : `Bucket ${point.index + 1}`,
+      [
+        {
+          label: options.valueLabel || "Value",
+          value: `${cleanNumber(point.value).toFixed(2)}${options.unit || ""}`,
+          color: options.color || "#255d49",
+        },
+      ],
+      options.footer || (options.editable ? "Tip: drag on the chart to sketch values faster." : "")
+    ),
+  });
+  if (options.editable && options.path) {
+    attachSeriesEditorPointer(target, {
+      path: options.path,
+      length: data.length,
+      minValue,
+      maxValue,
+      top,
+      plotHeight,
+      left,
+      plotWidth,
+      labelForIndex: options.labelForIndex,
+      targetId,
+      unit: options.unit,
+      title: options.title,
+      valueLabel: options.valueLabel,
+      color: options.color,
+    });
+  }
+}
+
+function attachSeriesEditorPointer(target, options) {
+  const svg = target.querySelector("svg");
+  if (!svg) return;
+  let dragging = false;
+
+  function updateFromPointer(event) {
+    const rect = svg.getBoundingClientRect();
+    const localX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+    const localY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
+    const xRatio = rect.width > 0 ? localX / rect.width : 0;
+    const yRatio = rect.height > 0 ? localY / rect.height : 0;
+    const index = Math.max(0, Math.min(options.length - 1, Math.round(xRatio * Math.max(1, options.length - 1))));
+    const value = options.maxValue - (options.maxValue - options.minValue) * ((localY - (options.top / 240) * rect.height) / Math.max(1, (options.plotHeight / 240) * rect.height));
+    const nextValue = Math.max(options.minValue, Math.min(options.maxValue, value));
+    updateWorkbenchSeriesValue(options.path, index, nextValue.toFixed(2));
+    renderSeriesPreviewChart(options.targetId, getPathValue(selectedWorkbenchScenario(), options.path), {
+      path: options.path,
+      editable: true,
+      minValue: options.minValue,
+      maxValue: options.maxValue,
+      labelForIndex: options.labelForIndex,
+      title: options.title,
+      unit: options.unit,
+      valueLabel: options.valueLabel,
+      color: options.color,
+    });
+  }
+
+  svg.addEventListener("pointerdown", (event) => {
+    dragging = true;
+    svg.setPointerCapture(event.pointerId);
+    updateFromPointer(event);
+  });
+  svg.addEventListener("pointermove", (event) => {
+    if (!dragging) return;
+    updateFromPointer(event);
+  });
+  const stop = () => {
+    if (!dragging) return;
+    dragging = false;
+    renderWorkbench();
+  };
+  svg.addEventListener("pointerup", stop);
+  svg.addEventListener("pointercancel", stop);
+}
+
+function renderSeriesEditor(options) {
+  const scenario = selectedWorkbenchScenario();
+  const values = fillOrTrimSeries(options.values || [], workbenchHorizon(scenario), options.fillValue ?? 0);
+  const chartId = `series-${sanitizeDomId(options.path)}`;
+  const fillInputId = `${chartId}-fill`;
+  const pasteInputId = `${chartId}-paste`;
+  const inputs = values.map((value, index) => `
+    <label>
+      <span>${escapeHtml(formatWorkbenchBucketLabel(scenario, index))}</span>
+      <input type="number" step="0.01" value="${escapeHtml(cleanNumber(value).toFixed(2))}" data-workbench-series-path="${escapeHtml(options.path)}" data-index="${index}">
+    </label>
+  `).join("");
+  return `
+    <section class="series-editor">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">${escapeHtml(options.eyebrow || "Series")}</p>
+          <h4>${escapeHtml(options.title)}</h4>
+        </div>
+      </div>
+      <p class="series-help">${escapeHtml(options.help || "Edit the numeric series directly, paste a row of values, or sketch it on the chart.")}</p>
+      ${renderInlineErrors(options.errorPath || options.path)}
+      <div class="chart-frame series-chart" id="${chartId}" data-series-path="${escapeHtml(options.path)}" data-series-unit="${escapeHtml(options.unit || "")}" data-series-title="${escapeHtml(options.title)}"></div>
+      <div class="series-actions">
+        <div class="field-row">
+          <label for="${fillInputId}">Fill all buckets</label>
+          <input id="${fillInputId}" type="number" step="0.01" value="${escapeHtml(cleanNumber(values[values.length - 1] || options.fillValue || 0).toFixed(2))}">
+        </div>
+        <button type="button" class="ghost" data-workbench-action="series-fill" data-path="${escapeHtml(options.path)}" data-fill-input="${fillInputId}">Fill all</button>
+      </div>
+      <div class="field-row">
+        <label for="${pasteInputId}">Paste values</label>
+        <textarea id="${pasteInputId}" placeholder="Paste values separated by spaces, commas, or new lines."></textarea>
+      </div>
+      <div class="series-actions">
+        <button type="button" class="ghost" data-workbench-action="series-paste" data-path="${escapeHtml(options.path)}" data-paste-input="${pasteInputId}">Apply pasted values</button>
+      </div>
+      <div class="series-table">
+        <div class="series-table-grid">${inputs}</div>
+      </div>
+    </section>
+  `;
+}
+
+function renderWorkbenchRail() {
+  const container = document.getElementById("workbench-scenario-list");
+  const scenarios = workbenchState().scenarios || [];
+  if (!scenarios.length) {
+    container.innerHTML = `<div class="empty-state">No saved scenarios yet.</div>`;
+    return;
+  }
+  container.innerHTML = scenarios.map((scenario) => `
+    <button type="button" class="workbench-item ${scenario.id === workbenchState().selectedId ? "active" : ""}" data-workbench-select="${escapeHtml(scenario.id)}">
+      <strong>${escapeHtml(scenario.name)}</strong>
+      <p>${escapeHtml(scenario.description || "No description yet.")}</p>
+      <div class="band-meta">
+        <span class="pill muted">${escapeHtml(formatDateTime(scenario.updated_at, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }))}</span>
+        <span class="pill muted">${scenario.last_run_at ? `Run ${escapeHtml(formatDateTime(scenario.last_run_at, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }))}` : "Never run"}</span>
+      </div>
+    </button>
+  `).join("");
+}
+
+function renderWorkbenchHeader() {
+  const title = document.getElementById("workbench-title");
+  const copy = document.getElementById("workbench-copy");
+  const meta = document.getElementById("workbench-meta");
+  const dirty = document.getElementById("workbench-dirty-pill");
+  const scenario = selectedWorkbenchScenario();
+  const result = workbenchState().result;
+  if (!scenario) {
+    title.textContent = "Loading…";
+    copy.textContent = "Preparing the workbench.";
+    meta.innerHTML = "";
+    dirty.classList.add("hidden");
+    return;
+  }
+  title.textContent = scenario.name;
+  copy.textContent = scenario.description || "Use this scenario to stress the planner with your own prices, solar curves, and demand windows.";
+  const summary = result?.snapshot?.summary || {};
+  const metaItems = [
+    `Start ${formatDateTime(scenario.simulation_start_at, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`,
+    `${workbenchHorizon(scenario)} buckets / ${horizonHoursValue(scenario)} h`,
+    result?.run_at ? `Last run ${formatDateTime(result.run_at, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}` : "Not run yet",
+    summary.objective_value_czk !== undefined ? `Objective ${fmtMoney(summary.objective_value_czk)}` : "Objective pending",
+  ];
+  meta.innerHTML = metaItems.map((item) => `<span class="pill muted">${escapeHtml(item)}</span>`).join("");
+  dirty.classList.toggle("hidden", !workbenchState().dirty);
+}
+
+function renderWorkbenchErrors() {
+  const target = document.getElementById("workbench-errors");
+  const errors = workbenchState().errors || [];
+  if (!errors.length) {
+    target.classList.add("hidden");
+    target.innerHTML = "";
+    return;
+  }
+  target.classList.remove("hidden");
+  target.innerHTML = `
+    <h4>Validation</h4>
+    <ul class="validation-list">
+      ${errors.map((error) => `<li class="validation-item"><strong>${escapeHtml(pathLabel(error.path || "field"))}:</strong> ${escapeHtml(error.message || "Invalid value.")}</li>`).join("")}
+    </ul>
+  `;
+}
+
+function renderWorkbenchTabs() {
+  const target = document.getElementById("workbench-tabs");
+  target.innerHTML = WORKBENCH_TABS.map(([id, label]) => `
+    <button type="button" class="workbench-tab ${workbenchState().activeTab === id ? "active" : ""}" data-workbench-tab="${id}">${escapeHtml(label)}</button>
+  `).join("");
+}
+
+function renderWorkbenchGeneralTab(scenario) {
+  return `
+    <section class="workbench-grid two-up">
+      <article class="workbench-card">
+        <div class="field-grid">
+          <div class="field-row">
+            <label>Scenario name</label>
+            <input type="text" value="${escapeHtml(scenario.name || "")}" data-workbench-path="name">
+            ${renderInlineErrors("name")}
+          </div>
+          <div class="field-row">
+            <label>Description</label>
+            <textarea data-workbench-path="description">${escapeHtml(scenario.description || "")}</textarea>
+          </div>
+          <div class="field-row">
+            <label>Simulation start</label>
+            <input type="datetime-local" value="${escapeHtml(toDatetimeLocalValue(scenario.simulation_start_at))}" data-workbench-path="simulation_start_at" data-value-type="datetime-local">
+            ${renderInlineErrors("simulation_start_at")}
+          </div>
+        </div>
+      </article>
+      <article class="workbench-card">
+        <div class="field-grid">
+          <div class="field-row">
+            <label>Horizon hours</label>
+            <input type="number" min="1" step="1" value="${escapeHtml(String(horizonHoursValue(scenario)))}" data-workbench-horizon="hours">
+          </div>
+          <div class="field-row">
+            <label>Horizon buckets</label>
+            <input type="number" min="1" step="1" value="${escapeHtml(String(workbenchHorizon(scenario)))}" data-workbench-horizon="buckets">
+            ${renderInlineErrors("config.scheduler.horizon_buckets")}
+          </div>
+          <label class="mode-choice">
+            <input type="checkbox" ${boolAttr(Boolean(scenario.config.runtime.grid_available))} data-workbench-path="config.runtime.grid_available" data-value-type="bool">
+            <span>
+              <strong>Grid available</strong>
+              <small>Turn this off to simulate outage fallback with the same demand model.</small>
+            </span>
+          </label>
+        </div>
+      </article>
+    </section>
+  `;
+}
+
+function renderWorkbenchPricesTab(scenario) {
+  return `
+    <div class="series-editor-stack">
+      ${renderSeriesEditor({
+        eyebrow: "Import",
+        title: "Import price",
+        help: "Bucketed import price in CZK/kWh.",
+        path: "config.forecasts.prices.import_czk_per_kwh",
+        values: scenario.config.forecasts.prices.import_czk_per_kwh,
+        unit: " CZK/kWh",
+        fillValue: 4.5,
+        errorPath: "config.forecasts.prices.import_czk_per_kwh",
+      })}
+      ${renderSeriesEditor({
+        eyebrow: "Export",
+        title: "Export price",
+        help: "Bucketed export price in CZK/kWh.",
+        path: "config.forecasts.prices.export_czk_per_kwh",
+        values: scenario.config.forecasts.prices.export_czk_per_kwh,
+        unit: " CZK/kWh",
+        fillValue: 1.0,
+        errorPath: "config.forecasts.prices.export_czk_per_kwh",
+      })}
+    </div>
+  `;
+}
+
+function renderWorkbenchSolarTab(scenario) {
+  const scenarios = scenario.config.forecasts.solar.scenarios || [];
+  return `
+    <section class="workbench-card">
+      <div class="workbench-grid three-up">
+        <div class="field-row">
+          <label>Producer asset id</label>
+          <input type="text" value="${escapeHtml(scenario.config.forecasts.solar.asset_id || "")}" data-workbench-path="config.forecasts.solar.asset_id">
+        </div>
+        <label class="mode-choice">
+          <input type="checkbox" ${boolAttr(Boolean(scenario.config.forecasts.solar.export_allowed))} data-workbench-path="config.forecasts.solar.export_allowed" data-value-type="bool">
+          <span><strong>Export allowed</strong><small>Allow unused solar to leave to the grid.</small></span>
+        </label>
+        <label class="mode-choice">
+          <input type="checkbox" ${boolAttr(Boolean(scenario.config.forecasts.solar.curtailment_allowed))} data-workbench-path="config.forecasts.solar.curtailment_allowed" data-value-type="bool">
+          <span><strong>Curtailment allowed</strong><small>Allow solar to be spilled if no sink is attractive enough.</small></span>
+        </label>
+      </div>
+    </section>
+    <div class="demand-actions">
+      <button type="button" class="ghost" data-workbench-action="solar-add">Add solar scenario</button>
+    </div>
+    <div class="solar-editor-list">
+      ${scenarios.map((solarScenario, index) => `
+        <section class="solar-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Solar scenario ${index + 1}</p>
+              <h4>${escapeHtml(solarScenario.id || `solar-${index + 1}`)}</h4>
+            </div>
+            <button type="button" class="ghost danger" data-workbench-action="solar-remove" data-index="${index}">Remove</button>
+          </div>
+          <div class="solar-scenario-grid">
+            <div class="field-row">
+              <label>Scenario id</label>
+              <input type="text" value="${escapeHtml(solarScenario.id || "")}" data-workbench-path="config.forecasts.solar.scenarios.${index}.id">
+              ${renderInlineErrors(`config.forecasts.solar.scenarios[${index}].id`)}
+            </div>
+            <div class="field-row">
+              <label>Probability</label>
+              <input type="number" step="0.01" value="${escapeHtml(String(solarScenario.probability ?? 0))}" data-workbench-path="config.forecasts.solar.scenarios.${index}.probability" data-value-type="float">
+              ${renderInlineErrors(`config.forecasts.solar.scenarios[${index}].probability`)}
+            </div>
+            <div class="field-row">
+              <label>Labels</label>
+              <textarea data-workbench-path="config.forecasts.solar.scenarios.${index}.labels" data-value-type="labels">${escapeHtml(labelsText(solarScenario.labels || {}))}</textarea>
+            </div>
+          </div>
+          ${renderSeriesEditor({
+            eyebrow: "Generation",
+            title: `Generation profile for ${solarScenario.id || `solar-${index + 1}`}`,
+            help: "Expected generation for this solar case in kWh per bucket.",
+            path: `config.forecasts.solar.scenarios.${index}.generation_kwh`,
+            values: solarScenario.generation_kwh,
+            unit: " kWh",
+            fillValue: 0,
+            errorPath: `config.forecasts.solar.scenarios[${index}].generation_kwh`,
+          })}
+        </section>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderWorkbenchBatteryTab(scenario) {
+  const battery = scenario.config.assets.battery;
+  return `
+    <section class="workbench-grid two-up">
+      <article class="workbench-card">
+        <div class="workbench-grid three-up">
+          <div class="field-row"><label>Asset id</label><input type="text" value="${escapeHtml(battery.asset_id || "")}" data-workbench-path="config.assets.battery.asset_id"></div>
+          <div class="field-row"><label>Capacity (kWh)</label><input type="number" step="0.01" value="${escapeHtml(String(battery.capacity_kwh || 0))}" data-workbench-path="config.assets.battery.capacity_kwh" data-value-type="float">${renderInlineErrors("config.assets.battery.capacity_kwh")}</div>
+          <div class="field-row"><label>Initial SoC (kWh)</label><input type="number" step="0.01" value="${escapeHtml(String(battery.initial_soc_kwh || 0))}" data-workbench-path="config.assets.battery.initial_soc_kwh" data-value-type="float">${renderInlineErrors("config.assets.battery.initial_soc_kwh")}</div>
+          <div class="field-row"><label>Min SoC (kWh)</label><input type="number" step="0.01" value="${escapeHtml(String(battery.min_soc_kwh || 0))}" data-workbench-path="config.assets.battery.min_soc_kwh" data-value-type="float">${renderInlineErrors("config.assets.battery.min_soc_kwh")}</div>
+          <div class="field-row"><label>Max SoC (kWh)</label><input type="number" step="0.01" value="${escapeHtml(String(battery.max_soc_kwh || 0))}" data-workbench-path="config.assets.battery.max_soc_kwh" data-value-type="float"></div>
+          <div class="field-row"><label>Emergency floor (kWh)</label><input type="number" step="0.01" value="${escapeHtml(String(battery.emergency_floor_kwh || 0))}" data-workbench-path="config.assets.battery.emergency_floor_kwh" data-value-type="float">${renderInlineErrors("config.assets.battery.emergency_floor_kwh")}</div>
+          <div class="field-row"><label>Max charge (kW)</label><input type="number" step="0.01" value="${escapeHtml(String(battery.max_charge_kw || 0))}" data-workbench-path="config.assets.battery.max_charge_kw" data-value-type="float"></div>
+          <div class="field-row"><label>Max discharge (kW)</label><input type="number" step="0.01" value="${escapeHtml(String(battery.max_discharge_kw || 0))}" data-workbench-path="config.assets.battery.max_discharge_kw" data-value-type="float"></div>
+          <div class="field-row"><label>Cycle cost (CZK/kWh)</label><input type="number" step="0.01" value="${escapeHtml(String(battery.cycle_cost_czk_per_kwh || 0))}" data-workbench-path="config.assets.battery.cycle_cost_czk_per_kwh" data-value-type="float"></div>
+          <div class="field-row"><label>Charge efficiency</label><input type="number" step="0.01" value="${escapeHtml(String(battery.charge_efficiency || 0))}" data-workbench-path="config.assets.battery.charge_efficiency" data-value-type="float"></div>
+          <div class="field-row"><label>Discharge efficiency</label><input type="number" step="0.01" value="${escapeHtml(String(battery.discharge_efficiency || 0))}" data-workbench-path="config.assets.battery.discharge_efficiency" data-value-type="float"></div>
+        </div>
+        <div class="workbench-grid two-up">
+          <label class="mode-choice">
+            <input type="checkbox" ${boolAttr(Boolean(battery.grid_charge_allowed))} data-workbench-path="config.assets.battery.grid_charge_allowed" data-value-type="bool">
+            <span><strong>Grid charging allowed</strong><small>Let the battery charge from import when the economics say yes.</small></span>
+          </label>
+          <label class="mode-choice">
+            <input type="checkbox" ${boolAttr(Boolean(battery.export_discharge_allowed))} data-workbench-path="config.assets.battery.export_discharge_allowed" data-value-type="bool">
+            <span><strong>Export discharge allowed</strong><small>Let the battery discharge to support export.</small></span>
+          </label>
+        </div>
+      </article>
+      <article class="workbench-card">
+        <p class="section-copy">Reserve target and reserve value are separate. The target expresses the desired stock level. The reserve value tells the solver how expensive it is to spend the next stored kWh.</p>
+      </article>
+    </section>
+    <div class="series-editor-stack">
+      ${renderSeriesEditor({
+        eyebrow: "Reserve",
+        title: "Reserve target",
+        help: "Desired battery level to carry through each bucket.",
+        path: "config.assets.battery.reserve_target_kwh",
+        values: battery.reserve_target_kwh,
+        unit: " kWh",
+        fillValue: battery.emergency_floor_kwh || 0,
+        errorPath: "config.assets.battery.reserve_target_kwh",
+      })}
+      ${renderSeriesEditor({
+        eyebrow: "Reserve",
+        title: "Reserve value",
+        help: "Marginal value of keeping energy in the battery for later buckets.",
+        path: "config.assets.battery.reserve_value_czk_per_kwh",
+        values: battery.reserve_value_czk_per_kwh,
+        unit: " CZK/kWh",
+        fillValue: 0,
+        errorPath: "config.assets.battery.reserve_value_czk_per_kwh",
+      })}
+    </div>
+  `;
+}
+
+function renderWorkbenchBaseLoadTab(scenario) {
+  return `
+    <div class="series-editor-stack">
+      ${renderSeriesEditor({
+        eyebrow: "House",
+        title: "Base load",
+        help: "Non-flexible load in kWh per bucket.",
+        path: "config.assets.base_load.fixed_demand_kwh",
+        values: scenario.config.assets.base_load.fixed_demand_kwh,
+        unit: " kWh",
+        fillValue: 0.4,
+        errorPath: "config.assets.base_load.fixed_demand_kwh",
+      })}
+    </div>
+  `;
+}
+
+function weekdayOptions(selected) {
+  return [0, 1, 2, 3, 4, 5, 6].map((weekday) => {
+    const date = new Date(Date.UTC(2026, 3, 20 + weekday));
+    const label = new Intl.DateTimeFormat([], { weekday: "long" }).format(date);
+    return `<option value="${weekday}" ${selectedAttr(selected, weekday)}>${escapeHtml(label)}</option>`;
+  }).join("");
+}
+
+function renderWorkbenchTeslaTab(scenario) {
+  const tesla = scenario.config.assets.tesla;
+  if (!tesla) {
+    return `<div class="empty-state">Tesla is not configured in this scenario.</div>`;
+  }
+  const days = tesla.calendar?.days || [];
+  return `
+    <section class="workbench-grid two-up">
+      <article class="workbench-card">
+        <div class="workbench-grid three-up">
+          <div class="field-row"><label>Asset id</label><input type="text" value="${escapeHtml(tesla.asset_id || "")}" data-workbench-path="config.assets.tesla.asset_id"></div>
+          <div class="field-row"><label>Battery capacity (kWh)</label><input type="number" step="0.01" value="${escapeHtml(String(tesla.battery_capacity_kwh || 0))}" data-workbench-path="config.assets.tesla.battery_capacity_kwh" data-value-type="float"></div>
+          <div class="field-row"><label>Current SoC (%)</label><input type="number" step="0.1" value="${escapeHtml(String(tesla.current_soc_pct || 0))}" data-workbench-path="config.assets.tesla.current_soc_pct" data-value-type="float"></div>
+          <div class="field-row"><label>Default start SoC (%)</label><input type="number" step="0.1" value="${escapeHtml(String(tesla.default_start_soc_pct || 0))}" data-workbench-path="config.assets.tesla.default_start_soc_pct" data-value-type="float"></div>
+          <div class="field-row"><label>Charge power (kW)</label><input type="number" step="0.1" value="${escapeHtml(String(tesla.charge_power_kw || 0))}" data-workbench-path="config.assets.tesla.charge_power_kw" data-value-type="float"></div>
+          <div class="field-row"><label>Required value (CZK/kWh)</label><input type="number" step="0.01" value="${escapeHtml(String(tesla.required_marginal_value_czk_per_kwh || 0))}" data-workbench-path="config.assets.tesla.required_marginal_value_czk_per_kwh" data-value-type="float"></div>
+          <div class="field-row"><label>Required unmet penalty</label><input type="number" step="0.01" value="${escapeHtml(String(tesla.required_unmet_penalty_czk_per_kwh || 0))}" data-workbench-path="config.assets.tesla.required_unmet_penalty_czk_per_kwh" data-value-type="float"></div>
+          <div class="field-row"><label>Opportunistic target SoC (%)</label><input type="number" step="0.1" value="${escapeHtml(String(tesla.opportunistic_target_soc_pct || 0))}" data-workbench-path="config.assets.tesla.opportunistic_target_soc_pct" data-value-type="float"></div>
+          <div class="field-row"><label>Opportunistic value (CZK/kWh)</label><input type="number" step="0.01" value="${escapeHtml(String(tesla.opportunistic_marginal_value_czk_per_kwh || 0))}" data-workbench-path="config.assets.tesla.opportunistic_marginal_value_czk_per_kwh" data-value-type="float"></div>
+        </div>
+      </article>
+      <article class="workbench-card">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Recurring defaults</p>
+            <h4>Weekday schedule</h4>
+          </div>
+          <button type="button" class="ghost" data-workbench-action="schedule-add">Add day</button>
+        </div>
+        <div class="schedule-list">
+          ${(tesla.recurring_schedule || []).map((entry, index) => `
+            <div class="schedule-card">
+              <div class="schedule-row">
+                <div class="field-row">
+                  <label>Weekday</label>
+                  <select data-workbench-path="config.assets.tesla.recurring_schedule.${index}.weekday" data-value-type="int" data-refresh-calendar="true">
+                    ${weekdayOptions(entry.weekday)}
+                  </select>
+                </div>
+                <div class="field-row">
+                  <label>Departure</label>
+                  <input type="time" value="${escapeHtml(entry.departure_time || "")}" data-workbench-path="config.assets.tesla.recurring_schedule.${index}.departure_time" data-refresh-calendar="true">
+                </div>
+                <div class="field-row">
+                  <label>Target SoC</label>
+                  <input type="number" step="0.1" value="${escapeHtml(String(entry.target_soc_pct || 0))}" data-workbench-path="config.assets.tesla.recurring_schedule.${index}.target_soc_pct" data-value-type="float" data-refresh-calendar="true">
+                </div>
+                <div class="field-row">
+                  <label>Confidence</label>
+                  <input type="number" step="0.01" value="${escapeHtml(String(entry.confidence || 0))}" data-workbench-path="config.assets.tesla.recurring_schedule.${index}.confidence" data-value-type="float" data-refresh-calendar="true">
+                </div>
+              </div>
+              <div class="series-actions">
+                <button type="button" class="ghost danger" data-workbench-action="schedule-remove" data-index="${index}">Remove day</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </article>
+    </section>
+    <section class="workbench-card calendar-panel">
+      <div class="panel-header">
+        <div>
+          <p class="eyebrow">Scenario-local</p>
+          <h4>Tesla calendar</h4>
+        </div>
+      </div>
+      <p class="section-copy">Explicit departure days are taken at 90% confidence. Explicit “no departure” days keep only a 10% fallback of the recurring schedule. Everything else stays on the low-confidence default model.</p>
+      <div class="calendar-weekdays">
+        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+      </div>
+      <div class="calendar-grid" id="workbench-calendar-grid"></div>
+    </section>
+  `;
+}
+
+function renderWorkbenchDemandsTab(scenario) {
+  const demands = scenario.config.assets.demands || [];
+  return `
+    <div class="demand-actions">
+      <button type="button" class="ghost" data-workbench-action="demand-add">Add demand</button>
+    </div>
+    <div class="demand-editor-list">
+      ${demands.map((demand, demandIndex) => `
+        <section class="demand-card">
+          <div class="panel-header">
+            <div>
+              <p class="eyebrow">Demand asset ${demandIndex + 1}</p>
+              <h4>${escapeHtml(demand.display_name || demand.asset_id)}</h4>
+            </div>
+            <div class="demand-actions">
+              <button type="button" class="ghost" data-workbench-action="demand-band-add" data-index="${demandIndex}">Add band</button>
+              <button type="button" class="ghost danger" data-workbench-action="demand-remove" data-index="${demandIndex}">Remove demand</button>
+            </div>
+          </div>
+          <div class="workbench-grid two-up">
+            <div class="field-row"><label>Asset id</label><input type="text" value="${escapeHtml(demand.asset_id || "")}" data-workbench-path="config.assets.demands.${demandIndex}.asset_id">${renderInlineErrors(`config.assets.demands[${demandIndex}].asset_id`)}</div>
+            <div class="field-row"><label>Display name</label><input type="text" value="${escapeHtml(demand.display_name || "")}" data-workbench-path="config.assets.demands.${demandIndex}.display_name"></div>
+          </div>
+          ${(demand.bands || []).map((band, bandIndex) => `
+            <section class="schedule-card">
+              <div class="panel-header">
+                <div>
+                  <p class="eyebrow">Band ${bandIndex + 1}</p>
+                  <h4>${escapeHtml(band.display_name || band.id)}</h4>
+                </div>
+                <button type="button" class="ghost danger" data-workbench-action="demand-band-remove" data-index="${demandIndex}" data-band-index="${bandIndex}">Remove band</button>
+              </div>
+              <div class="demand-band-grid wide">
+                <div class="field-row"><label>Band id</label><input type="text" value="${escapeHtml(band.id || "")}" data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.id">${renderInlineErrors(`config.assets.demands[${demandIndex}].bands[${bandIndex}].id`)}</div>
+                <div class="field-row"><label>Display name</label><input type="text" value="${escapeHtml(band.display_name || "")}" data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.display_name"></div>
+                <div class="field-row"><label>Target (kWh)</label><input type="number" step="0.01" value="${escapeHtml(String(band.target_quantity_kwh || 0))}" data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.target_quantity_kwh" data-value-type="float"></div>
+                <div class="field-row"><label>Min power (kW)</label><input type="number" step="0.01" value="${escapeHtml(String(band.min_power_kw || 0))}" data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.min_power_kw" data-value-type="float"></div>
+                <div class="field-row"><label>Max power (kW)</label><input type="number" step="0.01" value="${escapeHtml(String(band.max_power_kw || 0))}" data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.max_power_kw" data-value-type="float"></div>
+                <div class="field-row"><label>Start bucket</label><input type="number" step="1" value="${escapeHtml(String(band.start_index || 0))}" data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.start_index" data-value-type="int">${renderInlineErrors(`config.assets.demands[${demandIndex}].bands[${bandIndex}].start_index`)}</div>
+                <div class="field-row"><label>Deadline bucket</label><input type="number" step="1" value="${escapeHtml(String(band.deadline_index || 0))}" data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.deadline_index" data-value-type="int">${renderInlineErrors(`config.assets.demands[${demandIndex}].bands[${bandIndex}].deadline_index`)}</div>
+                <div class="field-row"><label>Earliest start</label><input type="number" step="1" value="${escapeHtml(String(band.earliest_start_index || 0))}" data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.earliest_start_index" data-value-type="int">${renderInlineErrors(`config.assets.demands[${demandIndex}].bands[${bandIndex}].earliest_start_index`)}</div>
+                <div class="field-row"><label>Latest finish</label><input type="number" step="1" value="${escapeHtml(String(band.latest_finish_index || 0))}" data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.latest_finish_index" data-value-type="int">${renderInlineErrors(`config.assets.demands[${demandIndex}].bands[${bandIndex}].latest_finish_index`)}</div>
+                <div class="field-row"><label>Marginal value</label><input type="number" step="0.01" value="${escapeHtml(String(band.marginal_value_czk_per_kwh || 0))}" data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.marginal_value_czk_per_kwh" data-value-type="float"></div>
+                <div class="field-row"><label>Unmet penalty</label><input type="number" step="0.01" value="${escapeHtml(String(band.unmet_penalty_czk_per_kwh || 0))}" data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.unmet_penalty_czk_per_kwh" data-value-type="float"></div>
+                <div class="field-row"><label>Quantity unit</label><select data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.quantity_unit"><option value="kwh" ${selectedAttr(band.quantity_unit, "kwh")}>kWh</option><option value="soc_pct" ${selectedAttr(band.quantity_unit, "soc_pct")}>SoC %</option><option value="temperature_c" ${selectedAttr(band.quantity_unit, "temperature_c")}>Temperature °C</option></select></div>
+              </div>
+              <div class="workbench-grid three-up">
+                <label class="mode-choice">
+                  <input type="checkbox" ${boolAttr(Boolean(band.required_level))} data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.required_level" data-value-type="bool">
+                  <span><strong>Required</strong><small>Give this band a strong penalty if it is not satisfied.</small></span>
+                </label>
+                <label class="mode-choice">
+                  <input type="checkbox" ${boolAttr(Boolean(band.interruptible))} data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.interruptible" data-value-type="bool">
+                  <span><strong>Interruptible</strong><small>The load can stop and restart inside its window.</small></span>
+                </label>
+                <label class="mode-choice">
+                  <input type="checkbox" ${boolAttr(Boolean(band.preemptible))} data-workbench-path="config.assets.demands.${demandIndex}.bands.${bandIndex}.preemptible" data-value-type="bool">
+                  <span><strong>Preemptible</strong><small>The planner can temporarily deprioritize it if something more valuable appears.</small></span>
+                </label>
+              </div>
+            </section>
+          `).join("")}
+        </section>
+      `).join("")}
+    </div>
+  `;
+}
+
+function workbenchDeadlineLabel(summary, band) {
+  if (band.metadata?.date && band.metadata?.departure_time) {
+    return `${formatDayLabel(band.metadata.date)} ${band.metadata.departure_time}`;
+  }
+  return formatBucketTime(summary, Number(band.deadline_index || 0), {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function renderWorkbenchResultsTab(result) {
+  if (!result) {
+    return `<div class="empty-state">Run the scenario to inspect the plan and constraint debug.</div>`;
+  }
+  const snapshot = result.snapshot || {};
+  const summary = snapshot.summary || {};
+  const bands = result.band_fulfillment || [];
+  const solarAssumptions = result.scenario_assumptions?.solar || [];
+  const teslaDays = (result.scenario_assumptions?.tesla_calendar || []).filter((day) => day.mode !== "default" || day.departure_time);
+  return `
+    <section class="results-grid two-up">
+      <article class="panel panel-chart">
+        <div class="panel-header">
+          <div><p class="eyebrow">Balance</p><h3>Energy balance</h3></div>
+          <div class="legend" id="workbench-flow-legend"></div>
+        </div>
+        <div class="chart-metrics" id="workbench-flow-metrics"></div>
+        <div class="chart-frame" id="workbench-flow-chart"></div>
+      </article>
+      <article class="panel panel-chart">
+        <div class="panel-header">
+          <div><p class="eyebrow">Storage</p><h3>Battery plan</h3></div>
+          <div class="legend" id="workbench-battery-legend"></div>
+        </div>
+        <div class="chart-metrics" id="workbench-battery-metrics"></div>
+        <div class="chart-frame" id="workbench-battery-chart"></div>
+      </article>
+      <article class="panel panel-chart">
+        <div class="panel-header">
+          <div><p class="eyebrow">Vehicle</p><h3>Tesla charging</h3></div>
+          <div class="legend" id="workbench-tesla-legend"></div>
+        </div>
+        <div class="chart-metrics" id="workbench-tesla-metrics"></div>
+        <div class="chart-frame" id="workbench-tesla-chart"></div>
+      </article>
+      <article class="results-table">
+        <p class="eyebrow">Assumptions</p>
+        <h4>Scenario assumptions</h4>
+        <div class="assumption-list">
+          <div class="assumption-row"><span>Grid</span><strong>${result.scenario_assumptions?.grid_available ? "Available" : "Outage fallback"}</strong></div>
+          ${solarAssumptions.map((item) => `<div class="assumption-row"><span>${escapeHtml(item.id)}</span><strong>${Math.round(Number(item.probability || 0) * 100)}%</strong></div>`).join("")}
+          ${teslaDays.slice(0, 6).map((day) => `<div class="assumption-row"><span>${escapeHtml(formatDayLabel(day.date))}</span><strong>${escapeHtml(dayStatusLabel(day))}</strong></div>`).join("")}
+        </div>
+      </article>
+    </section>
+    <section class="results-table">
+      <p class="eyebrow">Fulfillment</p>
+      <h4>Demand bands</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Band</th>
+            <th>Type</th>
+            <th>Target</th>
+            <th>Served</th>
+            <th>Shortfall</th>
+            <th>Deadline</th>
+            <th>Value</th>
+            <th>Confidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${bands.map((band) => `
+            <tr>
+              <td>${escapeHtml(band.display_name || band.band_id || band.asset_id)}</td>
+              <td>${band.required_level ? "Required" : "Optional"}</td>
+              <td>${fmtShort(band.target_quantity_kwh, " kWh")}</td>
+              <td>${fmtShort(band.served_quantity_kwh, " kWh")}</td>
+              <td>${fmtShort(band.shortfall_kwh, " kWh")}</td>
+              <td>${escapeHtml(workbenchDeadlineLabel(summary, band))}</td>
+              <td>${fmtPrice(band.marginal_value_czk_per_kwh)}</td>
+              <td>${Math.round(Number(band.scenario_probability || band.confidence || 1) * 100)}%</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </section>
+    <section class="results-grid two-up">
+      <article class="results-table">
+        <p class="eyebrow">Planner status</p>
+        <h4>Summary</h4>
+        <div class="assumption-list">
+          <div class="assumption-row"><span>Objective</span><strong>${fmtMoney(summary.objective_value_czk)}</strong></div>
+          <div class="assumption-row"><span>Planner timestamp</span><strong>${escapeHtml(formatDateTime(summary.planner_timestamp, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }))}</strong></div>
+          <div class="assumption-row"><span>Battery now</span><strong>${fmtShort(summary.battery_soc_kwh, " kWh")}</strong></div>
+          <div class="assumption-row"><span>Next Tesla day</span><strong>${summary.next_tesla_day ? escapeHtml(`${formatDayLabel(summary.next_tesla_day.date)} ${summary.next_tesla_day.departure_time || ""}`.trim()) : "Not set"}</strong></div>
+        </div>
+      </article>
+      <article class="results-table">
+        <p class="eyebrow">Constraint debug</p>
+        <h4>Warnings and shortfalls</h4>
+        ${result.validation_warnings?.length ? `<ul class="validation-list">${result.validation_warnings.map((warning) => `<li class="validation-item">${escapeHtml(warning)}</li>`).join("")}</ul>` : `<p class="results-note">No validation warnings.</p>`}
+        ${result.constraint_debug?.shortfalls?.filter((shortfall) => Number(shortfall.unmet_kwh || 0) > 0.01).length
+          ? `<ul class="validation-list">${result.constraint_debug.shortfalls
+            .filter((shortfall) => Number(shortfall.unmet_kwh || 0) > 0.01)
+            .map((shortfall) => `<li class="validation-item">${escapeHtml(shortfall.band_id || shortfall.asset_id || "Band")} in ${escapeHtml(shortfall.scenario_id || "scenario")} short by ${fmtShort(shortfall.unmet_kwh, " kWh")}</li>`)
+            .join("")}</ul>`
+          : `<p class="results-note">No scenario shortfalls in this run.</p>`}
+      </article>
+    </section>
+  `;
+}
+
+function renderWorkbenchPanel() {
+  const target = document.getElementById("workbench-panel");
+  const scenario = selectedWorkbenchScenario();
+  if (!target || !scenario) {
+    target.innerHTML = `<div class="empty-state">No scenario selected.</div>`;
+    return;
+  }
+  let html = "";
+  if (workbenchState().activeTab === "general") html = renderWorkbenchGeneralTab(scenario);
+  if (workbenchState().activeTab === "prices") html = renderWorkbenchPricesTab(scenario);
+  if (workbenchState().activeTab === "solar") html = renderWorkbenchSolarTab(scenario);
+  if (workbenchState().activeTab === "battery") html = renderWorkbenchBatteryTab(scenario);
+  if (workbenchState().activeTab === "base_load") html = renderWorkbenchBaseLoadTab(scenario);
+  if (workbenchState().activeTab === "tesla") html = renderWorkbenchTeslaTab(scenario);
+  if (workbenchState().activeTab === "demands") html = renderWorkbenchDemandsTab(scenario);
+  if (workbenchState().activeTab === "results") html = renderWorkbenchResultsTab(workbenchState().result);
+  target.innerHTML = html;
+  hydrateWorkbenchPanel();
+}
+
+function renderWorkbench() {
+  renderWorkbenchRail();
+  renderWorkbenchHeader();
+  renderWorkbenchTabs();
+  renderWorkbenchErrors();
+  renderWorkbenchPanel();
+}
+
+function hydrateWorkbenchPanel() {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return;
+  document.querySelectorAll(".series-editor").forEach((editor) => {
+    const chart = editor.querySelector(".series-chart");
+    if (!chart) return;
+    const actualPath = chart.dataset.seriesPath || editor.querySelector("[data-workbench-series-path]")?.dataset.workbenchSeriesPath;
+    if (!actualPath) return;
+    renderSeriesPreviewChart(chart.id, getPathValue(scenario, actualPath), {
+      path: actualPath,
+      editable: true,
+      labelForIndex: (index) => formatWorkbenchBucketLabel(scenario, index),
+      title: chart.dataset.seriesTitle || actualPath,
+      unit: chart.dataset.seriesUnit || "",
+    });
+  });
+  if (workbenchState().activeTab === "tesla" && scenario.config.assets.tesla?.calendar?.days) {
+    renderCalendarGrid(
+      "workbench-calendar-grid",
+      scenario.config.assets.tesla.calendar.days,
+      {
+        readOnly: false,
+        onDayClick: (day) => openCalendarModal(day, "workbench"),
+      },
+    );
+  }
+  if (workbenchState().activeTab === "results" && workbenchState().result?.snapshot) {
+    const snapshot = workbenchState().result.snapshot;
+    const timeline = snapshot.telemetry_timeline || [];
+    const summary = snapshot.summary || {};
+    const hourly = aggregateTimeline(timeline, summary.bucket_minutes || 15, 60, 24);
+    renderLegend("workbench-flow-legend", [...FLOW_SUPPLY_SERIES, ...FLOW_USE_SERIES]);
+    renderLegend("workbench-battery-legend", BATTERY_LEGEND);
+    renderLegend("workbench-tesla-legend", TESLA_LEGEND);
+    renderFlowMetrics(hourly, summary, "workbench-flow-metrics");
+    renderBatteryMetrics(hourly, summary, "workbench-battery-metrics");
+    renderTeslaMetrics(hourly, summary, "workbench-tesla-metrics");
+    renderFlowChart(timeline, summary, "workbench-flow-chart");
+    renderBatteryChart(timeline, summary, "workbench-battery-chart");
+    renderTeslaChart(timeline, summary, "workbench-tesla-chart");
+  }
+}
+
 function renderNav() {
   const active = routeName();
+  document.body.dataset.route = active;
   document.querySelectorAll("[data-route]").forEach((link) => {
     link.classList.toggle("active", link.dataset.route === active);
   });
@@ -1466,7 +3232,7 @@ function renderMetricCards(targetId, items) {
   `).join("");
 }
 
-function renderFlowMetrics(data, summary) {
+function renderFlowMetrics(data, summary, targetId = "flow-metrics") {
   const totalSolar = sumKey(data, "solar_kwh");
   const totalImport = sumKey(data, "import_kwh");
   const totalExport = sumKey(data, "export_kwh");
@@ -1474,7 +3240,7 @@ function renderFlowMetrics(data, summary) {
   const totalTesla = sumKey(data, "tesla_kwh");
   const drift = sumKey(data, "net_balance_kwh");
   const peakImport = maxBy(data, (point) => Number(point.import_kwh || 0));
-  renderMetricCards("flow-metrics", [
+  renderMetricCards(targetId, [
     {
       label: "Solar total",
       value: fmtShort(totalSolar, " kWh"),
@@ -1507,13 +3273,13 @@ function renderFlowMetrics(data, summary) {
   ]);
 }
 
-function renderBatteryMetrics(data, summary) {
+function renderBatteryMetrics(data, summary, targetId = "battery-metrics") {
   const start = data[0];
   const end = data[data.length - 1];
   const peak = maxBy(data, (point) => Number(point.battery_soc_kwh || 0));
   const trough = minBy(data, (point) => Number(point.battery_soc_kwh || 0));
   const margin = minBy(data, (point) => Number(point.battery_soc_kwh || 0) - Number(point.emergency_floor_kwh || 0));
-  renderMetricCards("battery-metrics", [
+  renderMetricCards(targetId, [
     {
       label: "Starts at",
       value: fmtShort(start?.battery_soc_kwh, " kWh"),
@@ -1539,12 +3305,12 @@ function renderBatteryMetrics(data, summary) {
   ]);
 }
 
-function renderTeslaMetrics(data, summary) {
+function renderTeslaMetrics(data, summary, targetId = "tesla-metrics") {
   const totalTesla = sumKey(data, "tesla_kwh");
   const firstCharge = data.find((point) => Number(point.tesla_kwh || 0) > 0.01);
   const lastCharge = [...data].reverse().find((point) => Number(point.tesla_kwh || 0) > 0.01);
   const nextTesla = summary.next_tesla_day;
-  renderMetricCards("tesla-metrics", [
+  renderMetricCards(targetId, [
     {
       label: "Planned charge",
       value: fmtShort(totalTesla, " kWh"),
@@ -1570,6 +3336,7 @@ function renderTeslaMetrics(data, summary) {
 }
 
 function renderBandCards(bands) {
+  const summary = appState.livePlan?.summary || {};
   const important = [...bands]
     .filter((band) => Number(band.target_quantity_kwh || 0) > 0.01)
     .sort((a, b) => {
@@ -1590,7 +3357,7 @@ function renderBandCards(bands) {
       <div class="band-topline">
         <div>
           <h3>${escapeHtml(band.display_name)}</h3>
-          <p class="band-copy">${escapeHtml(describeBand(band))}</p>
+          <p class="band-copy">${escapeHtml(describeBand(band, summary))}</p>
         </div>
         <span class="pill ${band.required_level ? "" : "muted"}">${band.required_level ? "Required" : "Optional"}</span>
       </div>
@@ -1602,7 +3369,7 @@ function renderBandCards(bands) {
         <span>${bandStatusCopy(band)}</span>
       </div>
       <div class="band-meta">
-        <span class="pill muted">${deadlineLabel(band)}</span>
+        <span class="pill muted">${deadlineLabel(band, summary)}</span>
         <span class="pill muted">${Math.round(Number(band.scenario_probability || band.confidence || 1) * 100)}% probability</span>
         <span class="pill ${bandStatusTone(band)}">${bandStatusLabel(band)}</span>
       </div>
@@ -1617,11 +3384,11 @@ function renderLegend(targetId, series) {
   `).join("");
 }
 
-function deadlineLabel(band) {
+function deadlineLabel(band, summary = appState.livePlan?.summary || {}) {
   if (band.metadata && band.metadata.date && band.metadata.departure_time) {
     return `${formatDayLabel(band.metadata.date)} ${band.metadata.departure_time}`;
   }
-  return formatBucketTime(appState.livePlan.summary || {}, Number(band.deadline_index || 0), {
+  return formatBucketTime(summary || {}, Number(band.deadline_index || 0), {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -1630,11 +3397,11 @@ function deadlineLabel(band) {
   });
 }
 
-function describeBand(band) {
+function describeBand(band, summary = appState.livePlan?.summary || {}) {
   if (band.metadata && band.metadata.departure_time && band.metadata.target_soc_pct) {
     return `Tesla target of ${band.metadata.target_soc_pct}% by ${band.metadata.date} ${band.metadata.departure_time}.`;
   }
-  return `${band.asset_id} should receive ${fmtShort(band.target_quantity_kwh, " kWh")} by ${deadlineLabel(band)}.`;
+  return `${band.asset_id} should receive ${fmtShort(band.target_quantity_kwh, " kWh")} by ${deadlineLabel(band, summary)}.`;
 }
 
 function progressPct(band) {
@@ -1811,11 +3578,11 @@ function renderEmptyChart(targetId, message) {
   `;
 }
 
-function renderFlowChart(points, summary) {
-  const target = document.getElementById("flow-chart");
+function renderFlowChart(points, summary, targetId = "flow-chart") {
+  const target = document.getElementById(targetId);
   const data = aggregateTimeline(points, summary.bucket_minutes || 15, 60, 24);
   if (!data.length) {
-    renderEmptyChart("flow-chart", "No timeline data yet.");
+    renderEmptyChart(targetId, "No timeline data yet.");
     return;
   }
 
@@ -1925,11 +3692,11 @@ function buildLinePath(points, xFor, yFor) {
   return points.map((point, index) => `${index === 0 ? "M" : "L"} ${xFor(index)} ${yFor(point)}`).join(" ");
 }
 
-function renderBatteryChart(points, summary) {
-  const target = document.getElementById("battery-chart");
+function renderBatteryChart(points, summary, targetId = "battery-chart") {
+  const target = document.getElementById(targetId);
   const data = aggregateTimeline(points, summary.bucket_minutes || 15, 60, 24);
   if (!data.length) {
-    renderEmptyChart("battery-chart", "No battery timeline data yet.");
+    renderEmptyChart(targetId, "No battery timeline data yet.");
     return;
   }
 
@@ -2012,11 +3779,11 @@ function renderBatteryChart(points, summary) {
   });
 }
 
-function renderTeslaChart(points, summary) {
-  const target = document.getElementById("tesla-chart");
+function renderTeslaChart(points, summary, targetId = "tesla-chart") {
+  const target = document.getElementById(targetId);
   const data = aggregateTimeline(points, summary.bucket_minutes || 15, 60, 24);
   if (!data.length || data.every((point) => Number(point.tesla_kwh || 0) < 0.01)) {
-    renderEmptyChart("tesla-chart", "No Tesla charging is planned in the next 24 hours.");
+    renderEmptyChart(targetId, "No Tesla charging is planned in the next 24 hours.");
     return;
   }
 
@@ -2157,14 +3924,17 @@ function syncCalendarModal() {
   }
 }
 
-function openCalendarModal(day) {
-  if (isReadOnlyScenario()) {
+function openCalendarModal(day, source = "live") {
+  if (source === "live" && isReadOnlyScenario()) {
     return;
   }
   appState.modalDay = day;
+  appState.modalSource = source;
   const { dialog, title, copy, time, soc } = modalElements();
   title.textContent = formatDateTime(`${day.date}T12:00:00`, { weekday: "long", day: "numeric", month: "long" });
-  copy.textContent = `Choose what kind of Tesla day this is. Explicit departures are treated as 90% confidence. "No departure" still keeps a 10% fallback if your recurring schedule says the car usually leaves that day.`;
+  copy.textContent = source === "workbench"
+    ? `This edit stays inside the current workbench scenario. Explicit departures are treated as 90% confidence. "No departure" keeps only a 10% fallback if the recurring Tesla schedule says the car normally leaves that day.`
+    : `Choose what kind of Tesla day this is. Explicit departures are treated as 90% confidence. "No departure" still keeps a 10% fallback if your recurring schedule says the car usually leaves that day.`;
   document.querySelectorAll('input[name="mode"]').forEach((input) => {
     input.checked = input.value === day.mode;
   });
@@ -2179,34 +3949,75 @@ function closeCalendarModal() {
   form.reset();
   dialog.close();
   appState.modalDay = null;
+  appState.modalSource = "live";
 }
 
 async function saveModalDay(event) {
   event.preventDefault();
   if (!appState.modalDay) return;
-  if (isReadOnlyScenario()) {
+  const source = appState.modalSource;
+  if (appState.modalSource === "live" && isReadOnlyScenario()) {
     closeCalendarModal();
     return;
   }
   const { time, soc } = modalElements();
+  const mode = selectedModalMode();
+  if (mode === "explicit_departure" && (!time.value || !soc.value)) {
+    window.alert("Explicit departure days need both a departure time and a target SoC.");
+    return;
+  }
   const payload = {
-    mode: selectedModalMode(),
+    mode,
     departure_time: time.value || null,
     target_soc_pct: soc.value || null,
   };
-  await fetchJson(`/api/tesla/calendar/${appState.modalDay.date}`, {
-    method: "PUT",
-    body: JSON.stringify(payload),
-  });
+  if (source === "workbench") {
+    const scenario = selectedWorkbenchScenario();
+    if (!scenario?.config?.assets?.tesla) {
+      closeCalendarModal();
+      return;
+    }
+    const days = [...(scenario.config.assets.tesla.calendar?.days || [])];
+    const index = days.findIndex((day) => day.date === appState.modalDay.date);
+    const nextDay = {
+      date: appState.modalDay.date,
+      mode: payload.mode,
+      departure_time: payload.departure_time,
+      target_soc_pct: payload.target_soc_pct === null ? null : Number(payload.target_soc_pct),
+      confidence: payload.mode === "explicit_departure" ? 0.9 : payload.mode === "no_departure" ? 0.1 : 0.35,
+      updated_at: new Date().toISOString(),
+    };
+    if (index >= 0) {
+      days[index] = nextDay;
+    } else {
+      days.push(nextDay);
+    }
+    scenario.config.assets.tesla.calendar = refreshWorkbenchCalendar(
+      { days },
+      scenario.config.assets.tesla.recurring_schedule || [],
+      scenario.simulation_start_at,
+    );
+    markWorkbenchDirty();
+  } else {
+    await fetchJson(`/api/tesla/calendar/${appState.modalDay.date}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  }
   closeCalendarModal();
-  await boot();
+  if (source === "workbench") {
+    renderWorkbenchPanel();
+    renderWorkbenchHeader();
+  } else {
+    await boot();
+  }
 }
 
-function renderCalendar(days) {
-  const container = document.getElementById("calendar-grid");
+function renderCalendarGrid(targetId, days, options = {}) {
+  const container = document.getElementById(targetId);
+  if (!container) return;
   container.innerHTML = "";
-  if (!days.length) {
-    renderTeslaSummary(days);
+  if (!days?.length) {
     return;
   }
   const firstWeekday = (new Date(`${days[0].date}T12:00:00`).getDay() + 6) % 7;
@@ -2220,7 +4031,7 @@ function renderCalendar(days) {
     const isToday = day.date === new Date().toISOString().slice(0, 10);
     button.className = `calendar-day ${day.mode === "explicit_departure" ? "explicit" : ""} ${day.mode === "no_departure" ? "no-departure" : ""} ${isToday ? "today" : ""}`.trim();
     button.type = "button";
-    button.disabled = isReadOnlyScenario();
+    button.disabled = Boolean(options.readOnly);
     button.innerHTML = `
       <div class="calendar-day-header">
         <div>
@@ -2238,9 +4049,16 @@ function renderCalendar(days) {
       </div>
     `;
     if (!button.disabled) {
-      button.addEventListener("click", () => openCalendarModal(day));
+      button.addEventListener("click", () => options.onDayClick?.(day));
     }
     container.appendChild(button);
+  });
+}
+
+function renderCalendar(days) {
+  renderCalendarGrid("calendar-grid", days, {
+    readOnly: isReadOnlyScenario(),
+    onDayClick: (day) => openCalendarModal(day, "live"),
   });
   renderTeslaSummary(days);
 }
@@ -2277,6 +4095,84 @@ async function refreshPlanAndCalendar() {
   renderCalendar(appState.calendar.days || []);
 }
 
+async function handleWorkbenchScenarioSelection(scenarioId) {
+  if (!scenarioId || scenarioId === workbenchState().selectedId) return;
+  if (workbenchState().dirty) {
+    try {
+      await saveWorkbenchScenario();
+    } catch (_error) {
+      return;
+    }
+  }
+  await loadWorkbenchScenario(scenarioId);
+}
+
+async function handleWorkbenchClick(event) {
+  const scenarioButton = event.target.closest("[data-workbench-select]");
+  if (scenarioButton) {
+    event.preventDefault();
+    await handleWorkbenchScenarioSelection(scenarioButton.dataset.workbenchSelect);
+    return;
+  }
+
+  const tabButton = event.target.closest("[data-workbench-tab]");
+  if (tabButton) {
+    event.preventDefault();
+    workbenchState().activeTab = tabButton.dataset.workbenchTab;
+    renderWorkbench();
+    return;
+  }
+
+  const actionButton = event.target.closest("[data-workbench-action]");
+  if (!actionButton) return;
+  event.preventDefault();
+  const action = actionButton.dataset.workbenchAction;
+  if (action === "series-fill") {
+    const input = document.getElementById(actionButton.dataset.fillInput);
+    applySeriesFill(actionButton.dataset.path, input?.value || "0");
+    return;
+  }
+  if (action === "series-paste") {
+    const input = document.getElementById(actionButton.dataset.pasteInput);
+    applySeriesPaste(actionButton.dataset.path, input?.value || "");
+    return;
+  }
+  if (action === "solar-add") return addSolarScenario();
+  if (action === "solar-remove") return removeSolarScenario(Number(actionButton.dataset.index));
+  if (action === "demand-add") return addDemandAsset();
+  if (action === "demand-remove") return removeDemandAsset(Number(actionButton.dataset.index));
+  if (action === "demand-band-add") return addDemandBand(Number(actionButton.dataset.index));
+  if (action === "demand-band-remove") return removeDemandBand(Number(actionButton.dataset.index), Number(actionButton.dataset.bandIndex));
+  if (action === "schedule-add") return addRecurringScheduleEntry();
+  if (action === "schedule-remove") return removeRecurringScheduleEntry(Number(actionButton.dataset.index));
+}
+
+function handleWorkbenchChange(event) {
+  const seriesInput = event.target.closest("[data-workbench-series-path]");
+  if (seriesInput) {
+    updateWorkbenchSeriesValue(seriesInput.dataset.workbenchSeriesPath, Number(seriesInput.dataset.index), seriesInput.value);
+    renderWorkbenchPanel();
+    return;
+  }
+
+  const horizonInput = event.target.closest("[data-workbench-horizon]");
+  if (horizonInput) {
+    const bucketMinutes = workbenchBucketMinutes(selectedWorkbenchScenario());
+    const nextBuckets = horizonInput.dataset.workbenchHorizon === "hours"
+      ? Math.max(1, Math.round((Number(horizonInput.value || 1) * 60) / bucketMinutes))
+      : Math.max(1, Number.parseInt(horizonInput.value || "1", 10) || 1);
+    updateWorkbenchField("config.scheduler.horizon_buckets", nextBuckets);
+    return;
+  }
+
+  const field = event.target.closest("[data-workbench-path]");
+  if (!field) return;
+  updateWorkbenchField(field.dataset.workbenchPath, coerceWorkbenchValue(field), {
+    refreshCalendar: field.dataset.refreshCalendar === "true",
+    rerender: true,
+  });
+}
+
 async function boot() {
   const scenarioPayload = await fetchJson("/api/scenarios");
   appState.scenarios = scenarioPayload.scenarios || [];
@@ -2294,6 +4190,7 @@ async function boot() {
   renderNav();
   renderScenarioChrome();
   await refreshPlanAndCalendar();
+  await ensureWorkbenchScenario();
 }
 
 function handleNavigation(event) {
@@ -2309,6 +4206,11 @@ function handleNavigation(event) {
 }
 
 document.addEventListener("click", handleNavigation);
+document.addEventListener("click", (event) => {
+  handleWorkbenchClick(event).catch((error) => {
+    setWorkbenchErrors(parseWorkbenchError(error));
+  });
+});
 window.addEventListener("popstate", async () => {
   appState.selectedScenarioId = normalizeScenarioId(readScenarioIdFromLocation() || "real");
   renderScenarioPicker();
@@ -2319,7 +4221,9 @@ window.addEventListener("popstate", async () => {
 document.addEventListener("change", (event) => {
   if (event.target.matches('input[name="mode"]')) {
     syncCalendarModal();
+    return;
   }
+  handleWorkbenchChange(event);
 });
 document.getElementById("scenario-select").addEventListener("change", async (event) => {
   appState.selectedScenarioId = normalizeScenarioId(event.target.value);
@@ -2327,6 +4231,24 @@ document.getElementById("scenario-select").addEventListener("change", async (eve
   renderScenarioPicker();
   renderScenarioChrome();
   await refreshPlanAndCalendar();
+});
+document.getElementById("workbench-new").addEventListener("click", () => {
+  createWorkbenchScenario().catch((error) => setWorkbenchErrors(parseWorkbenchError(error)));
+});
+document.getElementById("workbench-clone").addEventListener("click", () => {
+  cloneWorkbenchScenario().catch((error) => setWorkbenchErrors(parseWorkbenchError(error)));
+});
+document.getElementById("workbench-rename").addEventListener("click", () => {
+  renameWorkbenchScenario();
+});
+document.getElementById("workbench-delete").addEventListener("click", () => {
+  deleteWorkbenchScenario().catch((error) => setWorkbenchErrors(parseWorkbenchError(error)));
+});
+document.getElementById("workbench-save").addEventListener("click", () => {
+  saveWorkbenchScenario().catch((error) => setWorkbenchErrors(parseWorkbenchError(error)));
+});
+document.getElementById("workbench-run").addEventListener("click", () => {
+  runWorkbenchScenario().catch((error) => setWorkbenchErrors(parseWorkbenchError(error)));
 });
 document.getElementById("calendar-modal-form").addEventListener("submit", saveModalDay);
 document.getElementById("calendar-modal-cancel").addEventListener("click", closeCalendarModal);
