@@ -2276,6 +2276,29 @@ function updateWorkbenchSeriesValue(path, index, rawValue) {
   markWorkbenchDirty();
 }
 
+function applyWorkbenchSeriesSegment(path, length, startPoint, endPoint) {
+  const scenario = selectedWorkbenchScenario();
+  if (!scenario) return [];
+  const series = fillOrTrimSeries([...(getPathValue(scenario, path) || [])], length, 0);
+  const startIndex = Math.max(0, Math.min(length - 1, Number(startPoint.index || 0)));
+  const endIndex = Math.max(0, Math.min(length - 1, Number(endPoint.index || 0)));
+  const distance = Math.abs(endIndex - startIndex);
+  if (distance === 0) {
+    series[startIndex] = Number((Number(startPoint.value || 0)).toFixed(2));
+  } else {
+    const direction = endIndex > startIndex ? 1 : -1;
+    for (let offset = 0; offset <= distance; offset += 1) {
+      const index = startIndex + offset * direction;
+      const ratio = distance > 0 ? offset / distance : 0;
+      const value = Number(startPoint.value || 0) + (Number(endPoint.value || 0) - Number(startPoint.value || 0)) * ratio;
+      series[index] = Number(value.toFixed(2));
+    }
+  }
+  setPathValue(scenario, path, series);
+  markWorkbenchDirty();
+  return series;
+}
+
 function applySeriesFill(path, fillValue) {
   const scenario = selectedWorkbenchScenario();
   if (!scenario) return;
@@ -2388,6 +2411,8 @@ function renderSeriesPreviewChart(targetId, values, options = {}) {
       length: data.length,
       minValue,
       maxValue,
+      viewWidth: width,
+      viewHeight: height,
       top,
       plotHeight,
       left,
@@ -2406,18 +2431,30 @@ function attachSeriesEditorPointer(target, options) {
   const svg = target.querySelector("svg");
   if (!svg) return;
   let dragging = false;
+  let lastPoint = null;
+  const lastIndex = Math.max(0, options.length - 1);
+  const step = options.plotWidth / Math.max(1, lastIndex);
+  const valueRange = Math.max(0.001, options.maxValue - options.minValue);
 
-  function updateFromPointer(event) {
+  function pointerToSeriesPoint(event) {
     const rect = svg.getBoundingClientRect();
-    const localX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
-    const localY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
-    const xRatio = rect.width > 0 ? localX / rect.width : 0;
-    const yRatio = rect.height > 0 ? localY / rect.height : 0;
-    const index = Math.max(0, Math.min(options.length - 1, Math.round(xRatio * Math.max(1, options.length - 1))));
-    const value = options.maxValue - (options.maxValue - options.minValue) * ((localY - (options.top / 240) * rect.height) / Math.max(1, (options.plotHeight / 240) * rect.height));
-    const nextValue = Math.max(options.minValue, Math.min(options.maxValue, value));
-    updateWorkbenchSeriesValue(options.path, index, nextValue.toFixed(2));
-    renderSeriesPreviewChart(options.targetId, getPathValue(selectedWorkbenchScenario(), options.path), {
+    const scaleX = rect.width > 0 ? options.viewWidth / rect.width : 1;
+    const scaleY = rect.height > 0 ? options.viewHeight / rect.height : 1;
+    const viewX = (event.clientX - rect.left) * scaleX;
+    const viewY = (event.clientY - rect.top) * scaleY;
+    const plotX = Math.max(options.left, Math.min(options.left + options.plotWidth, viewX));
+    const plotY = Math.max(options.top, Math.min(options.top + options.plotHeight, viewY));
+    const index = Math.max(0, Math.min(lastIndex, Math.round((plotX - options.left) / Math.max(step, 0.001))));
+    const ratio = options.plotHeight > 0 ? (plotY - options.top) / options.plotHeight : 0;
+    const value = options.maxValue - valueRange * ratio;
+    return {
+      index,
+      value: Math.max(options.minValue, Math.min(options.maxValue, value)),
+    };
+  }
+
+  function renderUpdatedSeries(series) {
+    renderSeriesPreviewChart(options.targetId, series, {
       path: options.path,
       editable: true,
       minValue: options.minValue,
@@ -2430,18 +2467,43 @@ function attachSeriesEditorPointer(target, options) {
     });
   }
 
+  function updateFromPointer(event) {
+    const point = pointerToSeriesPoint(event);
+    const nextSeries = applyWorkbenchSeriesSegment(
+      options.path,
+      options.length,
+      lastPoint || point,
+      point,
+    );
+    lastPoint = point;
+    renderUpdatedSeries(nextSeries);
+  }
+
   svg.addEventListener("pointerdown", (event) => {
     dragging = true;
-    svg.setPointerCapture(event.pointerId);
+    try {
+      svg.setPointerCapture(event.pointerId);
+    } catch (_error) {
+      // Some synthetic pointer events used in browser automation do not create capturable pointers.
+    }
+    lastPoint = null;
     updateFromPointer(event);
   });
   svg.addEventListener("pointermove", (event) => {
     if (!dragging) return;
     updateFromPointer(event);
   });
-  const stop = () => {
+  const stop = (event) => {
     if (!dragging) return;
     dragging = false;
+    lastPoint = null;
+    if (event?.pointerId !== undefined && svg.hasPointerCapture?.(event.pointerId)) {
+      try {
+        svg.releasePointerCapture(event.pointerId);
+      } catch (_error) {
+        // Ignore pointer capture races when the chart is re-rendered during editing.
+      }
+    }
     renderWorkbench();
   };
   svg.addEventListener("pointerup", stop);
