@@ -64,6 +64,7 @@ The scheduler models:
 Key assumptions:
 
 - Import and export are both modeled as bucketed market prices
+- The grid is treated as a single net connection in arbitrage-prone buckets, so the planner will not exploit simultaneous import/export loops
 - Explicit uncertainty is carried only for solar and future car-need scenarios in v1
 - Infeasible plans still emit the least-bad result plus shortfalls
 - Outage handling uses the same optimizer with import removed as an available source

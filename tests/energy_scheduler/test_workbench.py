@@ -153,6 +153,23 @@ class WorkbenchStoreTests(unittest.TestCase):
             self.assertEqual(result["snapshot"]["summary"]["planner_timestamp"], f"{first_day}T06:00:00+02:00")
             self.assertEqual(result["snapshot"]["summary"]["next_tesla_day"]["departure_time"], "07:15")
 
+    def test_run_scenario_handles_export_above_import_prices(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state_dir = Path(tmp)
+            config = _build_config(state_dir)
+            store = WorkbenchStore(
+                state_dir,
+                config,
+                lambda: build_default_calendar(config.assets["tesla"]["recurring_schedule"]),
+            )
+            scenario = store.create_scenario()
+            scenario["config"]["forecasts"]["prices"]["export_czk_per_kwh"][28:34] = [4.61, 5.44, 5.74, 5.89, 5.83, 4.99]
+
+            store.save_scenario(scenario["id"], scenario)
+            result = store.run_scenario(scenario["id"])
+
+            self.assertEqual(result["snapshot"]["summary"]["planner_status"], "ok")
+
     def test_invalid_demand_window_returns_field_errors(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             state_dir = Path(tmp)

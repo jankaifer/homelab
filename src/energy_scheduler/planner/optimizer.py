@@ -11,6 +11,10 @@ def _bucket_hours(bucket_minutes: int) -> float:
     return bucket_minutes / 60.0
 
 
+def _needs_grid_direction_lock(import_price: float, export_price: float) -> bool:
+    return import_price < 0 or export_price > import_price
+
+
 def solve_plan(plan: PlannerInput) -> PlannerResult:
     hours = _bucket_hours(plan.bucket_minutes)
     problem = pulp.LpProblem("energy_scheduler", pulp.LpMaximize)
@@ -28,6 +32,9 @@ def solve_plan(plan: PlannerInput) -> PlannerResult:
     battery_discharge: dict[tuple[str, int], pulp.LpVariable] = {}
     battery_soc: dict[tuple[str, int], pulp.LpVariable] = {}
     reserve_shortfall: dict[tuple[str, int], pulp.LpVariable] = {}
+    grid_import_mode: dict[int, pulp.LpVariable] = {}
+
+    effective_min_soc = max(plan.battery.min_soc_kwh, plan.battery.emergency_floor_kwh)
 
     for scenario_id in scenario_ids:
         scenario_token = scenario_tokens[scenario_id]
@@ -55,11 +62,23 @@ def solve_plan(plan: PlannerInput) -> PlannerResult:
             reserve_shortfall[(scenario_id, bucket)] = pulp.LpVariable(
                 f"reserve_shortfall_{scenario_token}_{bucket}",
                 lowBound=0,
+                upBound=max(0.0, plan.battery.reserve_target_kwh[bucket] - effective_min_soc),
             )
+            if bucket not in grid_import_mode and _needs_grid_direction_lock(
+                plan.prices.import_prices[bucket],
+                plan.prices.export_prices[bucket],
+            ):
+                grid_import_mode[bucket] = pulp.LpVariable(
+                    f"grid_import_mode_{bucket}",
+                    lowBound=0,
+                    upBound=1,
+                    cat="Binary",
+                )
 
     band_energy: dict[tuple[str, str, int], pulp.LpVariable] = {}
     band_shortfall: dict[tuple[str, str], pulp.LpVariable] = {}
     band_tokens = {id(band): f"b{index}" for index, band in enumerate(plan.demand.demand_bands)}
+    max_flexible_load: dict[tuple[str, int], float] = defaultdict(float)
 
     for band in plan.demand.demand_bands:
         band_token = band_tokens[id(band)]
@@ -70,9 +89,11 @@ def solve_plan(plan: PlannerInput) -> PlannerResult:
             band_shortfall[(band.band_id, scenario_id)] = pulp.LpVariable(
                 f"band_shortfall_{band_token}_{scenario_token}",
                 lowBound=0,
+                upBound=max(0.0, band.target_quantity_kwh),
             )
             for bucket in bucket_range:
                 if band.earliest_start_index <= bucket <= band.latest_finish_index:
+                    max_flexible_load[(scenario_id, bucket)] += max_band_energy
                     band_energy[(band.band_id, scenario_id, bucket)] = pulp.LpVariable(
                         f"band_energy_{band_token}_{scenario_token}_{bucket}",
                         lowBound=0,
@@ -81,6 +102,13 @@ def solve_plan(plan: PlannerInput) -> PlannerResult:
 
     for scenario_id in scenario_ids:
         for bucket in bucket_range:
+            charge_limit = plan.battery.max_charge_kw * hours
+            discharge_limit = plan.battery.max_discharge_kw * hours
+            import_cap = plan.demand.fixed_demand_kwh[bucket] + max_flexible_load[(scenario_id, bucket)] + charge_limit
+            export_cap = solar_by_scenario[scenario_id][bucket] + (
+                discharge_limit if plan.battery.export_discharge_allowed else 0.0
+            )
+
             if not plan.grid_available:
                 problem += import_energy[(scenario_id, bucket)] == 0
             if not plan.producer.export_allowed:
@@ -91,6 +119,13 @@ def solve_plan(plan: PlannerInput) -> PlannerResult:
                 problem += battery_charge[(scenario_id, bucket)] <= solar_by_scenario[scenario_id][bucket] + battery_discharge[(scenario_id, bucket)]
             if not plan.battery.export_discharge_allowed:
                 problem += export_energy[(scenario_id, bucket)] <= solar_by_scenario[scenario_id][bucket]
+            problem += import_energy[(scenario_id, bucket)] <= import_cap
+            problem += export_energy[(scenario_id, bucket)] <= export_cap
+            problem += curtail_energy[(scenario_id, bucket)] <= solar_by_scenario[scenario_id][bucket]
+            if bucket in grid_import_mode:
+                # Model the grid as a single net connection only in arbitrage-prone buckets.
+                problem += import_energy[(scenario_id, bucket)] <= import_cap * grid_import_mode[bucket]
+                problem += export_energy[(scenario_id, bucket)] <= export_cap * (1 - grid_import_mode[bucket])
 
             fixed_demand = plan.demand.fixed_demand_kwh[bucket]
             flexible = []

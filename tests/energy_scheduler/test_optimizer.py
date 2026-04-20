@@ -145,6 +145,12 @@ class OptimizerTests(unittest.TestCase):
         self.assertLess(served_pool, 1.0)
         self.assertGreater(exported, 1.0)
 
+    def test_export_price_above_import_remains_bounded(self) -> None:
+        result = solve_plan(self._build_input(export_price=6.0, import_price=4.5))
+        self.assertTrue(result.battery_plan)
+        for bucket in result.battery_plan:
+            self.assertFalse(bucket.import_kwh > 1e-6 and bucket.export_kwh > 1e-6)
+
     def test_outage_disables_grid_import(self) -> None:
         result = solve_plan(self._build_input(grid_available=False))
         imported = sum(item.import_kwh for item in result.battery_plan)
