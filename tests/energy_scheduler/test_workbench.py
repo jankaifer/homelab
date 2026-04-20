@@ -91,8 +91,12 @@ class WorkbenchStoreTests(unittest.TestCase):
             store = WorkbenchStore(state_dir, config, lambda: live_calendar)
 
             scenario = store.create_scenario()
+            simulation_start_at = datetime.fromisoformat(scenario["simulation_start_at"])
 
             self.assertEqual(scenario["config"]["scheduler"]["bucket_minutes"], 15)
+            self.assertEqual(scenario["config"]["scheduler"]["horizon_buckets"], 96)
+            self.assertEqual(simulation_start_at.hour, 0)
+            self.assertEqual(simulation_start_at.minute, 0)
             self.assertIn("calendar", scenario["config"]["assets"]["tesla"])
             self.assertEqual(
                 scenario["config"]["assets"]["tesla"]["calendar"]["days"][0]["date"],

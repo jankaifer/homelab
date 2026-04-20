@@ -14,6 +14,7 @@ from energy_scheduler.service import SchedulerService
 
 
 SCENARIO_ID_PATTERN = re.compile(r"^[a-z0-9-]+$")
+DEFAULT_WORKBENCH_HORIZON_BUCKETS = 96
 
 
 def _deep_copy(value: Any) -> Any:
@@ -33,6 +34,11 @@ def _fill_or_trim(values: list[Any], length: int, fill_value: Any) -> list[Any]:
 
 def _scenario_slug() -> str:
     return f"scenario-{uuid4().hex[:8]}"
+
+
+def _default_simulation_start() -> datetime:
+    now = datetime.now().astimezone().replace(second=0, microsecond=0)
+    return now.replace(hour=0, minute=0)
 
 
 def _parse_iso_datetime(value: str) -> datetime:
@@ -55,13 +61,13 @@ def _normalize_runtime(config: dict[str, Any], runtime_dir: Path) -> None:
 def _normalize_scheduler(config: dict[str, Any], errors: list[dict[str, str]]) -> int:
     scheduler = config.setdefault("scheduler", {})
     try:
-        horizon_buckets = int(scheduler.get("horizon_buckets", 48))
+        horizon_buckets = int(scheduler.get("horizon_buckets", DEFAULT_WORKBENCH_HORIZON_BUCKETS))
     except (TypeError, ValueError):
         errors.append(_error("config.scheduler.horizon_buckets", "Horizon buckets must be an integer."))
-        horizon_buckets = 48
+        horizon_buckets = DEFAULT_WORKBENCH_HORIZON_BUCKETS
     if horizon_buckets <= 0:
         errors.append(_error("config.scheduler.horizon_buckets", "Horizon buckets must be greater than zero."))
-        horizon_buckets = 48
+        horizon_buckets = DEFAULT_WORKBENCH_HORIZON_BUCKETS
     scheduler["horizon_buckets"] = horizon_buckets
     scheduler["bucket_minutes"] = 15
     scheduler["loop_interval_seconds"] = int(scheduler.get("loop_interval_seconds", 60))
@@ -313,7 +319,9 @@ class WorkbenchStore:
         self.ensure_dirs()
         scenario_id = _scenario_slug()
         now = datetime.now().astimezone().replace(second=0, microsecond=0)
+        simulation_start_at = _default_simulation_start()
         config = _deep_copy(self.base_config.raw)
+        config.setdefault("scheduler", {})["horizon_buckets"] = DEFAULT_WORKBENCH_HORIZON_BUCKETS
         tesla = config.setdefault("assets", {}).get("tesla")
         if tesla is not None:
             tesla["calendar"] = self.live_calendar_provider()
@@ -323,7 +331,7 @@ class WorkbenchStore:
             "description": "",
             "created_at": now.isoformat(),
             "updated_at": now.isoformat(),
-            "simulation_start_at": now.isoformat(),
+            "simulation_start_at": simulation_start_at.isoformat(),
             "config": config,
         }
         return self.save_scenario(scenario_id, scenario, creating=True)

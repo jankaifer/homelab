@@ -49,6 +49,7 @@ An optional separate service exposes the scheduler behind Caddy:
   - `/var/lib/energy-scheduler/workbench/results/*.json`
   - `/var/lib/energy-scheduler/workbench/runtime/<scenario-id>/`
 - Clones the live planner config when you create a new scenario, but keeps Tesla calendar overrides and all edits scenario-local after that
+- Seeds a fresh workbench with a single default scenario covering the current day from local midnight over 24 hours
 - Supports typed editors for prices, solar scenarios, battery settings, base load, Tesla schedule/calendar, and generic demand bands
 - Runs the same planner core on demand with an explicit simulation start time instead of using wall-clock `now`
 

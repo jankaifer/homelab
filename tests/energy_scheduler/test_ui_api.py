@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 
 from energy_scheduler.config import RuntimeConfig
@@ -138,7 +139,11 @@ class UiApiTests(unittest.TestCase):
             ui = UIServer(config)
 
             created = ui.create_workbench_scenario()
+            simulation_start_at = datetime.fromisoformat(created["simulation_start_at"])
             self.assertTrue(created["id"].startswith("scenario-"))
+            self.assertEqual(created["config"]["scheduler"]["horizon_buckets"], 96)
+            self.assertEqual(simulation_start_at.hour, 0)
+            self.assertEqual(simulation_start_at.minute, 0)
 
             listed = ui.list_workbench_scenarios()["scenarios"]
             self.assertEqual(len(listed), 1)

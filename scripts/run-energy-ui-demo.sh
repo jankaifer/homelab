@@ -9,10 +9,11 @@ STATE_DIR="/tmp/energy-scheduler-demo"
 HOST="127.0.0.1"
 PORT="8787"
 XDG_CACHE_HOME="${XDG_CACHE_HOME:-/tmp/nix-cache-ui}"
+KEEP_STATE=0
 
 usage() {
     cat <<EOF
-Usage: ./scripts/run-energy-ui-demo.sh [--host HOST] [--port PORT] [--config PATH]
+Usage: ./scripts/run-energy-ui-demo.sh [--host HOST] [--port PORT] [--config PATH] [--keep-state]
 
 Starts the Energy Scheduler demo UI locally using the repo dev environment.
 
@@ -24,6 +25,7 @@ Defaults:
 Example:
   ./scripts/run-energy-ui-demo.sh
   ./scripts/run-energy-ui-demo.sh --port 8790
+  ./scripts/run-energy-ui-demo.sh --keep-state
 EOF
 }
 
@@ -41,6 +43,10 @@ while [[ $# -gt 0 ]]; do
             CONFIG_PATH="$2"
             shift 2
             ;;
+        --keep-state)
+            KEEP_STATE=1
+            shift
+            ;;
         --help|-h)
             usage
             exit 0
@@ -53,12 +59,17 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+if [[ "$KEEP_STATE" != "1" ]]; then
+    rm -rf "$STATE_DIR"
+fi
+
 mkdir -p "$STATE_DIR" "$XDG_CACHE_HOME"
 
 echo "Energy Scheduler demo UI"
 echo "  project: $PROJECT_DIR"
 echo "  config:  $CONFIG_PATH"
 echo "  state:   $STATE_DIR"
+echo "  reset:   $([[ \"$KEEP_STATE\" == \"1\" ]] && echo \"no\" || echo \"yes\")"
 echo "  url:     http://$HOST:$PORT/"
 echo ""
 
