@@ -342,6 +342,9 @@ in
         height = 1080;
         fps = 5;
       };
+      motion.mask = [
+        "0,0,1,0,1,0.25,0.5,0.1667,0,0.25"
+      ];
     };
     runtimeSecretFiles = {
       ".cameras.camera2.ffmpeg.inputs[0].path" = config.age.secrets.frigate-camera2-detect-url.path;
