@@ -102,18 +102,32 @@ INDEX_HTML = """<!doctype html>
           <p class="page-copy">These charts show the next part of the planning horizon, up to 24 hours, and they are aggregated to one-hour steps. The first chart balances sources against uses. The second shows how much battery state the optimizer wants to carry forward.</p>
         </header>
 
-        <article class="panel panel-chart">
-          <div class="panel-header">
-            <div>
-              <p class="eyebrow">Balance</p>
-              <h3>Hourly Energy Balance</h3>
+        <section class="results-grid two-up timeline-charts">
+          <article class="panel panel-chart">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Balance</p>
+                <h3>Hourly Energy Balance</h3>
+              </div>
+              <div class="legend" id="flow-legend"></div>
             </div>
-            <div class="legend" id="flow-legend"></div>
-          </div>
-          <div class="chart-metrics" id="flow-metrics"></div>
-          <div class="chart-frame" id="flow-chart"></div>
-          <p class="chart-note">Above zero = energy sources. Below zero = energy uses. If the chart is honest, every hour balances.</p>
-        </article>
+            <div class="chart-metrics" id="flow-metrics"></div>
+            <div class="chart-frame" id="flow-chart"></div>
+            <p class="chart-note">Above zero = energy sources. Below zero = energy uses. If the chart is honest, every hour balances.</p>
+          </article>
+          <article class="panel panel-chart">
+            <div class="panel-header">
+              <div>
+                <p class="eyebrow">Separate traces</p>
+                <h3>Hourly Component Lines</h3>
+              </div>
+              <div class="legend" id="flow-line-legend"></div>
+            </div>
+            <div class="chart-metrics" id="flow-line-metrics"></div>
+            <div class="chart-frame" id="flow-line-chart"></div>
+            <p class="chart-note">Each component is shown separately so you can see when solar, car charging, grid flow, and battery movement peak.</p>
+          </article>
+        </section>
 
         <article class="panel panel-chart">
           <div class="panel-header">
@@ -635,6 +649,9 @@ p { margin: 0; }
     linear-gradient(90deg, rgba(37, 93, 73, 0.02), rgba(255, 255, 255, 0));
   border: 1px solid rgba(217, 211, 198, 0.92);
   overflow: hidden;
+}
+.timeline-charts {
+  margin-bottom: 1.2rem;
 }
 .chart-frame svg {
   display: block;
@@ -1498,6 +1515,16 @@ const BATTERY_LEGEND = [
 
 const TESLA_LEGEND = [
   { label: "Tesla charging", color: "#111111" },
+];
+
+const FLOW_LINE_LEGEND = [
+  { key: "solar_kwh", label: "Solar", color: "#d08b3c" },
+  { key: "tesla_kwh", label: "Tesla charging", color: "#111111" },
+  { key: "fixed_load_kwh", label: "Base load", color: "#33483b" },
+  { key: "battery_charge_kwh", label: "Battery charge", color: "#b96a31" },
+  { key: "battery_discharge_kwh", label: "Battery discharge", color: "#255d49" },
+  { key: "import_kwh", label: "Grid import", color: "#4168ad" },
+  { key: "export_kwh", label: "Grid export", color: "#a5481f" },
 ];
 
 function routeName() {
@@ -3115,6 +3142,14 @@ function renderWorkbenchResultsTab(result) {
       </article>
       <article class="panel panel-chart">
         <div class="panel-header">
+          <div><p class="eyebrow">Separate traces</p><h3>Component lines</h3></div>
+          <div class="legend" id="workbench-flow-line-legend"></div>
+        </div>
+        <div class="chart-metrics" id="workbench-flow-line-metrics"></div>
+        <div class="chart-frame" id="workbench-flow-line-chart"></div>
+      </article>
+      <article class="panel panel-chart">
+        <div class="panel-header">
           <div><p class="eyebrow">Storage</p><h3>Battery plan</h3></div>
           <div class="legend" id="workbench-battery-legend"></div>
         </div>
@@ -3257,12 +3292,15 @@ function hydrateWorkbenchPanel() {
     const summary = snapshot.summary || {};
     const hourly = aggregateTimeline(timeline, summary.bucket_minutes || 15, 60, 24);
     renderLegend("workbench-flow-legend", [...FLOW_SUPPLY_SERIES, ...FLOW_USE_SERIES]);
+    renderLegend("workbench-flow-line-legend", FLOW_LINE_LEGEND);
     renderLegend("workbench-battery-legend", BATTERY_LEGEND);
     renderLegend("workbench-tesla-legend", TESLA_LEGEND);
     renderFlowMetrics(hourly, summary, "workbench-flow-metrics");
+    renderFlowLineMetrics(hourly, summary, "workbench-flow-line-metrics");
     renderBatteryMetrics(hourly, summary, "workbench-battery-metrics");
     renderTeslaMetrics(hourly, summary, "workbench-tesla-metrics");
     renderFlowChart(timeline, summary, "workbench-flow-chart");
+    renderFlowLineChart(timeline, summary, "workbench-flow-line-chart");
     renderBatteryChart(timeline, summary, "workbench-battery-chart");
     renderTeslaChart(timeline, summary, "workbench-tesla-chart");
   }
@@ -3457,6 +3495,36 @@ function renderBatteryMetrics(data, summary, targetId = "battery-metrics") {
       value: fmtShort((margin?.battery_soc_kwh || 0) - (margin?.emergency_floor_kwh || 0), " kWh"),
       foot: trough ? `Lowest SoC is ${fmtShort(trough.battery_soc_kwh, " kWh")} around ${formatBucketTime(summary, trough.bucket_index)}.` : "No battery activity.",
       tone: (margin && ((margin.battery_soc_kwh || 0) - (margin.emergency_floor_kwh || 0) < 0.5)) ? "warning" : "",
+    },
+  ]);
+}
+
+function renderFlowLineMetrics(data, summary, targetId = "flow-line-metrics") {
+  const peakSolar = maxBy(data, (point) => Number(point.solar_kwh || 0));
+  const peakTesla = maxBy(data, (point) => Number(point.tesla_kwh || 0));
+  const peakBatteryCharge = maxBy(data, (point) => Number(point.battery_charge_kwh || 0));
+  const peakBatteryDischarge = maxBy(data, (point) => Number(point.battery_discharge_kwh || 0));
+  renderMetricCards(targetId, [
+    {
+      label: "Solar peak",
+      value: fmtShort(peakSolar?.solar_kwh, " kWh"),
+      foot: peakSolar ? `Around ${formatBucketTime(summary, peakSolar.bucket_index)}.` : "No solar expected.",
+      tone: "ok",
+    },
+    {
+      label: "Tesla peak",
+      value: fmtShort(peakTesla?.tesla_kwh, " kWh"),
+      foot: peakTesla && peakTesla.tesla_kwh > 0.01 ? `Around ${formatBucketTime(summary, peakTesla.bucket_index)}.` : "No Tesla charging in this window.",
+    },
+    {
+      label: "Battery in",
+      value: fmtShort(peakBatteryCharge?.battery_charge_kwh, " kWh"),
+      foot: peakBatteryCharge && peakBatteryCharge.battery_charge_kwh > 0.01 ? `Charge peak near ${formatBucketTime(summary, peakBatteryCharge.bucket_index)}.` : "Battery does not absorb much here.",
+    },
+    {
+      label: "Battery out",
+      value: fmtShort(peakBatteryDischarge?.battery_discharge_kwh, " kWh"),
+      foot: peakBatteryDischarge && peakBatteryDischarge.battery_discharge_kwh > 0.01 ? `Discharge peak near ${formatBucketTime(summary, peakBatteryDischarge.bucket_index)}.` : "Battery discharge stays low here.",
     },
   ]);
 }
@@ -3856,6 +3924,20 @@ function renderFlowChart(points, summary, targetId = "flow-chart") {
   });
 }
 
+function renderFlowLineChart(points, summary, targetId = "flow-line-chart") {
+  const target = document.getElementById(targetId);
+  const data = buildChartTimeline(points, summary);
+  if (!data.length) {
+    renderEmptyChart(targetId, "No timeline data yet.");
+    return;
+  }
+  if (window.EnergyCharts?.renderFlowLineChart) {
+    window.EnergyCharts.renderFlowLineChart(target, data, summary);
+    return;
+  }
+  renderFlowChart(points, summary, targetId);
+}
+
 function buildLinePath(points, xFor, yFor) {
   return points.map((point, index) => `${index === 0 ? "M" : "L"} ${xFor(index)} ${yFor(point)}`).join(" ");
 }
@@ -4250,12 +4332,15 @@ function renderLivePlan() {
   renderSummary(summary);
   renderBandCards(livePlan.bands || []);
   renderLegend("flow-legend", [...FLOW_SUPPLY_SERIES, ...FLOW_USE_SERIES]);
+  renderLegend("flow-line-legend", FLOW_LINE_LEGEND);
   renderLegend("battery-legend", BATTERY_LEGEND);
   renderLegend("tesla-legend", TESLA_LEGEND);
   renderFlowMetrics(hourly, summary);
+  renderFlowLineMetrics(hourly, summary);
   renderBatteryMetrics(hourly, summary);
   renderTeslaMetrics(hourly, summary);
   renderFlowChart(timeline, summary);
+  renderFlowLineChart(timeline, summary);
   renderBatteryChart(timeline, summary);
   renderTeslaChart(timeline, summary);
 }

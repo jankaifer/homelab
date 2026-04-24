@@ -245,6 +245,26 @@ function TeslaTooltip({ active, payload }) {
   });
 }
 
+function FlowLineTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const point = payload[0].payload;
+  return React.createElement(TooltipShell, {
+    label: point.hour_label,
+    rows: [
+      { label: "Solar", value: fmtDetailed(point.solar_kwh), color: COLORS.solar },
+      { label: "Tesla charging", value: fmtDetailed(point.tesla_kwh), color: COLORS.tesla },
+      { label: "Base load", value: fmtDetailed(point.fixed_load_kwh), color: COLORS.baseLoad },
+      { label: "Battery charge", value: fmtDetailed(point.battery_charge_kwh), color: COLORS.charge },
+      { label: "Battery discharge", value: fmtDetailed(point.battery_discharge_kwh), color: COLORS.discharge },
+      { label: "Grid import", value: fmtDetailed(point.import_kwh), color: COLORS.import },
+      { label: "Grid export", value: fmtDetailed(point.export_kwh), color: COLORS.export },
+      { label: "Import price", value: fmtPrice(point.import_price_czk_per_kwh), color: "#d8d1c2" },
+      { label: "Export price", value: fmtPrice(point.export_price_czk_per_kwh), color: "#d8d1c2" },
+    ],
+    footer: `Read this as timing rather than balance: it shows when each component peaks and fades over the hour-by-hour plan.`,
+  });
+}
+
 function sharedChartProps(height) {
   return {
     width: "100%",
@@ -294,6 +314,50 @@ function FlowChart({ data }) {
       React.createElement(Bar, { dataKey: "battery_charge_neg", stackId: "use", fill: COLORS.charge, radius: [0, 0, 8, 8], maxBarSize: 26 }),
       React.createElement(Bar, { dataKey: "export_neg", stackId: "use", fill: COLORS.export, radius: [0, 0, 8, 8], maxBarSize: 26 }),
       React.createElement(Bar, { dataKey: "curtail_neg", stackId: "use", fill: COLORS.curtail, radius: [0, 0, 8, 8], maxBarSize: 26 }),
+    ),
+  );
+}
+
+function FlowLineChart({ data }) {
+  if (!data?.length) {
+    return React.createElement(EmptyState, { message: "No timeline data yet.", height: 400 });
+  }
+  const maxY = Math.max(
+    0.5,
+    ...data.map((point) => Math.max(
+      Number(point.solar_kwh || 0),
+      Number(point.tesla_kwh || 0),
+      Number(point.fixed_load_kwh || 0),
+      Number(point.battery_charge_kwh || 0),
+      Number(point.battery_discharge_kwh || 0),
+      Number(point.import_kwh || 0),
+      Number(point.export_kwh || 0),
+    )),
+  );
+  return React.createElement(
+    ResponsiveContainer,
+    sharedChartProps(400),
+    React.createElement(
+      ComposedChart,
+      { data, margin: { top: 24, right: 24, bottom: 18, left: 12 } },
+      React.createElement(CartesianGrid, { stroke: COLORS.grid, vertical: false }),
+      React.createElement(XAxis, { dataKey: "bucket_label", tick: { fill: COLORS.axis, fontSize: 12 }, tickMargin: 10, axisLine: false, tickLine: false }),
+      React.createElement(YAxis, {
+        tick: { fill: COLORS.axis, fontSize: 12 },
+        tickFormatter: (value) => fmtNumber(value, 1),
+        domain: [0, maxY],
+        axisLine: false,
+        tickLine: false,
+        width: 56,
+      }),
+      React.createElement(Tooltip, { content: React.createElement(FlowLineTooltip, null), cursor: { stroke: "rgba(37, 93, 73, 0.35)", strokeDasharray: "5 5" } }),
+      React.createElement(Line, { type: "monotone", dataKey: "solar_kwh", stroke: COLORS.solar, strokeWidth: 3, dot: false }),
+      React.createElement(Line, { type: "monotone", dataKey: "tesla_kwh", stroke: COLORS.tesla, strokeWidth: 3, dot: false }),
+      React.createElement(Line, { type: "monotone", dataKey: "fixed_load_kwh", stroke: COLORS.baseLoad, strokeWidth: 2.4, dot: false }),
+      React.createElement(Line, { type: "monotone", dataKey: "battery_charge_kwh", stroke: COLORS.charge, strokeWidth: 2.4, dot: false }),
+      React.createElement(Line, { type: "monotone", dataKey: "battery_discharge_kwh", stroke: COLORS.discharge, strokeWidth: 2.4, dot: false }),
+      React.createElement(Line, { type: "monotone", dataKey: "import_kwh", stroke: COLORS.import, strokeWidth: 2.4, dot: false }),
+      React.createElement(Line, { type: "monotone", dataKey: "export_kwh", stroke: COLORS.export, strokeWidth: 2.4, dot: false }),
     ),
   );
 }
@@ -366,6 +430,9 @@ function renderChart(target, element) {
 const EnergyCharts = {
   renderFlowChart(target, data, summary) {
     renderChart(target, React.createElement(FlowChart, { data, summary }));
+  },
+  renderFlowLineChart(target, data, summary) {
+    renderChart(target, React.createElement(FlowLineChart, { data, summary }));
   },
   renderBatteryChart(target, data, summary) {
     renderChart(target, React.createElement(BatteryChart, { data, summary }));
