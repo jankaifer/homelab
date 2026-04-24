@@ -349,7 +349,6 @@ in
     };
     extraSettings = {
       birdseye.enabled = false;
-      ffmpeg.hwaccel_args = "preset-vaapi";
       objects.track = [ "person" "car" "bicycle" ];
     };
     snapshots = {

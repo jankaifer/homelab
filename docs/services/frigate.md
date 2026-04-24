@@ -68,7 +68,6 @@ homelab.services.frigate = {
   };
   extraSettings = {
     birdseye.enabled = false;
-    ffmpeg.hwaccel_args = "preset-vaapi";
     objects.track = [ "person" "car" "bicycle" ];
   };
   snapshots = {
@@ -126,7 +125,7 @@ homelab.services.frigate = {
 - Caps snapshot retention to one week and disables clean-copy duplicates
 - Symlinks `/var/lib/frigate/clips`, `/var/lib/frigate/exports`, and `/var/lib/frigate/recordings` into the NAS-backed retention path
 - Extends the internal nginx unit with the NAS shared group when recordings live under `/nas` so review/history media remains readable through the UI
-- On `frame1`, enables Intel VA-API decode with `intel-media-driver`, `services.frigate.vaapiDriver = "iHD"`, and `ffmpeg.hwaccel_args = "preset-vaapi"`
+- On `frame1`, keeps Intel media-driver support available, but the current `camera2` path avoids the unstable Frigate VA-API decode override and falls back to the safer default ffmpeg ingest path
 - Publishes Frigate only through Caddy on `https://frigate.frame1.hobitin.eu`
 - Renders the final Frigate runtime config in `/run/frigate/frigate.yml` so the MQTT password and RTSP URLs can come from agenix instead of the Nix store
 - Publishes Frigate MQTT topics under `frigate/#` through the host-local Mosquitto listener

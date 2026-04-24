@@ -75,3 +75,4 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Disabled the production mock RTSP publisher on `frame1` once the real camera stream was ready, while keeping the VM-only mock path for local Frigate testing.
 - Enabled `camera2`'s RTSP substream and switched Frigate detection to `subtype=1` after verifying it serves `640x480 @ 5 FPS`, while keeping the main stream on `subtype=0` for recording quality.
 - Reverted `camera2` back to the main stream for both `detect` and `record` after the mixed `4:3` substream and `16:9` main stream caused undesirable Frigate UI aspect-ratio behavior.
+- Removed Frigate's `preset-vaapi` ingest override from the production `camera2` path after repeated `ffmpeg.camera2.detect` crashes (`Failed to sync surface` / `hwdownload`) showed the hardware-download path was unstable on the live stream.
