@@ -46,10 +46,14 @@ SMTP_PORT=587
 SMTP_USERNAME=notifier@example.com
 SMTP_PASSWORD=change-me
 SMTP_FROM=Frigate <notifier@example.com>
+SMTP_ENVELOPE_FROM=notifier@example.com
 SMTP_STARTTLS=true
 ```
 
 Use `SMTP_SSL=true` and `SMTP_PORT=465` instead when the provider requires implicit TLS.
+For Google Workspace SMTP relay with "Only registered Apps users", keep
+`SMTP_ENVELOPE_FROM` set to the authenticated Workspace user even if the visible
+`SMTP_FROM` display address is an alias-style notification address.
 
 ## Runtime
 

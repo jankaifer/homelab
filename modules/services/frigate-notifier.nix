@@ -68,7 +68,8 @@ let
                 smtp.ehlo()
             if username:
                 smtp.login(username, password or "")
-            smtp.send_message(message)
+            envelope_from = os.environ.get("SMTP_ENVELOPE_FROM") or username or os.environ["SMTP_FROM"]
+            smtp.send_message(message, from_addr=envelope_from, to_addrs=[args.recipient])
 
 
     def main():
