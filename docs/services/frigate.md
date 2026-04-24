@@ -57,8 +57,8 @@ homelab.services.frigate = {
     ];
     detect = {
       enabled = true;
-      width = 1920;
-      height = 1080;
+      width = 640;
+      height = 480;
       fps = 5;
     };
   };
@@ -131,12 +131,12 @@ homelab.services.frigate = {
 - Renders the final Frigate runtime config in `/run/frigate/frigate.yml` so the MQTT password and RTSP URLs can come from agenix instead of the Nix store
 - Publishes Frigate MQTT topics under `frigate/#` through the host-local Mosquitto listener
 - In `frame1-vm`, records against the mock RTSP source and stores media in `/var/lib/frigate-test-media`
-- On `frame1`, records against `camera2.hobitin.eu` using Dahua-compatible RTSP paths injected from agenix secrets
+- On `frame1`, records against `camera2.hobitin.eu` using Dahua-compatible RTSP paths injected from agenix secrets, with the `640x480 @ 5 FPS` substream dedicated to `detect`
 
 ## Current Limits
 
 - The production camera RTSP URLs are secret-backed and therefore not visible in the committed Nix config
-- The current `camera2` setup uses the proven main stream for both `detect` and `record`; a lower-bitrate substream can be added later if the camera exposes one
+- `camera2` now uses the proven substream for `detect` and the main stream for `record`
 - Home Assistant has working MQTT access to `frigate/#`, but the dedicated Frigate integration/entities are not configured yet
 
 ## Access Model
@@ -183,7 +183,7 @@ homelab.services.frigate = {
 
 ## Next Steps
 
-1. Add a lower-bitrate `detect` substream for `camera2` if the camera exposes a working secondary RTSP path
+1. Tune the `camera2` substream bitrate only if detection quality is insufficient at the current `640x480 @ 5 FPS` setting
 2. Configure the Home Assistant Frigate integration once you want Frigate devices/entities to appear in Home Assistant
 3. Validate the lower-retention profile against real camera traffic and tune per camera as needed
 4. Keep only the cameras and review windows that are operationally useful once the production camera set stabilizes

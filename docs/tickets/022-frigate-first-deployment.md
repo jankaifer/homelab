@@ -73,3 +73,4 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Re-deployed and verified the final `frame1` generation with Frigate, Mosquitto, Caddy, MediaMTX, and the mock RTSP publisher all active.
 - Added a new production `camera2.hobitin.eu` RTSP camera definition for Frigate using Dahua-style `cam/realmonitor` paths, with the final RTSP URLs injected from agenix secrets at runtime so credentials do not enter the Nix store.
 - Disabled the production mock RTSP publisher on `frame1` once the real camera stream was ready, while keeping the VM-only mock path for local Frigate testing.
+- Enabled `camera2`'s RTSP substream and switched Frigate detection to `subtype=1` after verifying it serves `640x480 @ 5 FPS`, while keeping the main stream on `subtype=0` for recording quality.
