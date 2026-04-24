@@ -338,8 +338,8 @@ in
       ];
       detect = {
         enabled = true;
-        width = 640;
-        height = 480;
+        width = 1920;
+        height = 1080;
         fps = 5;
       };
     };
