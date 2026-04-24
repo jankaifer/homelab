@@ -5,7 +5,7 @@ Frigate-based camera NVR scaffold for the homelab.
 ## Status
 
 **Enabled:** Yes in `frame1-vm` and on `frame1`  
-**State:** Private Frigate deployment live on `frame1`, currently backed by a synthetic RTSP source pending real camera definitions
+**State:** Private Frigate deployment live on `frame1`; production now consumes the real `camera2.hobitin.eu` RTSP stream while `frame1-vm` keeps the synthetic source for local testing
 
 ## Configuration
 
@@ -27,6 +27,7 @@ Frigate-based camera NVR scaffold for the homelab.
 | `homelab.services.frigate.reviewRetainMode`     | enum         | `"motion"`                  | How much video around review events to keep      |
 | `homelab.services.frigate.cameras`              | attrset      | `{}`                        | Camera definitions passed to Frigate             |
 | `homelab.services.frigate.extraSettings`        | attrset      | `{}`                        | Additional Frigate settings merged over defaults |
+| `homelab.services.frigate.runtimeSecretFiles`   | attrset      | `{}`                        | jq-path-to-secret-file substitutions applied when rendering the runtime config |
 | `homelab.services.frigate.snapshots.*`          | attrs        | see module                  | Snapshot enablement plus retention controls      |
 | `homelab.services.frigate.mqtt.*`               | attrs        | see module                  | Optional secret-backed MQTT publishing for Frigate events and stats |
 
@@ -41,18 +42,29 @@ homelab.services.frigate = {
   continuousRetainDays = 3;
   retainMode = "all";
   reviewRetainDays = 365;
-  cameras.mock_driveway = {
-    ffmpeg.inputs = [{
-      path = "rtsp://127.0.0.1:8554/mock-driveway";
-      input_args = "preset-rtsp-restream";
-      roles = [ "detect" "record" ];
-    }];
+  cameras.camera2 = {
+    ffmpeg.inputs = [
+      {
+        path = "";
+        input_args = "preset-rtsp-restream";
+        roles = [ "detect" ];
+      }
+      {
+        path = "";
+        input_args = "preset-rtsp-restream";
+        roles = [ "record" ];
+      }
+    ];
     detect = {
       enabled = true;
-      width = 1280;
-      height = 720;
+      width = 1920;
+      height = 1080;
       fps = 5;
     };
+  };
+  runtimeSecretFiles = {
+    ".cameras.camera2.ffmpeg.inputs[0].path" = config.age.secrets.frigate-camera2-detect-url.path;
+    ".cameras.camera2.ffmpeg.inputs[1].path" = config.age.secrets.frigate-camera2-record-url.path;
   };
   extraSettings = {
     birdseye.enabled = false;
@@ -112,20 +124,19 @@ homelab.services.frigate = {
 - Stores media-oriented data under `/nas/nvr/frigate`
 - Defaults to `3` days of base continuous retention and one-year review retention
 - Caps snapshot retention to one week and disables clean-copy duplicates
-- Uses a synthetic RTSP publisher running at `30` FPS while Frigate detection remains capped at `5` FPS for lower compute cost
 - Symlinks `/var/lib/frigate/clips`, `/var/lib/frigate/exports`, and `/var/lib/frigate/recordings` into the NAS-backed retention path
 - Extends the internal nginx unit with the NAS shared group when recordings live under `/nas` so review/history media remains readable through the UI
 - On `frame1`, enables Intel VA-API decode with `intel-media-driver`, `services.frigate.vaapiDriver = "iHD"`, and `ffmpeg.hwaccel_args = "preset-vaapi"`
 - Publishes Frigate only through Caddy on `https://frigate.frame1.hobitin.eu`
-- Renders the final Frigate runtime config in `/run/frigate/frigate.yml` so the MQTT password can come from agenix instead of the Nix store
+- Renders the final Frigate runtime config in `/run/frigate/frigate.yml` so the MQTT password and RTSP URLs can come from agenix instead of the Nix store
 - Publishes Frigate MQTT topics under `frigate/#` through the host-local Mosquitto listener
 - In `frame1-vm`, records against the mock RTSP source and stores media in `/var/lib/frigate-test-media`
-- On `frame1`, records against the same mock RTSP source while real camera URLs are still pending
+- On `frame1`, records against `camera2.hobitin.eu` using Dahua-compatible RTSP paths injected from agenix secrets
 
 ## Current Limits
 
-- No real RTSP camera definitions are committed yet
-- Production currently uses a synthetic RTSP stream instead of a real camera feed
+- The production camera RTSP URLs are secret-backed and therefore not visible in the committed Nix config
+- The current `camera2` setup uses the proven main stream for both `detect` and `record`; a lower-bitrate substream can be added later if the camera exposes one
 - Home Assistant has working MQTT access to `frigate/#`, but the dedicated Frigate integration/entities are not configured yet
 
 ## Access Model
@@ -162,20 +173,20 @@ homelab.services.frigate = {
 - Set `snapshots.enable = false` if Frigate snapshots are not needed by Home Assistant or notifications
 - Keep `snapshots.cleanCopy = false` to avoid duplicate stored images
 - When real cameras are added, use a low-bitrate substream for `detect` and keep the main stream for `record`
-- The current synthetic `mock_driveway` stream is noisier than a tuned real camera and can overstate expected disk growth during testing
+- The VM-only synthetic `mock_driveway` stream is noisier than a tuned real camera and can overstate expected disk growth during testing
 
 ## Dependencies
 
 - Caddy reverse proxy
 - NAS layout if using the default `/nas/nvr/frigate` path
-- Real camera stream definitions before replacing the synthetic source
+- Real camera credentials in agenix for production RTSP ingest
 
 ## Next Steps
 
-1. Replace the synthetic RTSP source with real camera definitions under `homelab.services.frigate.cameras`
+1. Add a lower-bitrate `detect` substream for `camera2` if the camera exposes a working secondary RTSP path
 2. Configure the Home Assistant Frigate integration once you want Frigate devices/entities to appear in Home Assistant
 3. Validate the lower-retention profile against real camera traffic and tune per camera as needed
-4. Keep only the cameras and review windows that are operationally useful once the synthetic source is removed
+4. Keep only the cameras and review windows that are operationally useful once the production camera set stabilizes
 
 ## Links
 

@@ -164,6 +164,18 @@ in
       group = "frigate";
       mode = "0400";
     };
+    frigate-camera2-detect-url = {
+      file = ../../secrets/frigate-camera2-detect-url.age;
+      owner = "frigate";
+      group = "frigate";
+      mode = "0400";
+    };
+    frigate-camera2-record-url = {
+      file = ../../secrets/frigate-camera2-record-url.age;
+      owner = "frigate";
+      group = "frigate";
+      mode = "0400";
+    };
     restic-password = {
       file = ../../secrets/restic-password.age;
       owner = "root";
@@ -303,19 +315,7 @@ in
     enable = true;
   };
 
-  # Synthetic RTSP source for Frigate integration work until real cameras
-  # are configured.
-  homelab.services.mockRtspCamera = {
-    enable = true;
-    streamName = "mock-driveway";
-    rtspPort = 8554;
-    width = 1280;
-    height = 720;
-    fps = 30;
-  };
-
-  # Frigate is enabled in production against the synthetic RTSP source so the
-  # private UI, storage path, and service plumbing can be verified end to end.
+  # Frigate is enabled in production against the real camera2 RTSP stream.
   homelab.services.frigate = {
     enable = true;
     domain = "frigate.frame1.hobitin.eu";
@@ -323,18 +323,29 @@ in
     continuousRetainDays = 3;
     retainMode = "all";
     reviewRetainDays = 365;
-    cameras.mock_driveway = {
-      ffmpeg.inputs = [{
-        path = "rtsp://127.0.0.1:8554/mock-driveway";
-        input_args = "preset-rtsp-restream";
-        roles = [ "detect" "record" ];
-      }];
+    cameras.camera2 = {
+      ffmpeg.inputs = [
+        {
+          path = "";
+          input_args = "preset-rtsp-restream";
+          roles = [ "detect" ];
+        }
+        {
+          path = "";
+          input_args = "preset-rtsp-restream";
+          roles = [ "record" ];
+        }
+      ];
       detect = {
         enabled = true;
-        width = 1280;
-        height = 720;
+        width = 1920;
+        height = 1080;
         fps = 5;
       };
+    };
+    runtimeSecretFiles = {
+      ".cameras.camera2.ffmpeg.inputs[0].path" = config.age.secrets.frigate-camera2-detect-url.path;
+      ".cameras.camera2.ffmpeg.inputs[1].path" = config.age.secrets.frigate-camera2-record-url.path;
     };
     extraSettings = {
       birdseye.enabled = false;

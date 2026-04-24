@@ -71,3 +71,5 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Verified Frigate publishes MQTT topics under `frigate/#`, and confirmed the Home Assistant MQTT credentials can subscribe to those topics through the existing broker ACLs.
 - Increased the mock RTSP publisher to `30` FPS while keeping Frigate detection at `5` FPS, improving live-view responsiveness without changing the overall declarative camera setup.
 - Re-deployed and verified the final `frame1` generation with Frigate, Mosquitto, Caddy, MediaMTX, and the mock RTSP publisher all active.
+- Added a new production `camera2.hobitin.eu` RTSP camera definition for Frigate using Dahua-style `cam/realmonitor` paths, with the final RTSP URLs injected from agenix secrets at runtime so credentials do not enter the Nix store.
+- Disabled the production mock RTSP publisher on `frame1` once the real camera stream was ready, while keeping the VM-only mock path for local Frigate testing.

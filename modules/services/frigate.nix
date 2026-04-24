@@ -133,6 +133,19 @@ in
       description = "Additional Frigate settings merged over the homelab defaults.";
     };
 
+    runtimeSecretFiles = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      example = {
+        ".cameras.front_door.ffmpeg.inputs[0].path" = "/run/agenix/frigate-front-door-record-url";
+      };
+      description = ''
+        Runtime-only secret substitutions applied to `/run/frigate/frigate.yml`
+        after the static template is rendered. Keys are jq paths and values are
+        secret file paths whose contents replace those paths.
+      '';
+    };
+
     mqtt = {
       enable = lib.mkEnableOption "Frigate MQTT publishing";
 
@@ -296,6 +309,13 @@ in
           '' else ''
             cp --no-preserve=mode ${runtimeConfigTemplate} /run/frigate/frigate.yml
           ''}
+
+          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (jqPath: secretFile: ''
+            value="$(tr -d '\n' < ${lib.escapeShellArg secretFile})"
+            tmp="$(mktemp)"
+            jq --arg value "$value" '${jqPath} = $value' /run/frigate/frigate.yml > "$tmp"
+            mv "$tmp" /run/frigate/frigate.yml
+          '') cfg.runtimeSecretFiles)}
 
           chown frigate:frigate /run/frigate/frigate.yml
           chmod 0600 /run/frigate/frigate.yml
