@@ -4,9 +4,9 @@ Small systemd service that subscribes to Frigate MQTT events and sends filtered 
 
 ## Status
 
-**Enabled:** No
+**Enabled:** Yes
 
-The service is available as a reusable module, but production still needs an SMTP secret before it can send mail.
+Production sends email notifications to `jan@kaifer.cz` for `person` and `car` events from `camera2`.
 
 ## Configuration
 
@@ -38,7 +38,7 @@ homelab.services.frigate-notifier = {
 
 ## SMTP Secret
 
-The SMTP environment file should contain:
+The production SMTP secret is `secrets/frigate-notifier-smtp-env.age`. The SMTP environment file should contain:
 
 ```env
 SMTP_HOST=smtp.example.com

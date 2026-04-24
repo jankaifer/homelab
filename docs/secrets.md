@@ -19,6 +19,7 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 | MQTT Password (`homeassistant`) | `secrets/mqtt-homeassistant-password.age` | Home Assistant MQTT client |
 | MQTT Password (`zigbee2mqtt`) | `secrets/mqtt-zigbee2mqtt-password.age` | Zigbee2MQTT MQTT client |
 | MQTT Password (`frigate`) | `secrets/mqtt-frigate-password.age` | Frigate MQTT client |
+| Frigate Notifier SMTP Env | `secrets/frigate-notifier-smtp-env.age` | Frigate email notifications |
 | NAS SMB Password (`jankaifer`) | `secrets/nas-jankaifer-password.age` | Samba login for admin NAS access |
 | NAS SMB Password (`nasguest`) | `secrets/nas-guest-password.age` | Samba login for guest media access |
 | Restic Password | `secrets/restic-password.age` | Restic backup job |

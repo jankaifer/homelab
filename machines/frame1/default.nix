@@ -177,6 +177,12 @@ in
       group = "frigate";
       mode = "0400";
     };
+    frigate-notifier-smtp-env = {
+      file = ../../secrets/frigate-notifier-smtp-env.age;
+      owner = "frigate";
+      group = "frigate";
+      mode = "0400";
+    };
     restic-password = {
       file = ../../secrets/restic-password.age;
       owner = "root";
@@ -365,6 +371,13 @@ in
       port = 1883;
       passwordFile = config.age.secrets.mqtt-frigate-password.path;
     };
+  };
+
+  homelab.services.frigate-notifier = {
+    enable = true;
+    recipient = "jan@kaifer.cz";
+    mqttPasswordFile = config.age.secrets.mqtt-frigate-password.path;
+    smtpEnvironmentFile = config.age.secrets.frigate-notifier-smtp-env.path;
   };
 
   services.frigate.vaapiDriver = lib.mkIf pkgs.stdenv.hostPlatform.isx86_64 "iHD";

@@ -49,6 +49,9 @@ in
   "frigate-camera2-detect-url.age".publicKeys = allKeys;
   "frigate-camera2-record-url.age".publicKeys = allKeys;
 
+  # Frigate email notification SMTP relay settings
+  "frigate-notifier-smtp-env.age".publicKeys = allKeys;
+
   # Restic repository password
   "restic-password.age".publicKeys = allKeys;
 

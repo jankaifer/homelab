@@ -73,7 +73,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Energy Scheduler | systemd only | planner daemon behind the UI/API | [docs/services/energy-scheduler.md](services/energy-scheduler.md) |
 | Energy Scheduler UI | 8787 (internal) | https://energy.frame1.hobitin.eu | [docs/services/energy-scheduler.md](services/energy-scheduler.md) |
 | Frigate NVR | internal via nginx | https://frigate.frame1.hobitin.eu | [docs/services/frigate.md](services/frigate.md) |
-| Frigate Notifier | systemd service | disabled until SMTP secret is added | [docs/services/frigate-notifier.md](services/frigate-notifier.md) |
+| Frigate Notifier | systemd service | email alerts for camera2 people/cars | [docs/services/frigate-notifier.md](services/frigate-notifier.md) |
 | Tailscale | 41641 (UDP) | (VPN mesh network) | [docs/services/tailscale.md](services/tailscale.md) |
 | NAS | SMB/NFS | `/nas` exported over LAN + Tailscale | [docs/services/nas.md](services/nas.md) |
 | Backup (Restic) | timer only | (no UI) | [docs/services/backup.md](services/backup.md) |
