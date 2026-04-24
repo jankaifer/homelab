@@ -27,6 +27,7 @@ in
     ../../modules/services/energy-scheduler.nix
     ../../modules/services/energy-scheduler-ui.nix
     ../../modules/services/frigate.nix
+    ../../modules/services/frigate-notifier.nix
     ../../modules/services/mock-rtsp-camera.nix
   ];
 
