@@ -285,10 +285,14 @@ INDEX_HTML = """<!doctype html>
       </div>
     </form>
   </dialog>
+  <script src="/charts.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
 """
+
+UI_STATIC_DIR = Path(__file__).with_name("ui_static")
+CHARTS_BUNDLE_PATH = UI_STATIC_DIR / "charts.js"
 
 
 APP_CSS = """
@@ -3730,11 +3734,23 @@ function renderEmptyChart(targetId, message) {
   `;
 }
 
+function buildChartTimeline(points, summary) {
+  return aggregateTimeline(points, summary.bucket_minutes || 15, 60, 24).map((point) => ({
+    ...point,
+    bucket_label: formatBucketTime(summary, point.bucket_index),
+    hour_label: formatHourRange(summary, point.bucket_index),
+  }));
+}
+
 function renderFlowChart(points, summary, targetId = "flow-chart") {
   const target = document.getElementById(targetId);
-  const data = aggregateTimeline(points, summary.bucket_minutes || 15, 60, 24);
+  const data = buildChartTimeline(points, summary);
   if (!data.length) {
     renderEmptyChart(targetId, "No timeline data yet.");
+    return;
+  }
+  if (window.EnergyCharts?.renderFlowChart) {
+    window.EnergyCharts.renderFlowChart(target, data, summary);
     return;
   }
 
@@ -3846,9 +3862,13 @@ function buildLinePath(points, xFor, yFor) {
 
 function renderBatteryChart(points, summary, targetId = "battery-chart") {
   const target = document.getElementById(targetId);
-  const data = aggregateTimeline(points, summary.bucket_minutes || 15, 60, 24);
+  const data = buildChartTimeline(points, summary);
   if (!data.length) {
     renderEmptyChart(targetId, "No battery timeline data yet.");
+    return;
+  }
+  if (window.EnergyCharts?.renderBatteryChart) {
+    window.EnergyCharts.renderBatteryChart(target, data, summary);
     return;
   }
 
@@ -3933,9 +3953,13 @@ function renderBatteryChart(points, summary, targetId = "battery-chart") {
 
 function renderTeslaChart(points, summary, targetId = "tesla-chart") {
   const target = document.getElementById(targetId);
-  const data = aggregateTimeline(points, summary.bucket_minutes || 15, 60, 24);
+  const data = buildChartTimeline(points, summary);
   if (!data.length || data.every((point) => Number(point.tesla_kwh || 0) < 0.01)) {
     renderEmptyChart(targetId, "No Tesla charging is planned in the next 24 hours.");
+    return;
+  }
+  if (window.EnergyCharts?.renderTeslaChart) {
+    window.EnergyCharts.renderTeslaChart(target, data, summary);
     return;
   }
 
@@ -4524,6 +4548,8 @@ class UIRequestHandler(BaseHTTPRequestHandler):
                 self.end_headers()
             elif path == "/styles.css":
                 self._text(APP_CSS, "text/css; charset=utf-8")
+            elif path == "/charts.js":
+                self._text(CHARTS_BUNDLE_PATH.read_text(encoding="utf-8"), "application/javascript; charset=utf-8")
             elif path == "/app.js":
                 self._text(APP_JS, "application/javascript; charset=utf-8")
             elif path == "/api/scenarios":

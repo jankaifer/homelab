@@ -1,0 +1,13 @@
+{
+  "name": "energy-ui-charts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun build ./src/index.tsx --outfile ../../src/energy_scheduler/ui_static/charts.js --target=browser --format=iife --minify"
+  },
+  "dependencies": {
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "recharts": "^3.8.1"
+  }
+}
