@@ -80,8 +80,10 @@ let
                 subtype="jpeg",
                 filename=f"{camera}-{event_id}.jpg",
             )
+            has_snapshot = True
         else:
             print(f"snapshot unavailable for event {event_id}", flush=True)
+            has_snapshot = False
 
         host = os.environ["SMTP_HOST"]
         port = int(os.environ.get("SMTP_PORT", "587"))
@@ -104,6 +106,12 @@ let
                 smtp.login(username, password or "")
             envelope_from = os.environ.get("SMTP_ENVELOPE_FROM") or username or os.environ["SMTP_FROM"]
             smtp.send_message(message, from_addr=envelope_from, to_addrs=[args.recipient])
+
+        print(
+            f"sent {label} notification for {camera} event {event_id} "
+            f"to {args.recipient} snapshot={has_snapshot}",
+            flush=True,
+        )
 
 
     def main():
