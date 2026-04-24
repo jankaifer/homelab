@@ -6,7 +6,7 @@ Small systemd service that subscribes to Frigate MQTT events and sends filtered 
 
 **Enabled:** Yes
 
-Production sends email notifications to `jan@kaifer.cz` for `person` and `car` events from `camera2`.
+Production sends email notifications to `jan@kaifer.cz` for `person` and `car` events from `camera2`. Emails include a JPEG attachment from the Frigate event snapshot endpoint, with the latest camera frame as a fallback.
 
 ## Configuration
 
@@ -22,6 +22,7 @@ Important options:
 | `cameras` | `[ "camera2" ]` | Cameras that trigger notifications |
 | `topic` | `frigate/events` | Frigate MQTT event topic |
 | `cooldownSeconds` | `300` | Per-event notification cooldown |
+| `frigateApiUrl` | `http://127.0.0.1:5000` | Local Frigate API used for snapshot attachments |
 | `mqttPasswordFile` | required | MQTT password file |
 | `smtpEnvironmentFile` | required | SMTP credential environment file |
 

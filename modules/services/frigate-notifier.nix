@@ -14,6 +14,8 @@ let
     import ssl
     import time
     from email.message import EmailMessage
+    from urllib.error import URLError
+    from urllib.request import urlopen
 
     import paho.mqtt.client as mqtt
 
@@ -23,6 +25,27 @@ let
         if value is None:
             return default
         return value.lower() in ("1", "true", "yes", "on")
+
+
+    def fetch_snapshot(args, camera, event_id):
+        urls = [
+            f"{args.frigate_api_url}/api/events/{event_id}/snapshot.jpg",
+            f"{args.frigate_api_url}/api/{camera}/latest.jpg",
+        ]
+
+        for attempt in range(args.snapshot_attempts):
+            for url in urls:
+                try:
+                    with urlopen(url, timeout=args.snapshot_timeout) as response:
+                        content_type = response.headers.get("content-type", "")
+                        if response.status == 200 and content_type.startswith("image/"):
+                            return response.read()
+                except URLError:
+                    pass
+            if attempt + 1 < args.snapshot_attempts:
+                time.sleep(args.snapshot_retry_seconds)
+
+        return None
 
 
     def send_email(args, event):
@@ -48,6 +71,17 @@ let
                 ]
             )
         )
+
+        snapshot = fetch_snapshot(args, camera, event_id)
+        if snapshot is not None:
+            message.add_attachment(
+                snapshot,
+                maintype="image",
+                subtype="jpeg",
+                filename=f"{camera}-{event_id}.jpg",
+            )
+        else:
+            print(f"snapshot unavailable for event {event_id}", flush=True)
 
         host = os.environ["SMTP_HOST"]
         port = int(os.environ.get("SMTP_PORT", "587"))
@@ -83,6 +117,10 @@ let
         parser.add_argument("--labels", nargs="+", required=True)
         parser.add_argument("--cameras", nargs="+", required=True)
         parser.add_argument("--frigate-url", required=True)
+        parser.add_argument("--frigate-api-url", required=True)
+        parser.add_argument("--snapshot-attempts", type=int, required=True)
+        parser.add_argument("--snapshot-timeout", type=int, required=True)
+        parser.add_argument("--snapshot-retry-seconds", type=int, required=True)
         parser.add_argument("--cooldown-seconds", type=int, required=True)
         args = parser.parse_args()
 
@@ -196,6 +234,30 @@ in
       description = "External Frigate URL included in notification emails.";
     };
 
+    frigateApiUrl = lib.mkOption {
+      type = lib.types.str;
+      default = "http://127.0.0.1:5000";
+      description = "Local Frigate API URL used to fetch event snapshots.";
+    };
+
+    snapshotAttempts = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 3;
+      description = "How many times to try fetching an event snapshot before sending without it.";
+    };
+
+    snapshotTimeoutSeconds = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 5;
+      description = "HTTP timeout for each snapshot fetch attempt.";
+    };
+
+    snapshotRetrySeconds = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 2;
+      description = "Delay between snapshot fetch attempts.";
+    };
+
     cooldownSeconds = lib.mkOption {
       type = lib.types.ints.positive;
       default = 300;
@@ -224,6 +286,10 @@ in
             --labels ${lib.concatMapStringsSep " " lib.escapeShellArg cfg.labels} \
             --cameras ${lib.concatMapStringsSep " " lib.escapeShellArg cfg.cameras} \
             --frigate-url ${lib.escapeShellArg cfg.frigateUrl} \
+            --frigate-api-url ${lib.escapeShellArg cfg.frigateApiUrl} \
+            --snapshot-attempts ${toString cfg.snapshotAttempts} \
+            --snapshot-timeout ${toString cfg.snapshotTimeoutSeconds} \
+            --snapshot-retry-seconds ${toString cfg.snapshotRetrySeconds} \
             --cooldown-seconds ${toString cfg.cooldownSeconds}
         '';
         Restart = "always";
