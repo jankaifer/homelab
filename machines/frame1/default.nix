@@ -348,13 +348,19 @@ in
         width = 1920;
         height = 1080;
         fps = 5;
+        max_disappeared = 150;
+        stationary.threshold = 25;
       };
       motion.mask = [
         "0,0,1,0,1,0.18,0.5,0.0967,0,0.18"
       ];
-      objects.filters.car.mask = [
-        "0.19,0.24,0.45,0.22,0.45,0.42,0.20,0.42"
-      ];
+      objects.filters.car = {
+        min_score = 0.6;
+        threshold = 0.8;
+        mask = [
+          "0.19,0.24,0.45,0.22,0.45,0.42,0.20,0.42"
+        ];
+      };
     };
     runtimeSecretFiles = {
       ".cameras.camera2.ffmpeg.inputs[0].path" = config.age.secrets.frigate-camera2-detect-url.path;

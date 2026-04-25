@@ -8,6 +8,8 @@ Small systemd service that subscribes to Frigate MQTT events and sends filtered 
 
 Production sends email notifications to `jan@kaifer.cz` for `person` and `car` events from `camera2`. Emails include a JPEG attachment from the Frigate event snapshot endpoint, with the latest camera frame as a fallback.
 
+Notifications are intentionally limited to Frigate `new` events. Car notifications also require Frigate to mark the object as active/non-stationary, which prevents a parked car from generating repeated overnight emails when it is re-detected.
+
 ## Configuration
 
 **Module:** `modules/services/frigate-notifier.nix`  
@@ -19,6 +21,8 @@ Important options:
 |--------|---------|-------------|
 | `recipient` | required | Destination email address |
 | `labels` | `[ "person" "car" ]` | Object labels that trigger notifications |
+| `eventTypes` | `[ "new" ]` | Frigate event types that trigger notifications |
+| `activeOnlyLabels` | `[ "car" ]` | Labels that only notify while active/non-stationary |
 | `cameras` | `[ "camera2" ]` | Cameras that trigger notifications |
 | `topic` | `frigate/events` | Frigate MQTT event topic |
 | `cooldownSeconds` | `300` | Per-event notification cooldown |

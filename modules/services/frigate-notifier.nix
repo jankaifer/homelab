@@ -123,6 +123,8 @@ let
         parser.add_argument("--topic", required=True)
         parser.add_argument("--recipient", required=True)
         parser.add_argument("--labels", nargs="+", required=True)
+        parser.add_argument("--event-types", nargs="+", required=True)
+        parser.add_argument("--active-only-labels", nargs="*", default=[])
         parser.add_argument("--cameras", nargs="+", required=True)
         parser.add_argument("--frigate-url", required=True)
         parser.add_argument("--frigate-api-url", required=True)
@@ -133,6 +135,8 @@ let
         args = parser.parse_args()
 
         labels = set(args.labels)
+        event_types = set(args.event_types)
+        active_only_labels = set(args.active_only_labels)
         cameras = set(args.cameras)
         last_sent = {}
 
@@ -154,9 +158,15 @@ let
                 camera = after.get("camera")
                 event_id = after.get("id")
 
-                if event_type not in ("new", "update"):
+                if event_type not in event_types:
                     return
                 if label not in labels or camera not in cameras or not event_id:
+                    return
+                if label in active_only_labels and not after.get("active", False):
+                    print(
+                        f"skipped inactive {label} event {event_id} on {camera}",
+                        flush=True,
+                    )
                     return
 
                 key = (camera, label, event_id)
@@ -222,6 +232,18 @@ in
       type = lib.types.listOf lib.types.str;
       default = [ "person" "car" ];
       description = "Frigate object labels that should trigger email notifications.";
+    };
+
+    eventTypes = lib.mkOption {
+      type = lib.types.listOf (lib.types.enum [ "new" "update" "end" ]);
+      default = [ "new" ];
+      description = "Frigate event types that should trigger email notifications.";
+    };
+
+    activeOnlyLabels = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "car" ];
+      description = "Labels that should only notify when Frigate marks the object active/non-stationary.";
     };
 
     cameras = lib.mkOption {
@@ -292,6 +314,8 @@ in
             --topic ${lib.escapeShellArg cfg.topic} \
             --recipient ${lib.escapeShellArg cfg.recipient} \
             --labels ${lib.concatMapStringsSep " " lib.escapeShellArg cfg.labels} \
+            --event-types ${lib.concatMapStringsSep " " lib.escapeShellArg cfg.eventTypes} \
+            --active-only-labels ${lib.concatMapStringsSep " " lib.escapeShellArg cfg.activeOnlyLabels} \
             --cameras ${lib.concatMapStringsSep " " lib.escapeShellArg cfg.cameras} \
             --frigate-url ${lib.escapeShellArg cfg.frigateUrl} \
             --frigate-api-url ${lib.escapeShellArg cfg.frigateApiUrl} \

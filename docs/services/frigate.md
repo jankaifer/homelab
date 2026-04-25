@@ -136,7 +136,7 @@ homelab.services.frigate = {
 
 - The production camera RTSP URLs are secret-backed and therefore not visible in the committed Nix config
 - `camera2` currently uses the proven main stream for both `detect` and `record`
-- `camera2` has a car object filter mask over the fixed parked-car spot to prevent repeated alerts for the same parked vehicle
+- `camera2` has car-specific tuning to reduce repeated parked-car alerts: a fixed parked-car object mask, higher car score thresholds, faster stationary classification, and a longer `max_disappeared` window so briefly missed cars are less likely to become new events
 - Home Assistant has working MQTT access to `frigate/#`, but the dedicated Frigate integration/entities are not configured yet
 
 ## Access Model
