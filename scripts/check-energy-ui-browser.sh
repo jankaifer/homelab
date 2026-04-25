@@ -80,7 +80,7 @@ assert_dashboard() {
   output="$("${PWCLI[@]}" --session "${session}" eval '() => ({
     title: document.querySelector("h1")?.textContent || "",
     hasDate: Boolean(document.querySelector("input[type=date]")),
-    hasChart: Boolean(document.querySelector(".chart svg")),
+    chartCount: document.querySelectorAll(".chart svg").length,
     hasHistory: Boolean(document.querySelector("table.table") || document.body.textContent.includes("No persisted history")),
     hasWorkbench: document.body.textContent.includes("Workbench"),
     hasEditor: document.body.textContent.includes("Scenario editor")
@@ -97,9 +97,11 @@ if not match:
 data = json.loads(match.group(1))
 if data["title"] != "Energy Scheduler":
     raise SystemExit(f"Unexpected title: {data['title']}")
-for key in ("hasDate", "hasChart", "hasHistory"):
+for key in ("hasDate", "hasHistory"):
     if not data[key]:
         raise SystemExit(f"Dashboard assertion failed: {key}")
+if data["chartCount"] < 2:
+    raise SystemExit(f"Expected split generation/use charts, got {data['chartCount']}")
 if data["hasWorkbench"] or data["hasEditor"]:
     raise SystemExit("Old workbench/editor UI is still visible")
 PY
@@ -109,7 +111,7 @@ assert_chart_hover() {
   local session="$1"
   local metrics_output
   metrics_output="$(session_eval "${session}" '() => {
-    const rect = document.querySelector(".chart svg")?.getBoundingClientRect();
+    const rect = document.querySelector("[data-chart=\"generation\"] svg")?.getBoundingClientRect();
     return rect ? { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) } : null;
   }')"
   eval "$(RESULT_TEXT="${metrics_output}" python3 - <<'PY'
@@ -146,7 +148,7 @@ if not match:
 data = json.loads(match.group(1))
 if not data.get("visible"):
     raise SystemExit("Expected Recharts tooltip to appear on hover")
-for label in ("Solar", "Import", "Demand", "SoC"):
+for label in ("Solar", "Grid import", "Battery discharge"):
     if label not in data.get("text", ""):
         raise SystemExit(f"Tooltip missing {label}: {data.get('text')!r}")
 PY

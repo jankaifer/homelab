@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, CartesianGrid, ComposedChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { DashboardResponse, DemandBand, HistoryEntry, PlannerSnapshot, PlannerSummary, TelemetryPoint } from "./shared";
 
 const styles = `
@@ -106,10 +106,29 @@ input {
 .chart-wrap { padding: 14px 16px 16px; }
 .chart {
   width: 100%;
-  height: 320px;
+  height: 260px;
   min-width: 0;
-  min-height: 320px;
+  min-height: 260px;
   display: block;
+}
+.chart + .chart {
+  margin-top: 18px;
+}
+.chart-title-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.chart-title-row h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.chart-title-row p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 .chart-tooltip {
   min-width: 220px;
@@ -234,9 +253,10 @@ const numberFormat = new Intl.NumberFormat([], { maximumFractionDigits: 2 });
 const VICTRON_COLORS = {
   solar: "#f2c94c",
   import: "#d64545",
-  demand: "#52525b",
+  baseLoad: "#52525b",
+  flexibleLoad: "#111827",
   battery: "#2f80ed",
-  reserve: "#f59e0b",
+  export: "#10b981",
 };
 
 function injectStyles() {
@@ -278,7 +298,10 @@ function chartRows(points: TelemetryPoint[], summary: PlannerSummary) {
   return points.map((point) => ({
     ...point,
     time: bucketTime(summary, point),
-    demand_kwh: Number(point.fixed_load_kwh || 0) + Number(point.flexible_load_kwh || 0),
+    grid_import_kwh: Number(point.import_kwh || 0),
+    grid_export_kwh: Number(point.export_kwh || 0),
+    base_load_kwh: Number(point.fixed_load_kwh || 0),
+    flexible_load_kwh: Number(point.flexible_load_kwh || 0),
   }));
 }
 
@@ -302,13 +325,42 @@ function Metric({ label, value, foot, className = "" }: { label: string; value: 
   </div>;
 }
 
-function Sparkline({ points, summary }: { points: TelemetryPoint[]; summary: PlannerSummary }) {
+type ChartSeries = {
+  key: string;
+  label: string;
+  color: string;
+};
+
+function EnergyFlowChart({
+  title,
+  subtitle,
+  points,
+  summary,
+  series,
+  chartId,
+}: {
+  title: string;
+  subtitle: string;
+  points: TelemetryPoint[];
+  summary: PlannerSummary;
+  series: ChartSeries[];
+  chartId: string;
+}) {
   if (!points.length) return <div className="empty">No forecast timeline for this date.</div>;
   const data = chartRows(points, summary);
 
-  return <div className="chart" role="img" aria-label="Energy forecast chart">
-    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
-      <ComposedChart data={data} margin={{ top: 12, right: 30, bottom: 0, left: 22 }} barGap={1} barCategoryGap={2}>
+  return <div className="chart" data-chart={chartId} role="img" aria-label={`${title} chart`}>
+    <div className="chart-title-row">
+      <div>
+        <h3>{title}</h3>
+        <p>{subtitle}</p>
+      </div>
+      <div className="legend">
+        {series.map((item) => <span key={item.key}><i className="dot" style={{ background: item.color }} />{item.label}</span>)}
+      </div>
+    </div>
+    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={260}>
+      <ComposedChart data={data} margin={{ top: 6, right: 18, bottom: 0, left: 22 }} barGap={1} barCategoryGap={2}>
         <CartesianGrid stroke="var(--line)" vertical={false} />
         <XAxis dataKey="time" tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={{ stroke: "var(--line)" }} minTickGap={22} />
         <YAxis
@@ -317,24 +369,22 @@ function Sparkline({ points, summary }: { points: TelemetryPoint[]; summary: Pla
           tickLine={false}
           axisLine={false}
           width={58}
-          label={{ value: "Energy kWh", angle: -90, position: "insideLeft", offset: -8, fill: "var(--muted)", fontSize: 11 }}
-        />
-        <YAxis
-          yAxisId="battery"
-          orientation="right"
-          domain={[0, Math.max(Number(summary.battery_capacity_kwh || 0), 1)]}
-          tick={{ fill: "var(--muted)", fontSize: 11 }}
-          tickLine={false}
-          axisLine={false}
-          width={58}
-          label={{ value: "Battery kWh", angle: 90, position: "insideRight", offset: -8, fill: "var(--muted)", fontSize: 11 }}
+          label={{ value: "kWh / bucket", angle: -90, position: "insideLeft", offset: -8, fill: "var(--muted)", fontSize: 11 }}
         />
         <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(9, 9, 11, 0.04)" }} />
-        <Bar yAxisId="energy" dataKey="solar_kwh" name="Solar" fill={VICTRON_COLORS.solar} opacity={0.82} radius={[3, 3, 0, 0]} barSize={8} />
-        <Bar yAxisId="energy" dataKey="import_kwh" name="Import" fill={VICTRON_COLORS.import} opacity={0.74} radius={[3, 3, 0, 0]} barSize={8} />
-        <Bar yAxisId="energy" dataKey="demand_kwh" name="Demand" fill={VICTRON_COLORS.demand} opacity={0.74} radius={[3, 3, 0, 0]} barSize={8} />
-        <Line yAxisId="battery" type="monotone" dataKey="battery_soc_kwh" name="SoC" stroke={VICTRON_COLORS.battery} strokeWidth={3} dot={false} />
-        <Line yAxisId="battery" type="monotone" dataKey="reserve_target_kwh" name="Reserve" stroke={VICTRON_COLORS.reserve} strokeWidth={2} strokeDasharray="5 5" dot={false} />
+        {series.map((item) => (
+          <Bar
+            key={item.key}
+            yAxisId="energy"
+            dataKey={item.key}
+            name={item.label}
+            fill={item.color}
+            opacity={0.82}
+            radius={[3, 3, 0, 0]}
+            barSize={10}
+            stackId="energy"
+          />
+        ))}
       </ComposedChart>
     </ResponsiveContainer>
   </div>;
@@ -354,25 +404,44 @@ function ChartTooltip(props: { active?: boolean; payload?: Array<{ name?: string
 function EnergyChart({ plan }: { plan: PlannerSnapshot | null }) {
   const summary = selectedSummary(plan);
   const points = selectedTimeline(plan);
+  const generationSeries = [
+    { key: "solar_kwh", label: "Solar", color: VICTRON_COLORS.solar },
+    { key: "grid_import_kwh", label: "Grid import", color: VICTRON_COLORS.import },
+    { key: "battery_discharge_kwh", label: "Battery discharge", color: VICTRON_COLORS.battery },
+  ];
+  const useSeries = [
+    { key: "base_load_kwh", label: "Base load", color: VICTRON_COLORS.baseLoad },
+    { key: "flexible_load_kwh", label: "Flexible / Tesla", color: VICTRON_COLORS.flexibleLoad },
+    { key: "battery_charge_kwh", label: "Battery charge", color: VICTRON_COLORS.battery },
+    { key: "grid_export_kwh", label: "Grid export", color: VICTRON_COLORS.export },
+  ];
   return <section className="panel">
     <div className="panel-header">
       <div>
         <h2>Future</h2>
         <p>{points.length ? `${points.length} planner buckets from ${fmtTime(summary.planner_timestamp)}` : "No selected snapshot"}</p>
       </div>
-      <div className="legend">
-        <span><i className="dot" style={{ background: VICTRON_COLORS.solar }} />Solar</span>
-        <span><i className="dot" style={{ background: VICTRON_COLORS.import }} />Import</span>
-        <span><i className="dot" style={{ background: VICTRON_COLORS.demand }} />Demand</span>
-        <span><i className="dot" style={{ background: VICTRON_COLORS.battery }} />SoC</span>
-        <span><i className="dot" style={{ background: VICTRON_COLORS.reserve }} />Reserve</span>
-      </div>
     </div>
     <div className="chart-wrap">
-      <Sparkline points={points} summary={summary} />
+      <EnergyFlowChart
+        title="Electricity Generation"
+        subtitle="Where usable energy comes from"
+        points={points}
+        summary={summary}
+        series={generationSeries}
+        chartId="generation"
+      />
+      <EnergyFlowChart
+        title="Electricity Use"
+        subtitle="Where planned energy goes"
+        points={points}
+        summary={summary}
+        series={useSeries}
+        chartId="use"
+      />
       <div className="axis-legend" aria-label="Chart axis units">
-        <span>Left axis: solar, import, demand in kWh per bucket</span>
-        <span>Right axis: battery SoC and reserve in kWh</span>
+        <span>Both charts use kWh per planner bucket</span>
+        <span>Supply and use are split so grid import is not visually confused with demand</span>
       </div>
     </div>
   </section>;
