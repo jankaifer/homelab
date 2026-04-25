@@ -15,7 +15,7 @@ usage() {
     cat <<EOF
 Usage: ./scripts/run-energy-ui-demo.sh [--host HOST] [--port PORT] [--config PATH] [--keep-state]
 
-Starts the Energy Scheduler demo UI locally using the repo dev environment.
+Starts the Energy Scheduler demo UI locally using the Bun dashboard backend.
 
 Defaults:
   host:   127.0.0.1
@@ -74,7 +74,12 @@ echo "  url:     http://$HOST:$PORT/"
 echo ""
 
 cd "$PROJECT_DIR"
-exec nix develop -c env PYTHONPATH="$PROJECT_DIR/src" python -m energy_scheduler.ui \
+
+nix develop -c env PYTHONPATH="$PROJECT_DIR/src" python -m energy_scheduler.cli \
+    --config "$CONFIG_PATH" \
+    --once >/dev/null
+
+exec env ENERGY_UI_APP_JS="$PROJECT_DIR/src/energy_scheduler/ui_static/app.js" bun "$PROJECT_DIR/frontend/energy-ui-charts/src/server.ts" \
     --config "$CONFIG_PATH" \
     --host "$HOST" \
     --port "$PORT"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import tempfile
 import unittest
 from datetime import datetime
@@ -82,89 +83,43 @@ def _build_config(state_dir: Path) -> RuntimeConfig:
 
 
 class UiApiTests(unittest.TestCase):
-    def test_calendar_get_and_put(self) -> None:
+    def test_dashboard_uses_latest_plan_for_selected_date(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             state_dir = Path(tmp)
             config = _build_config(state_dir)
             ui = UIServer(config)
-            payload = ui.get_calendar()
-            first_day = payload["days"][0]["date"]
+            snapshot = ui.scheduler.run_once(persist=False, start_at=datetime.fromisoformat("2026-04-20T08:00:00+02:00"))
+            state_dir.mkdir(exist_ok=True)
+            (state_dir / "latest-plan.json").write_text(json.dumps(snapshot), encoding="utf-8")
 
-            updated = ui.update_calendar(
-                first_day,
-                {"mode": "explicit_departure", "departure_time": "06:30", "target_soc_pct": 70},
-            )
-            day = next(item for item in updated["days"] if item["date"] == first_day)
-            self.assertEqual(day["mode"], "explicit_departure")
-            self.assertAlmostEqual(day["confidence"], 0.9, places=6)
+            dashboard = ui.dashboard("2026-04-20")
 
-            plan = ui.plan_for_scenario("real")
-            tesla_required = [
-                band for band in plan["bands"]
-                if band["asset_id"] == "tesla-model-3" and band["required_level"]
-            ]
-            logical_keys = {
-                (
-                    band["display_name"],
-                    band.get("metadata", {}).get("date"),
-                    band.get("metadata", {}).get("departure_time"),
-                )
-                for band in tesla_required
-            }
-            self.assertEqual(len(tesla_required), len(logical_keys))
+            self.assertEqual(dashboard["selected_date"], "2026-04-20")
+            self.assertEqual(dashboard["selected_plan"]["summary"]["planner_timestamp"], "2026-04-20T08:00:00+02:00")
+            self.assertEqual(dashboard["history"], [])
+            self.assertIn("2026-04-20", dashboard["available_dates"])
 
-    def test_scenarios_endpoint_and_fake_plan(self) -> None:
+    def test_dashboard_lists_history_for_selected_date(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             state_dir = Path(tmp)
             config = _build_config(state_dir)
             ui = UIServer(config)
-            payload = ui.scenarios()
-            scenario_ids = [scenario["id"] for scenario in payload["scenarios"]]
-            self.assertEqual(scenario_ids, ["real", "winter", "spring", "summer", "autumn"])
+            state_dir.mkdir(exist_ok=True)
+            history_dir = state_dir / "history"
+            history_dir.mkdir()
 
-            winter_plan = ui.plan_for_scenario("winter")
-            self.assertEqual(winter_plan["selected_scenario"]["id"], "winter")
-            self.assertEqual(winter_plan["summary"]["scenario_kind"], "fake")
-            self.assertTrue(winter_plan["summary"]["scenario_read_only"])
+            first = ui.scheduler.run_once(persist=False, start_at=datetime.fromisoformat("2026-04-20T08:00:00+02:00"))
+            second = ui.scheduler.run_once(persist=False, start_at=datetime.fromisoformat("2026-04-20T09:00:00+02:00"))
+            other = ui.scheduler.run_once(persist=False, start_at=datetime.fromisoformat("2026-04-21T08:00:00+02:00"))
+            (state_dir / "latest-plan.json").write_text(json.dumps(other), encoding="utf-8")
+            (history_dir / "20260420T080000+0200.json").write_text(json.dumps(first), encoding="utf-8")
+            (history_dir / "20260420T090000+0200.json").write_text(json.dumps(second), encoding="utf-8")
 
-            real_plan = ui.plan_for_scenario("real")
-            self.assertEqual(real_plan["selected_scenario"]["id"], "real")
-            self.assertEqual(real_plan["summary"]["scenario_kind"], "real")
-            self.assertFalse(real_plan["summary"]["scenario_read_only"])
+            dashboard = ui.dashboard("2026-04-20")
 
-    def test_workbench_crud_and_run(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            state_dir = Path(tmp)
-            config = _build_config(state_dir)
-            ui = UIServer(config)
-
-            created = ui.create_workbench_scenario()
-            simulation_start_at = datetime.fromisoformat(created["simulation_start_at"])
-            self.assertTrue(created["id"].startswith("scenario-"))
-            self.assertEqual(created["config"]["scheduler"]["horizon_buckets"], 96)
-            self.assertEqual(simulation_start_at.hour, 0)
-            self.assertEqual(simulation_start_at.minute, 0)
-
-            listed = ui.list_workbench_scenarios()["scenarios"]
-            self.assertEqual(len(listed), 1)
-            self.assertEqual(listed[0]["id"], created["id"])
-
-            created["name"] = "Planner stress test"
-            created["simulation_start_at"] = "2026-04-20T08:00:00+02:00"
-            created["config"]["scheduler"]["horizon_buckets"] = 24
-            saved = ui.save_workbench_scenario(created["id"], created)
-            self.assertEqual(saved["name"], "Planner stress test")
-            self.assertEqual(len(saved["config"]["forecasts"]["prices"]["import_czk_per_kwh"]), 24)
-
-            clone = ui.clone_workbench_scenario(created["id"])
-            self.assertNotEqual(clone["id"], created["id"])
-
-            result = ui.run_workbench_scenario(created["id"])
-            self.assertEqual(result["scenario_id"], created["id"])
-            self.assertEqual(result["snapshot"]["summary"]["planner_timestamp"], "2026-04-20T08:00:00+02:00")
-
-            fetched_result = ui.get_workbench_result(created["id"])
-            self.assertEqual(fetched_result["run_at"], result["run_at"])
+            self.assertEqual(len(dashboard["history"]), 2)
+            self.assertEqual(dashboard["history"][0]["created_at"], "2026-04-20T09:00:00+02:00")
+            self.assertEqual(dashboard["selected_plan"]["summary"]["planner_timestamp"], "2026-04-20T09:00:00+02:00")
 
 
 if __name__ == "__main__":

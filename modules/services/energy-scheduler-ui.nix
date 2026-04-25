@@ -3,18 +3,40 @@
 let
   cfg = config.homelab.services.energySchedulerUi;
   schedulerCfg = config.homelab.services.energyScheduler;
-  package = schedulerCfg.package;
+  uiSource = lib.fileset.toSource {
+    root = ../../.;
+    fileset = lib.fileset.unions [
+      ../../frontend/energy-ui-charts/src
+      ../../src/energy_scheduler/ui_static/app.js
+    ];
+  };
+  package = pkgs.stdenvNoCC.mkDerivation {
+    pname = "energy-scheduler-ui";
+    version = "0.1.0";
+    src = uiSource;
+    nativeBuildInputs = [ pkgs.makeWrapper ];
+    installPhase = ''
+      runHook preInstall
+      mkdir -p $out/share/energy-scheduler-ui/src
+      cp -R frontend/energy-ui-charts/src/* $out/share/energy-scheduler-ui/src/
+      cp src/energy_scheduler/ui_static/app.js $out/share/energy-scheduler-ui/app.js
+      makeWrapper ${pkgs.bun}/bin/bun $out/bin/energy-scheduler-ui \
+        --add-flags "$out/share/energy-scheduler-ui/src/server.ts" \
+        --set ENERGY_UI_APP_JS "$out/share/energy-scheduler-ui/app.js"
+      runHook postInstall
+    '';
+  };
   homepageHttpsPort = lib.attrByPath [ "homelab" "services" "homepage" "publicHttpsPort" ] null config;
   homepageHref = "https://${cfg.domain}" + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
 in
 {
   options.homelab.services.energySchedulerUi = {
-    enable = lib.mkEnableOption "energy scheduler explainability UI";
+    enable = lib.mkEnableOption "energy scheduler dashboard UI";
 
     package = lib.mkOption {
       type = lib.types.package;
       default = package;
-      description = "Package providing the energy-scheduler-ui executable.";
+      description = "Package providing the Bun-based energy-scheduler-ui executable.";
     };
 
     port = lib.mkOption {
@@ -46,16 +68,8 @@ in
       createHome = false;
     };
 
-    systemd.tmpfiles.rules = [
-      "f ${cfg.schedulerStateDir}/tesla-calendar.json 0660 energy-scheduler energy-scheduler - -"
-      "d ${cfg.schedulerStateDir}/workbench 0770 energy-scheduler energy-scheduler - -"
-      "d ${cfg.schedulerStateDir}/workbench/scenarios 0770 energy-scheduler energy-scheduler - -"
-      "d ${cfg.schedulerStateDir}/workbench/results 0770 energy-scheduler energy-scheduler - -"
-      "d ${cfg.schedulerStateDir}/workbench/runtime 0770 energy-scheduler energy-scheduler - -"
-    ];
-
     systemd.services.energy-scheduler-ui = {
-      description = "Energy scheduler explainability UI";
+      description = "Energy scheduler dashboard UI";
       after = [ "network-online.target" "energy-scheduler.service" ];
       wants = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
@@ -71,10 +85,6 @@ in
         ProtectHome = true;
         PrivateTmp = true;
         ReadOnlyPaths = [ cfg.schedulerStateDir ];
-        ReadWritePaths = [
-          "${cfg.schedulerStateDir}/tesla-calendar.json"
-          "${cfg.schedulerStateDir}/workbench"
-        ];
       };
     };
 
@@ -83,7 +93,7 @@ in
     homelab.homepage.services = [{
       name = "Energy Scheduler";
       category = "Smart Home";
-      description = "Planner explainability UI and Tesla departure calendar";
+      description = "Read-only energy planner dashboard";
       href = homepageHref;
       icon = "chart-line";
     }];

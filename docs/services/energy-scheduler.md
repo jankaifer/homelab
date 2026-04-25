@@ -28,30 +28,24 @@ Local-first energy scheduling daemon for solar production, battery storage, and 
 - Writes latest plan and timestamped plan history into `/var/lib/energy-scheduler`
 - Seeds and reads a shared Tesla 14-day planning calendar at `/var/lib/energy-scheduler/tesla-calendar.json`
 
-## Explainability UI
+## Dashboard UI
 
 An optional separate service exposes the scheduler behind Caddy:
 
 - Domain: `https://energy.frame1.hobitin.eu`
 - Binary: `energy-scheduler-ui`
-- Reads planner state from `/var/lib/energy-scheduler/latest-plan.json`
-- Shows four pages:
-  - `Overview` for the current plan headline, summary cards, and deduplicated demand bands
-  - `Timeline` for a 24-hour energy-balance chart and battery SoC chart
-  - `Tesla Plan` for the Tesla charging chart and the 14-day planning calendar
-  - `Workbench` for local named scenario editing, simulation, and result inspection
-- Includes a source switcher with one `Real-time` plan and four prepared seasonal demos: `Winter`, `Spring`, `Summer`, and `Autumn`
-- Fake seasonal demos reuse the live Tesla planning hints but make the Tesla calendar read-only to avoid mutating real runtime state while previewing synthetic data
-- Lets you update Tesla departure planning for the next 14 days through a calendar day modal
-- Rolls the Tesla planning window forward automatically so the calendar always covers the next 14 days
-- Stores workbench scenarios and run results under the shared state directory:
-  - `/var/lib/energy-scheduler/workbench/scenarios/*.json`
-  - `/var/lib/energy-scheduler/workbench/results/*.json`
-  - `/var/lib/energy-scheduler/workbench/runtime/<scenario-id>/`
-- Clones the live planner config when you create a new scenario, but keeps Tesla calendar overrides and all edits scenario-local after that
-- Seeds a fresh workbench with a single default scenario covering the current day from local midnight over 24 hours
-- Supports typed editors for prices, solar scenarios, battery settings, base load, Tesla schedule/calendar, and generic demand bands
-- Runs the same planner core on demand with an explicit simulation start time instead of using wall-clock `now`
+- Runtime: Bun HTTP server with a React client bundle
+- Reads planner state from:
+  - `/var/lib/energy-scheduler/latest-plan.json`
+  - `/var/lib/energy-scheduler/history/*.json`
+- Uses shared TypeScript types between the Bun API server and React client
+- Shows a single read-only dashboard with:
+  - date selection for the whole dashboard
+  - headline planner metrics for the selected snapshot
+  - future energy forecast from the selected snapshot
+  - active demand bands and Tesla planning hints
+  - historical planner runs for the selected date
+- Does not expose workbench editing, scenario mutation, or Tesla calendar writes
 
 ## Planner Model
 
@@ -76,8 +70,6 @@ Key assumptions:
 - Latest plan: `/var/lib/energy-scheduler/latest-plan.json`
 - Plan history: `/var/lib/energy-scheduler/history/*.json`
 - Tesla calendar: `/var/lib/energy-scheduler/tesla-calendar.json`
-- Workbench scenarios: `/var/lib/energy-scheduler/workbench/scenarios/*.json`
-- Workbench results: `/var/lib/energy-scheduler/workbench/results/*.json`
 
 ## Example
 
@@ -112,10 +104,11 @@ Browser regression pass against a local demo:
 ./scripts/check-energy-ui-browser.sh --url http://127.0.0.1:8790/
 ```
 
-Workbench API smoke test in the dev shell:
+Bun UI build and API smoke tests:
 
 ```bash
-PYTHONPATH=src ./.venv/bin/python -m unittest tests.energy_scheduler.test_workbench tests.energy_scheduler.test_ui_api -v
+(cd frontend/energy-ui-charts && bun run build)
+PYTHONPATH=src ./.venv/bin/python -m unittest tests.energy_scheduler.test_ui_api -v
 ```
 
 ## Next Integrations

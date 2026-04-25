@@ -14,7 +14,6 @@ dependencies = [
 
 [project.scripts]
 energy-scheduler = "energy_scheduler.cli:main"
-energy-scheduler-ui = "energy_scheduler.ui:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
