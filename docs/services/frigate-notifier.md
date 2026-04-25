@@ -6,7 +6,7 @@ Small systemd service that subscribes to Frigate MQTT events and sends filtered 
 
 **Enabled:** Yes
 
-Production sends email notifications to `jan@kaifer.cz` for `person` and `car` events from `camera2`. Emails include a JPEG attachment from the Frigate event snapshot endpoint, with the latest camera frame as a fallback.
+Production sends email notifications to `jan@kaifer.cz` for `person` and `car` events from `camera2`. Emails include the existing Frigate event snapshot JPEG attachment plus a second `-bbox.jpg` attachment requested with Frigate's `bbox=1` overlay, with the latest camera frame as a fallback for either image.
 
 Notifications are intentionally limited to Frigate `new` events. Car notifications also require Frigate to mark the object as active/non-stationary, which prevents a parked car from generating repeated overnight emails when it is re-detected.
 
@@ -29,6 +29,8 @@ Important options:
 | `frigateApiUrl` | `http://127.0.0.1:5000` | Local Frigate API used for snapshot attachments |
 | `mqttPasswordFile` | required | MQTT password file |
 | `smtpEnvironmentFile` | required | SMTP credential environment file |
+
+The bounding-box attachment is fetched from the same event snapshot endpoint with `bbox=1`. Frigate applies snapshot query parameters while an event is still in progress; production notifications currently subscribe only to `new` events so the annotated image is requested during that window.
 
 Example production config:
 

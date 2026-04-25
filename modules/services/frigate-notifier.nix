@@ -27,10 +27,11 @@ let
         return value.lower() in ("1", "true", "yes", "on")
 
 
-    def fetch_snapshot(args, camera, event_id):
+    def fetch_snapshot(args, camera, event_id, *, bbox=None):
+        query = "" if bbox is None else f"?bbox={1 if bbox else 0}"
         urls = [
-            f"{args.frigate_api_url}/api/events/{event_id}/snapshot.jpg",
-            f"{args.frigate_api_url}/api/{camera}/latest.jpg",
+            f"{args.frigate_api_url}/api/events/{event_id}/snapshot.jpg{query}",
+            f"{args.frigate_api_url}/api/{camera}/latest.jpg{query}",
         ]
 
         for attempt in range(args.snapshot_attempts):
@@ -85,6 +86,19 @@ let
             print(f"snapshot unavailable for event {event_id}", flush=True)
             has_snapshot = False
 
+        boxed_snapshot = fetch_snapshot(args, camera, event_id, bbox=True)
+        if boxed_snapshot is not None:
+            message.add_attachment(
+                boxed_snapshot,
+                maintype="image",
+                subtype="jpeg",
+                filename=f"{camera}-{event_id}-bbox.jpg",
+            )
+            has_boxed_snapshot = True
+        else:
+            print(f"bounding-box snapshot unavailable for event {event_id}", flush=True)
+            has_boxed_snapshot = False
+
         host = os.environ["SMTP_HOST"]
         port = int(os.environ.get("SMTP_PORT", "587"))
         username = os.environ.get("SMTP_USERNAME")
@@ -109,7 +123,8 @@ let
 
         print(
             f"sent {label} notification for {camera} event {event_id} "
-            f"to {args.recipient} snapshot={has_snapshot}",
+            f"to {args.recipient} snapshot={has_snapshot} "
+            f"bbox_snapshot={has_boxed_snapshot}",
             flush=True,
         )
 

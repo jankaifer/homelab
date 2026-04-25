@@ -358,9 +358,15 @@ in
       motion.mask = [
         "0,0,1,0,1,0.12,0.5,0.0967,0,0.18"
       ];
-      objects.filters.car = {
-        min_score = 0.6;
-        threshold = 0.8;
+      objects.filters = {
+        car = {
+          min_score = 0.8;
+          threshold = 0.8;
+        };
+        person = {
+          min_score = 0.8;
+          threshold = 0.8;
+        };
       };
     };
     runtimeSecretFiles = {

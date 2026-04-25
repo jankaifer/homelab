@@ -2,7 +2,7 @@
 
 **Status**: DONE
 **Created**: 2026-03-31
-**Updated**: 2026-04-10
+**Updated**: 2026-04-25
 
 ## Task
 
@@ -76,3 +76,8 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 - Enabled `camera2`'s RTSP substream and switched Frigate detection to `subtype=1` after verifying it serves `640x480 @ 5 FPS`, while keeping the main stream on `subtype=0` for recording quality.
 - Reverted `camera2` back to the main stream for both `detect` and `record` after the mixed `4:3` substream and `16:9` main stream caused undesirable Frigate UI aspect-ratio behavior.
 - Removed Frigate's `preset-vaapi` ingest override from the production `camera2` path after repeated `ffmpeg.camera2.detect` crashes (`Failed to sync surface` / `hwdownload`) showed the hardware-download path was unstable on the live stream.
+
+### 2026-04-25
+
+- Updated the Frigate email notifier to keep the existing snapshot attachment and add a second `bbox=1` attachment so detection emails show the bounding box separately.
+- Raised production `camera2` `person` and `car` object filters to require 80% confidence via both `min_score` and `threshold`.

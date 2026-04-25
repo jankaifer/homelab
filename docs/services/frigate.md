@@ -60,6 +60,25 @@ homelab.services.frigate = {
       width = 1920;
       height = 1080;
       fps = 5;
+      min_initialized = 5;
+      max_disappeared = 300;
+      stationary = {
+        threshold = 10;
+        interval = 100;
+      };
+    };
+    motion.mask = [
+      "0,0,1,0,1,0.12,0.5,0.0967,0,0.18"
+    ];
+    objects.filters = {
+      car = {
+        min_score = 0.8;
+        threshold = 0.8;
+      };
+      person = {
+        min_score = 0.8;
+        threshold = 0.8;
+      };
     };
   };
   runtimeSecretFiles = {
@@ -136,7 +155,7 @@ homelab.services.frigate = {
 
 - The production camera RTSP URLs are secret-backed and therefore not visible in the committed Nix config
 - `camera2` currently uses the proven main stream for both `detect` and `record`
-- `camera2` has car-specific tuning to reduce repeated parked-car alerts and object ID churn: higher car score thresholds, faster stationary classification, slower stationary re-checks, a longer `max_disappeared` window, and a higher `min_initialized` value so weak one-off detections are less likely to become new tracks
+- `camera2` requires at least 80% confidence for `person` and `car` detections, and has extra car-specific tuning to reduce repeated parked-car alerts and object ID churn: faster stationary classification, slower stationary re-checks, a longer `max_disappeared` window, and a higher `min_initialized` value so weak one-off detections are less likely to become new tracks
 - Home Assistant has working MQTT access to `frigate/#`, but the dedicated Frigate integration/entities are not configured yet
 
 ## Access Model
