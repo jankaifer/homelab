@@ -5,9 +5,10 @@
 
 let
   cfg = config.homelab.services.frigate-notifier;
-  python = pkgs.python3.withPackages (ps: [ ps.paho-mqtt ]);
+  python = pkgs.python3.withPackages (ps: [ ps.paho-mqtt ps.pillow ]);
   notifierScript = pkgs.writeText "frigate-email-notifier.py" ''
     import argparse
+    import io
     import json
     import os
     import smtplib
@@ -18,6 +19,7 @@ let
     from urllib.request import urlopen
 
     import paho.mqtt.client as mqtt
+    from PIL import Image, ImageDraw, ImageFont
 
 
     def env_bool(name, default):
@@ -27,11 +29,10 @@ let
         return value.lower() in ("1", "true", "yes", "on")
 
 
-    def fetch_snapshot(args, camera, event_id, *, bbox=None):
-        query = "" if bbox is None else f"?bbox={1 if bbox else 0}"
+    def fetch_snapshot(args, camera, event_id):
         urls = [
-            f"{args.frigate_api_url}/api/events/{event_id}/snapshot.jpg{query}",
-            f"{args.frigate_api_url}/api/{camera}/latest.jpg{query}",
+            f"{args.frigate_api_url}/api/events/{event_id}/snapshot.jpg",
+            f"{args.frigate_api_url}/api/{camera}/latest.jpg",
         ]
 
         for attempt in range(args.snapshot_attempts):
@@ -47,6 +48,78 @@ let
                 time.sleep(args.snapshot_retry_seconds)
 
         return None
+
+
+    def object_text(label, score):
+        if isinstance(score, (int, float)):
+            return f"{label.upper()} {score:.0%}"
+        return label.upper()
+
+
+    def draw_label(draw, xy, text, font):
+        left, top = xy
+        padding_x = 12
+        padding_y = 8
+        text_box = draw.textbbox((0, 0), text, font=font)
+        width = text_box[2] - text_box[0]
+        height = text_box[3] - text_box[1]
+        draw.rectangle(
+            [
+                left,
+                top,
+                left + width + padding_x * 2,
+                top + height + padding_y * 2,
+            ],
+            fill=(220, 0, 0),
+        )
+        draw.text(
+            (left + padding_x, top + padding_y),
+            text,
+            fill=(255, 255, 255),
+            font=font,
+        )
+
+
+    def annotated_snapshot(snapshot, after, label, score):
+        image = Image.open(io.BytesIO(snapshot)).convert("RGB")
+        draw = ImageDraw.Draw(image)
+        font_size = max(24, image.height // 24)
+        font = ImageFont.load_default(size=font_size)
+        border_width = max(12, min(image.size) // 45)
+        text = object_text(label, score)
+
+        box = after.get("box")
+        if (
+            isinstance(box, list)
+            and len(box) == 4
+            and all(isinstance(value, (int, float)) for value in box)
+        ):
+            x1, y1, x2, y2 = box
+            x1 = max(0, min(image.width - 1, int(round(x1))))
+            y1 = max(0, min(image.height - 1, int(round(y1))))
+            x2 = max(0, min(image.width - 1, int(round(x2))))
+            y2 = max(0, min(image.height - 1, int(round(y2))))
+            if x2 <= x1 or y2 <= y1:
+                x1, y1 = border_width, border_width
+                x2, y2 = image.width - border_width, image.height - border_width
+                text = f"{text} DETECTED"
+        else:
+            x1, y1 = border_width, border_width
+            x2, y2 = image.width - border_width, image.height - border_width
+            text = f"{text} DETECTED"
+
+        for offset in range(border_width):
+            draw.rectangle(
+                [x1 - offset, y1 - offset, x2 + offset, y2 + offset],
+                outline=(255, 0, 0),
+            )
+
+        label_top = max(0, y1 - border_width - font_size - 24)
+        draw_label(draw, (max(0, x1), label_top), text, font)
+
+        output = io.BytesIO()
+        image.save(output, format="JPEG", quality=92)
+        return output.getvalue()
 
 
     def send_email(args, event):
@@ -86,18 +159,17 @@ let
             print(f"snapshot unavailable for event {event_id}", flush=True)
             has_snapshot = False
 
-        boxed_snapshot = fetch_snapshot(args, camera, event_id, bbox=True)
-        if boxed_snapshot is not None:
+        if snapshot is not None:
+            annotated = annotated_snapshot(snapshot, after, label, score)
             message.add_attachment(
-                boxed_snapshot,
+                annotated,
                 maintype="image",
                 subtype="jpeg",
-                filename=f"{camera}-{event_id}-bbox.jpg",
+                filename=f"{camera}-{event_id}-annotated.jpg",
             )
-            has_boxed_snapshot = True
+            has_annotated_snapshot = True
         else:
-            print(f"bounding-box snapshot unavailable for event {event_id}", flush=True)
-            has_boxed_snapshot = False
+            has_annotated_snapshot = False
 
         host = os.environ["SMTP_HOST"]
         port = int(os.environ.get("SMTP_PORT", "587"))
@@ -124,7 +196,7 @@ let
         print(
             f"sent {label} notification for {camera} event {event_id} "
             f"to {args.recipient} snapshot={has_snapshot} "
-            f"bbox_snapshot={has_boxed_snapshot}",
+            f"annotated_snapshot={has_annotated_snapshot}",
             flush=True,
         )
 

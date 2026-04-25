@@ -81,3 +81,4 @@ Implement the first camera/NVR deployment based on the architecture decision fro
 
 - Updated the Frigate email notifier to keep the existing snapshot attachment and add a second `bbox=1` attachment so detection emails show the bounding box separately.
 - Raised production `camera2` `person` and `car` object filters to require 80% confidence via both `min_score` and `threshold`.
+- Replaced the `bbox=1` email attachment with a notifier-generated annotated image that draws a thick red detection box and label banner, because the Frigate-provided overlay was not visually obvious enough in email clients.
