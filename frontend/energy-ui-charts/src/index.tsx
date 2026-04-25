@@ -67,6 +67,109 @@ input {
   align-items: center;
   flex-wrap: wrap;
 }
+.date-picker {
+  position: relative;
+}
+.date-trigger {
+  min-width: 178px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+.date-trigger small {
+  color: var(--muted);
+  font-weight: 500;
+}
+.calendar-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  width: min(360px, calc(100vw - 24px));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.14);
+  padding: 12px;
+}
+.shortcut-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.shortcut-row button {
+  padding: 0.5rem 0.45rem;
+}
+.month-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.month-header strong {
+  font-size: 0.92rem;
+}
+.month-nav {
+  display: flex;
+  gap: 6px;
+}
+.month-nav button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+.calendar-weekdays,
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.calendar-weekdays span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 4px 0;
+}
+.calendar-day-button {
+  height: 34px;
+  padding: 0;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  position: relative;
+}
+.calendar-day-button.outside {
+  color: #a1a1aa;
+  background: #fbfbfb;
+}
+.calendar-day-button.selected {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: white;
+}
+.calendar-day-button.today:not(.selected) {
+  border-color: var(--ink);
+}
+.calendar-day-button.has-data::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateX(-50%);
+  opacity: 0.7;
+}
+.calendar-foot {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
 .grid { display: grid; gap: 16px; }
 .metrics {
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -248,7 +351,9 @@ input {
   .shell { width: min(100vw - 20px, 1360px); padding-top: 12px; }
   .topbar { align-items: stretch; flex-direction: column; }
   .date-controls { display: grid; grid-template-columns: 1fr auto; }
-  .date-controls input { min-width: 0; }
+  .date-picker { min-width: 0; }
+  .date-trigger { width: 100%; min-width: 0; }
+  .calendar-popover { left: 0; right: auto; }
   .metrics, .two-up { grid-template-columns: 1fr; }
   .table-wrap { overflow-x: auto; }
   .chart-canvas { height: 230px; min-height: 230px; }
@@ -276,6 +381,29 @@ function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function localDate(dateKeyValue: string) {
+  return new Date(`${dateKeyValue}T12:00:00`);
+}
+
+function keyFromDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(dateKeyValue: string, count: number) {
+  const date = localDate(dateKeyValue);
+  date.setDate(date.getDate() + count);
+  return keyFromDate(date);
+}
+
+function addMonths(date: Date, count: number) {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + count, 1);
+  return next;
+}
+
 function dateFromLocation() {
   return new URLSearchParams(window.location.search).get("date") || todayKey();
 }
@@ -289,6 +417,10 @@ function fmt(value: unknown, suffix = "") {
 function fmtTime(value?: string, options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) {
   if (!value) return "-";
   return new Intl.DateTimeFormat([], options).format(new Date(value));
+}
+
+function fmtDateKey(dateKeyValue: string, options: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" }) {
+  return new Intl.DateTimeFormat([], options).format(localDate(dateKeyValue));
 }
 
 function sum(points: TelemetryPoint[], key: keyof TelemetryPoint) {
@@ -557,6 +689,84 @@ function Metrics({ plan, latest }: { plan: PlannerSnapshot | null; latest: Plann
   </div>;
 }
 
+function DatePicker({
+  value,
+  availableDates,
+  onChange,
+}: {
+  value: string;
+  availableDates: string[];
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const selected = localDate(value);
+    return new Date(selected.getFullYear(), selected.getMonth(), 1, 12, 0, 0, 0);
+  });
+  const today = todayKey();
+  const availableSet = useMemo(() => new Set(availableDates), [availableDates]);
+
+  useEffect(() => {
+    const selected = localDate(value);
+    setVisibleMonth(new Date(selected.getFullYear(), selected.getMonth(), 1, 12, 0, 0, 0));
+  }, [value]);
+
+  const choose = (next: string) => {
+    onChange(next);
+    setOpen(false);
+  };
+  const firstDayOffset = (visibleMonth.getDay() + 6) % 7;
+  const gridStart = new Date(visibleMonth);
+  gridStart.setDate(visibleMonth.getDate() - firstDayOffset);
+  const days = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart);
+    date.setDate(gridStart.getDate() + index);
+    return date;
+  });
+
+  return <div className="date-picker">
+    <button type="button" className="date-trigger" onClick={() => setOpen((current) => !current)} aria-expanded={open}>
+      <span>{fmtDateKey(value)}</span>
+      <small>Change date</small>
+    </button>
+    {open ? <div className="calendar-popover">
+      <div className="shortcut-row">
+        <button type="button" onClick={() => choose(addDays(today, -1))}>Yesterday</button>
+        <button type="button" className="primary" onClick={() => choose(today)}>Today</button>
+        <button type="button" onClick={() => choose(addDays(today, 1))}>Tomorrow</button>
+      </div>
+      <div className="month-header">
+        <strong>{new Intl.DateTimeFormat([], { month: "long", year: "numeric" }).format(visibleMonth)}</strong>
+        <div className="month-nav">
+          <button type="button" aria-label="Previous month" onClick={() => setVisibleMonth((current) => addMonths(current, -1))}>‹</button>
+          <button type="button" aria-label="Next month" onClick={() => setVisibleMonth((current) => addMonths(current, 1))}>›</button>
+        </div>
+      </div>
+      <div className="calendar-weekdays">
+        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <span key={day}>{day}</span>)}
+      </div>
+      <div className="calendar-days">
+        {days.map((day) => {
+          const key = keyFromDate(day);
+          const outside = day.getMonth() !== visibleMonth.getMonth();
+          const selected = key === value;
+          const currentToday = key === today;
+          const hasData = availableSet.has(key);
+          return <button
+            type="button"
+            key={key}
+            className={`calendar-day-button ${outside ? "outside" : ""} ${selected ? "selected" : ""} ${currentToday ? "today" : ""} ${hasData ? "has-data" : ""}`.trim()}
+            onClick={() => choose(key)}
+          >
+            {day.getDate()}
+          </button>;
+        })}
+      </div>
+      <p className="calendar-foot">Small dots mark dates with saved planner runs.</p>
+    </div> : null}
+  </div>;
+}
+
 function App() {
   const [date, setDate] = useState(dateFromLocation());
   const [data, setData] = useState<DashboardResponse | null>(null);
@@ -595,11 +805,7 @@ function App() {
         <span>Read-only planner dashboard</span>
       </div>
       <div className="date-controls">
-        <input type="date" value={date} list="available-dates" onChange={(event) => setDate(event.target.value)} />
-        <datalist id="available-dates">
-          {dateList.map((item) => <option key={item} value={item} />)}
-        </datalist>
-        <button type="button" onClick={() => setDate(todayKey())}>Today</button>
+        <DatePicker value={date} availableDates={dateList} onChange={setDate} />
         <button type="button" className="primary" onClick={() => data?.available_dates[0] && setDate(data.available_dates[0])}>Latest</button>
       </div>
     </header>

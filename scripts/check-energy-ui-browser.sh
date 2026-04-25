@@ -79,7 +79,7 @@ assert_dashboard() {
   local output
   output="$("${PWCLI[@]}" --session "${session}" eval '() => ({
     title: document.querySelector("h1")?.textContent || "",
-    hasDate: Boolean(document.querySelector("input[type=date]")),
+    hasDate: Boolean(document.querySelector(".date-trigger")),
     chartCount: document.querySelectorAll(".chart svg").length,
     hasHistory: Boolean(document.querySelector("table.table") || document.body.textContent.includes("No persisted history")),
     hasWorkbench: document.body.textContent.includes("Workbench"),
@@ -154,8 +154,37 @@ for label in ("Solar", "Grid import", "Battery discharge"):
 PY
 }
 
+assert_date_picker() {
+  local session="$1"
+  session_eval "${session}" '() => document.querySelector("button.date-trigger")?.click()' >/dev/null
+  local output
+  output="$(session_eval "${session}" '() => ({
+    open: Boolean(document.querySelector(".calendar-popover")),
+    shortcuts: Array.from(document.querySelectorAll(".shortcut-row button")).map((button) => button.textContent.trim()),
+    hasGrid: document.querySelectorAll(".calendar-day-button").length >= 35
+  })')"
+  RESULT_TEXT="${output}" python3 - <<'PY'
+import json
+import os
+import re
+
+text = os.environ["RESULT_TEXT"]
+match = re.search(r'### Result\s*(.*?)\s*### Ran', text, re.S)
+if not match:
+    raise SystemExit("Missing Playwright eval result for date picker")
+data = json.loads(match.group(1))
+if not data.get("open"):
+    raise SystemExit("Expected calendar popover to open")
+if data.get("shortcuts") != ["Yesterday", "Today", "Tomorrow"]:
+    raise SystemExit(f"Unexpected date shortcuts: {data.get('shortcuts')!r}")
+if not data.get("hasGrid"):
+    raise SystemExit("Expected calendar grid to render")
+PY
+}
+
 "${PWCLI[@]}" --session energy-ui-desktop open --config "${desktop_config}" "${URL}" >/dev/null
 assert_dashboard energy-ui-desktop
+assert_date_picker energy-ui-desktop
 assert_chart_hover energy-ui-desktop
 capture_screenshot energy-ui-desktop "${OUT_DIR}/dashboard-desktop.png"
 
