@@ -348,8 +348,12 @@ in
         width = 1920;
         height = 1080;
         fps = 5;
-        max_disappeared = 150;
-        stationary.threshold = 25;
+        min_initialized = 5;
+        max_disappeared = 300;
+        stationary = {
+          threshold = 10;
+          interval = 100;
+        };
       };
       motion.mask = [
         "0,0,1,0,1,0.12,0.5,0.0967,0,0.18"
