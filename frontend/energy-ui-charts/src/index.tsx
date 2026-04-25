@@ -149,6 +149,20 @@ input {
   font-size: 0.82rem;
 }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
+.axis-legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.axis-legend span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: #fcfcfc;
+}
 .dot { width: 8px; height: 8px; border-radius: 99px; display: inline-block; }
 .stack { display: grid; gap: 10px; }
 .band {
@@ -294,11 +308,27 @@ function Sparkline({ points, summary }: { points: TelemetryPoint[]; summary: Pla
 
   return <div className="chart" role="img" aria-label="Energy forecast chart">
     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
-      <ComposedChart data={data} margin={{ top: 12, right: 18, bottom: 0, left: -10 }} barGap={1} barCategoryGap={2}>
+      <ComposedChart data={data} margin={{ top: 12, right: 30, bottom: 0, left: 22 }} barGap={1} barCategoryGap={2}>
         <CartesianGrid stroke="var(--line)" vertical={false} />
         <XAxis dataKey="time" tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={{ stroke: "var(--line)" }} minTickGap={22} />
-        <YAxis yAxisId="energy" tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={false} width={44} />
-        <YAxis yAxisId="battery" orientation="right" domain={[0, Math.max(Number(summary.battery_capacity_kwh || 0), 1)]} tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={false} width={44} />
+        <YAxis
+          yAxisId="energy"
+          tick={{ fill: "var(--muted)", fontSize: 11 }}
+          tickLine={false}
+          axisLine={false}
+          width={58}
+          label={{ value: "Energy kWh", angle: -90, position: "insideLeft", offset: -8, fill: "var(--muted)", fontSize: 11 }}
+        />
+        <YAxis
+          yAxisId="battery"
+          orientation="right"
+          domain={[0, Math.max(Number(summary.battery_capacity_kwh || 0), 1)]}
+          tick={{ fill: "var(--muted)", fontSize: 11 }}
+          tickLine={false}
+          axisLine={false}
+          width={58}
+          label={{ value: "Battery kWh", angle: 90, position: "insideRight", offset: -8, fill: "var(--muted)", fontSize: 11 }}
+        />
         <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(9, 9, 11, 0.04)" }} />
         <Bar yAxisId="energy" dataKey="solar_kwh" name="Solar" fill={VICTRON_COLORS.solar} opacity={0.82} radius={[3, 3, 0, 0]} barSize={8} />
         <Bar yAxisId="energy" dataKey="import_kwh" name="Import" fill={VICTRON_COLORS.import} opacity={0.74} radius={[3, 3, 0, 0]} barSize={8} />
@@ -338,7 +368,13 @@ function EnergyChart({ plan }: { plan: PlannerSnapshot | null }) {
         <span><i className="dot" style={{ background: VICTRON_COLORS.reserve }} />Reserve</span>
       </div>
     </div>
-    <div className="chart-wrap"><Sparkline points={points} summary={summary} /></div>
+    <div className="chart-wrap">
+      <Sparkline points={points} summary={summary} />
+      <div className="axis-legend" aria-label="Chart axis units">
+        <span>Left axis: solar, import, demand in kWh per bucket</span>
+        <span>Right axis: battery SoC and reserve in kWh</span>
+      </div>
+    </div>
   </section>;
 }
 
