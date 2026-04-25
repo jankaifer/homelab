@@ -165,10 +165,16 @@ async function main() {
       try {
         const url = new URL(request.url);
         if (url.pathname === "/" || url.pathname === "/dashboard") return html();
+        if (url.pathname === "/favicon.ico") return new Response(null, { status: 204 });
         if (url.pathname === "/app.js") {
           const app = Bun.file(APP_JS_PATH);
           if (!(await app.exists())) return json({ error: `Missing app bundle at ${APP_JS_PATH}` }, 404);
-          return new Response(app, { headers: { "content-type": "application/javascript; charset=utf-8" } });
+          return new Response(app, {
+            headers: {
+              "content-type": "application/javascript; charset=utf-8",
+              "cache-control": "no-store",
+            },
+          });
         }
         if (url.pathname === "/api/dashboard") return json(await dashboard(stateDir, url.searchParams.get("date")));
         if (url.pathname === "/api/live/plan") return json(await latestPlan(stateDir));

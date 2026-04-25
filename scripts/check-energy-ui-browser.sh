@@ -68,13 +68,19 @@ capture_screenshot() {
   cp "${after}" "${destination}"
 }
 
+session_eval() {
+  local session="$1"
+  local expr="$2"
+  "${PWCLI[@]}" --session "${session}" eval "${expr}"
+}
+
 assert_dashboard() {
   local session="$1"
   local output
   output="$("${PWCLI[@]}" --session "${session}" eval '() => ({
     title: document.querySelector("h1")?.textContent || "",
     hasDate: Boolean(document.querySelector("input[type=date]")),
-    hasChart: Boolean(document.querySelector("svg.chart")),
+    hasChart: Boolean(document.querySelector(".chart svg")),
     hasHistory: Boolean(document.querySelector("table.table") || document.body.textContent.includes("No persisted history")),
     hasWorkbench: document.body.textContent.includes("Workbench"),
     hasEditor: document.body.textContent.includes("Scenario editor")
@@ -99,8 +105,56 @@ if data["hasWorkbench"] or data["hasEditor"]:
 PY
 }
 
+assert_chart_hover() {
+  local session="$1"
+  local metrics_output
+  metrics_output="$(session_eval "${session}" '() => {
+    const rect = document.querySelector(".chart svg")?.getBoundingClientRect();
+    return rect ? { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) } : null;
+  }')"
+  eval "$(RESULT_TEXT="${metrics_output}" python3 - <<'PY'
+import json
+import os
+import re
+
+text = os.environ["RESULT_TEXT"]
+match = re.search(r'### Result\s*(.*?)\s*### Ran', text, re.S)
+if not match:
+    raise SystemExit("Missing Playwright eval result for chart hover metrics")
+data = json.loads(match.group(1))
+if not data:
+    raise SystemExit("Missing chart SVG for hover assertion")
+print(f"hover_x={int(data['x'])}")
+print(f"hover_y={int(data['y'])}")
+PY
+)"
+  "${PWCLI[@]}" --session "${session}" mousemove "${hover_x}" "${hover_y}" >/dev/null
+  local tooltip_output
+  tooltip_output="$(session_eval "${session}" '() => ({
+    visible: Boolean(document.querySelector(".chart-tooltip")),
+    text: document.querySelector(".chart-tooltip")?.textContent || ""
+  })')"
+  RESULT_TEXT="${tooltip_output}" python3 - <<'PY'
+import json
+import os
+import re
+
+text = os.environ["RESULT_TEXT"]
+match = re.search(r'### Result\s*(.*?)\s*### Ran', text, re.S)
+if not match:
+    raise SystemExit("Missing Playwright eval result for chart hover tooltip")
+data = json.loads(match.group(1))
+if not data.get("visible"):
+    raise SystemExit("Expected Recharts tooltip to appear on hover")
+for label in ("Solar", "Import", "Demand", "SoC"):
+    if label not in data.get("text", ""):
+        raise SystemExit(f"Tooltip missing {label}: {data.get('text')!r}")
+PY
+}
+
 "${PWCLI[@]}" --session energy-ui-desktop open --config "${desktop_config}" "${URL}" >/dev/null
 assert_dashboard energy-ui-desktop
+assert_chart_hover energy-ui-desktop
 capture_screenshot energy-ui-desktop "${OUT_DIR}/dashboard-desktop.png"
 
 "${PWCLI[@]}" --session energy-ui-mobile open --config "${mobile_config}" "${URL}" >/dev/null

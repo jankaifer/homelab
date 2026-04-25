@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { DashboardResponse, DemandBand, HistoryEntry, PlannerSnapshot, PlannerSummary, TelemetryPoint } from "./shared";
 
 const styles = `
@@ -106,7 +107,37 @@ input {
 .chart {
   width: 100%;
   height: 320px;
+  min-width: 0;
+  min-height: 320px;
   display: block;
+}
+.chart-tooltip {
+  min-width: 220px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  padding: 10px 12px;
+}
+.chart-tooltip strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.86rem;
+}
+.chart-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.chart-tooltip-row + .chart-tooltip-row {
+  margin-top: 5px;
+}
+.chart-tooltip-row span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .axis { stroke: var(--line); stroke-width: 1; }
 .tick { fill: var(--muted); font-size: 11px; }
@@ -186,6 +217,13 @@ input {
 `;
 
 const numberFormat = new Intl.NumberFormat([], { maximumFractionDigits: 2 });
+const VICTRON_COLORS = {
+  solar: "#f2c94c",
+  import: "#d64545",
+  demand: "#52525b",
+  battery: "#2f80ed",
+  reserve: "#f59e0b",
+};
 
 function injectStyles() {
   const element = document.createElement("style");
@@ -222,6 +260,14 @@ function bucketTime(summary: PlannerSummary, point: TelemetryPoint) {
   return new Intl.DateTimeFormat([], { hour: "2-digit", minute: "2-digit" }).format(start);
 }
 
+function chartRows(points: TelemetryPoint[], summary: PlannerSummary) {
+  return points.map((point) => ({
+    ...point,
+    time: bucketTime(summary, point),
+    demand_kwh: Number(point.fixed_load_kwh || 0) + Number(point.flexible_load_kwh || 0),
+  }));
+}
+
 function selectedSummary(plan: PlannerSnapshot | null): PlannerSummary {
   return plan?.summary || {};
 }
@@ -243,53 +289,36 @@ function Metric({ label, value, foot, className = "" }: { label: string; value: 
 }
 
 function Sparkline({ points, summary }: { points: TelemetryPoint[]; summary: PlannerSummary }) {
-  const width = 960;
-  const height = 300;
-  const left = 42;
-  const right = 14;
-  const top = 16;
-  const bottom = 34;
-  const plotWidth = width - left - right;
-  const plotHeight = height - top - bottom;
-  const maxEnergy = Math.max(1, ...points.map((point) => Math.max(
-    Number(point.solar_kwh || 0),
-    Number(point.import_kwh || 0),
-    Number(point.fixed_load_kwh || 0) + Number(point.flexible_load_kwh || 0),
-    Number(point.battery_charge_kwh || 0),
-    Number(point.battery_discharge_kwh || 0),
-  )));
-  const maxSoc = Math.max(Number(summary.battery_capacity_kwh || 0), ...points.map((point) => Number(point.battery_soc_kwh || 0)), 1);
-  const step = points.length > 1 ? plotWidth / (points.length - 1) : plotWidth;
-  const xFor = (index: number) => left + index * step;
-  const yEnergy = (value: number) => top + plotHeight - (value / maxEnergy) * plotHeight;
-  const ySoc = (value: number) => top + plotHeight - (value / maxSoc) * plotHeight;
-  const socLine = points.map((point, index) => `${xFor(index)},${ySoc(Number(point.battery_soc_kwh || 0))}`).join(" ");
-  const reserveLine = points.map((point, index) => `${xFor(index)},${ySoc(Number(point.reserve_target_kwh || 0))}`).join(" ");
-  const barWidth = Math.max(4, Math.min(18, step * 0.62));
-  const ticks = points.filter((_, index) => index % Math.max(1, Math.ceil(points.length / 8)) === 0);
-
   if (!points.length) return <div className="empty">No forecast timeline for this date.</div>;
+  const data = chartRows(points, summary);
 
-  return <svg className="chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Energy forecast chart">
-    {[0, 0.5, 1].map((fraction) => {
-      const y = top + plotHeight * fraction;
-      return <line key={fraction} className="axis" x1={left} y1={y} x2={width - right} y2={y} />;
-    })}
-    {points.map((point, index) => {
-      const demand = Number(point.fixed_load_kwh || 0) + Number(point.flexible_load_kwh || 0);
-      const x = xFor(index) - barWidth / 2;
-      return <g key={index}>
-        <rect x={x} y={yEnergy(Number(point.solar_kwh || 0))} width={barWidth} height={plotHeight + top - yEnergy(Number(point.solar_kwh || 0))} fill="#a1a1aa" opacity="0.55" />
-        <rect x={x + barWidth * 0.34} y={yEnergy(Number(point.import_kwh || 0))} width={barWidth * 0.66} height={plotHeight + top - yEnergy(Number(point.import_kwh || 0))} fill="#2563eb" opacity="0.6" />
-        <rect x={x + barWidth * 0.68} y={yEnergy(demand)} width={barWidth * 0.66} height={plotHeight + top - yEnergy(demand)} fill="#09090b" opacity="0.82" />
-      </g>;
-    })}
-    <polyline points={reserveLine} fill="none" stroke="#b45309" strokeWidth="2" strokeDasharray="5 5" />
-    <polyline points={socLine} fill="none" stroke="#047857" strokeWidth="3" />
-    {ticks.map((point, index) => <text key={index} className="tick" x={xFor(points.indexOf(point))} y={height - 10} textAnchor="middle">{bucketTime(summary, point)}</text>)}
-    <text className="tick" x={left - 8} y={top + 4} textAnchor="end">{fmt(maxEnergy)}</text>
-    <text className="tick" x={left - 8} y={top + plotHeight + 4} textAnchor="end">0</text>
-  </svg>;
+  return <div className="chart" role="img" aria-label="Energy forecast chart">
+    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
+      <ComposedChart data={data} margin={{ top: 12, right: 18, bottom: 0, left: -10 }}>
+        <CartesianGrid stroke="var(--line)" vertical={false} />
+        <XAxis dataKey="time" tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={{ stroke: "var(--line)" }} minTickGap={22} />
+        <YAxis yAxisId="energy" tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={false} width={44} />
+        <YAxis yAxisId="battery" orientation="right" domain={[0, Math.max(Number(summary.battery_capacity_kwh || 0), 1)]} tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={false} width={44} />
+        <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(9, 9, 11, 0.04)" }} />
+        <Bar yAxisId="energy" dataKey="solar_kwh" name="Solar" fill={VICTRON_COLORS.solar} opacity={0.82} radius={[3, 3, 0, 0]} />
+        <Bar yAxisId="energy" dataKey="import_kwh" name="Import" fill={VICTRON_COLORS.import} opacity={0.74} radius={[3, 3, 0, 0]} />
+        <Bar yAxisId="energy" dataKey="demand_kwh" name="Demand" fill={VICTRON_COLORS.demand} opacity={0.74} radius={[3, 3, 0, 0]} />
+        <Line yAxisId="battery" type="monotone" dataKey="battery_soc_kwh" name="SoC" stroke={VICTRON_COLORS.battery} strokeWidth={3} dot={false} />
+        <Line yAxisId="battery" type="monotone" dataKey="reserve_target_kwh" name="Reserve" stroke={VICTRON_COLORS.reserve} strokeWidth={2} strokeDasharray="5 5" dot={false} />
+      </ComposedChart>
+    </ResponsiveContainer>
+  </div>;
+}
+
+function ChartTooltip(props: { active?: boolean; payload?: Array<{ name?: string; value?: number; color?: string }>; label?: string }) {
+  if (!props.active || !props.payload?.length) return null;
+  return <div className="chart-tooltip">
+    <strong>{props.label}</strong>
+    {props.payload.map((item) => <div className="chart-tooltip-row" key={item.name}>
+      <span><i className="dot" style={{ background: item.color || "var(--muted)" }} />{item.name}</span>
+      <b>{fmt(item.value, " kWh")}</b>
+    </div>)}
+  </div>;
 }
 
 function EnergyChart({ plan }: { plan: PlannerSnapshot | null }) {
@@ -302,10 +331,11 @@ function EnergyChart({ plan }: { plan: PlannerSnapshot | null }) {
         <p>{points.length ? `${points.length} planner buckets from ${fmtTime(summary.planner_timestamp)}` : "No selected snapshot"}</p>
       </div>
       <div className="legend">
-        <span><i className="dot" style={{ background: "#a1a1aa" }} />Solar</span>
-        <span><i className="dot" style={{ background: "#2563eb" }} />Import</span>
-        <span><i className="dot" style={{ background: "#09090b" }} />Demand</span>
-        <span><i className="dot" style={{ background: "#047857" }} />SoC</span>
+        <span><i className="dot" style={{ background: VICTRON_COLORS.solar }} />Solar</span>
+        <span><i className="dot" style={{ background: VICTRON_COLORS.import }} />Import</span>
+        <span><i className="dot" style={{ background: VICTRON_COLORS.demand }} />Demand</span>
+        <span><i className="dot" style={{ background: VICTRON_COLORS.battery }} />SoC</span>
+        <span><i className="dot" style={{ background: VICTRON_COLORS.reserve }} />Reserve</span>
       </div>
     </div>
     <div className="chart-wrap"><Sparkline points={points} summary={summary} /></div>
