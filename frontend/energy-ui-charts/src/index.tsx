@@ -106,13 +106,18 @@ input {
 .chart-wrap { padding: 14px 16px 16px; }
 .chart {
   width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.chart + .chart {
+  margin-top: 24px;
+}
+.chart-canvas {
+  width: 100%;
   height: 260px;
   min-width: 0;
   min-height: 260px;
-  display: block;
-}
-.chart + .chart {
-  margin-top: 18px;
 }
 .chart-title-row {
   display: flex;
@@ -172,7 +177,7 @@ input {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin: 12px 0 0;
+  margin: 16px 0 0;
   color: var(--muted);
   font-size: 0.78rem;
 }
@@ -246,6 +251,8 @@ input {
   .date-controls input { min-width: 0; }
   .metrics, .two-up { grid-template-columns: 1fr; }
   .table-wrap { overflow-x: auto; }
+  .chart-canvas { height: 230px; min-height: 230px; }
+  .chart-title-row { align-items: start; flex-direction: column; }
 }
 `;
 
@@ -359,10 +366,11 @@ function EnergyFlowChart({
         {series.map((item) => <span key={item.key}><i className="dot" style={{ background: item.color }} />{item.label}</span>)}
       </div>
     </div>
+    <div className="chart-canvas">
     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={260}>
-      <ComposedChart data={data} margin={{ top: 6, right: 18, bottom: 0, left: 22 }} barGap={1} barCategoryGap={2}>
+      <ComposedChart data={data} margin={{ top: 6, right: 18, bottom: 8, left: 22 }} barGap={1} barCategoryGap={2}>
         <CartesianGrid stroke="var(--line)" vertical={false} />
-        <XAxis dataKey="time" tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={{ stroke: "var(--line)" }} minTickGap={22} />
+        <XAxis dataKey="time" tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={{ stroke: "var(--line)" }} interval={5} />
         <YAxis
           yAxisId="energy"
           tick={{ fill: "var(--muted)", fontSize: 11 }}
@@ -387,6 +395,7 @@ function EnergyFlowChart({
         ))}
       </ComposedChart>
     </ResponsiveContainer>
+    </div>
   </div>;
 }
 
@@ -406,8 +415,8 @@ function EnergyChart({ plan }: { plan: PlannerSnapshot | null }) {
   const points = selectedTimeline(plan);
   const generationSeries = [
     { key: "solar_kwh", label: "Solar", color: VICTRON_COLORS.solar },
-    { key: "grid_import_kwh", label: "Grid import", color: VICTRON_COLORS.import },
     { key: "battery_discharge_kwh", label: "Battery discharge", color: VICTRON_COLORS.battery },
+    { key: "grid_import_kwh", label: "Grid import", color: VICTRON_COLORS.import },
   ];
   const useSeries = [
     { key: "base_load_kwh", label: "Base load", color: VICTRON_COLORS.baseLoad },
