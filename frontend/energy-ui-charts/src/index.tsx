@@ -294,15 +294,15 @@ function Sparkline({ points, summary }: { points: TelemetryPoint[]; summary: Pla
 
   return <div className="chart" role="img" aria-label="Energy forecast chart">
     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={320}>
-      <ComposedChart data={data} margin={{ top: 12, right: 18, bottom: 0, left: -10 }}>
+      <ComposedChart data={data} margin={{ top: 12, right: 18, bottom: 0, left: -10 }} barGap={1} barCategoryGap={2}>
         <CartesianGrid stroke="var(--line)" vertical={false} />
         <XAxis dataKey="time" tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={{ stroke: "var(--line)" }} minTickGap={22} />
         <YAxis yAxisId="energy" tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={false} width={44} />
         <YAxis yAxisId="battery" orientation="right" domain={[0, Math.max(Number(summary.battery_capacity_kwh || 0), 1)]} tick={{ fill: "var(--muted)", fontSize: 11 }} tickLine={false} axisLine={false} width={44} />
         <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(9, 9, 11, 0.04)" }} />
-        <Bar yAxisId="energy" dataKey="solar_kwh" name="Solar" fill={VICTRON_COLORS.solar} opacity={0.82} radius={[3, 3, 0, 0]} />
-        <Bar yAxisId="energy" dataKey="import_kwh" name="Import" fill={VICTRON_COLORS.import} opacity={0.74} radius={[3, 3, 0, 0]} />
-        <Bar yAxisId="energy" dataKey="demand_kwh" name="Demand" fill={VICTRON_COLORS.demand} opacity={0.74} radius={[3, 3, 0, 0]} />
+        <Bar yAxisId="energy" dataKey="solar_kwh" name="Solar" fill={VICTRON_COLORS.solar} opacity={0.82} radius={[3, 3, 0, 0]} barSize={8} />
+        <Bar yAxisId="energy" dataKey="import_kwh" name="Import" fill={VICTRON_COLORS.import} opacity={0.74} radius={[3, 3, 0, 0]} barSize={8} />
+        <Bar yAxisId="energy" dataKey="demand_kwh" name="Demand" fill={VICTRON_COLORS.demand} opacity={0.74} radius={[3, 3, 0, 0]} barSize={8} />
         <Line yAxisId="battery" type="monotone" dataKey="battery_soc_kwh" name="SoC" stroke={VICTRON_COLORS.battery} strokeWidth={3} dot={false} />
         <Line yAxisId="battery" type="monotone" dataKey="reserve_target_kwh" name="Reserve" stroke={VICTRON_COLORS.reserve} strokeWidth={2} strokeDasharray="5 5" dot={false} />
       </ComposedChart>
