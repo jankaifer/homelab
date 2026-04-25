@@ -46,7 +46,7 @@ input {
   color: var(--ink);
 }
 .shell {
-  width: min(1360px, calc(100vw - 32px));
+  width: min(1720px, calc(100vw - 24px));
   margin: 0 auto;
   padding: 24px 0 48px;
 }
@@ -175,7 +175,7 @@ input {
   grid-template-columns: repeat(6, minmax(0, 1fr));
   margin: 20px 0 16px;
 }
-.two-up { grid-template-columns: minmax(0, 1.45fr) minmax(360px, 0.75fr); }
+.two-up { grid-template-columns: minmax(0, 1.8fr) minmax(360px, 0.72fr); }
 .panel {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -348,7 +348,7 @@ input {
   .two-up > :first-child { grid-column: 1 / -1; }
 }
 @media (max-width: 720px) {
-  .shell { width: min(100vw - 20px, 1360px); padding-top: 12px; }
+  .shell { width: min(100vw - 20px, 1720px); padding-top: 12px; }
   .topbar { align-items: stretch; flex-direction: column; }
   .date-controls { display: grid; grid-template-columns: 1fr auto; }
   .date-picker { min-width: 0; }

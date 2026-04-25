@@ -180,6 +180,7 @@ if data.get("shortcuts") != ["Yesterday", "Today", "Tomorrow"]:
 if not data.get("hasGrid"):
     raise SystemExit("Expected calendar grid to render")
 PY
+  session_eval "${session}" '() => document.querySelector("button.date-trigger")?.click()' >/dev/null
 }
 
 "${PWCLI[@]}" --session energy-ui-desktop open --config "${desktop_config}" "${URL}" >/dev/null
