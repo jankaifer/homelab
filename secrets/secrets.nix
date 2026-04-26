@@ -45,6 +45,9 @@ in
   # MQTT password for Frigate MQTT client
   "mqtt-frigate-password.age".publicKeys = allKeys;
 
+  # Victron Einstein GX MQTT password
+  "victron-einstein-mqtt-password.age".publicKeys = allKeys;
+
   # Frigate camera2 RTSP URLs
   "frigate-camera2-detect-url.age".publicKeys = allKeys;
   "frigate-camera2-record-url.age".publicKeys = allKeys;
