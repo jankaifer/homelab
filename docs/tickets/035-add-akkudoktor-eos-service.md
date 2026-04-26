@@ -6,7 +6,7 @@
 
 ## Task
 
-Add Akkudoktor-EOS as the optimizer API service for the homelab energy stack.
+Add Akkudoktor-EOS as the read-only optimizer API service for the homelab energy stack.
 
 ## Implementation Plan
 
@@ -22,12 +22,14 @@ Add Akkudoktor-EOS as the optimizer API service for the homelab energy stack.
    - no direct heat pump control
    - no direct MQTT command publishing in v1
 9. Document that EOS Connect is the only planned caller that turns optimizer output into control decisions.
+10. During the first rollout, treat EOS output as advisory only: log/display plans but do not apply them to evcc, Home Assistant, MQTT command topics, or physical devices.
 
 Control boundary:
 
 - EOS receives forecasts, prices, constraints, and current state from EOS Connect.
 - EOS returns an optimization plan.
 - EOS does not command evcc, Home Assistant, MQTT, or physical devices directly.
+- No other service may apply EOS plans automatically during the first rollout.
 
 ## Work Log
 
@@ -35,6 +37,8 @@ Control boundary:
 
 - Created ticket from the hybrid integration decision in Ticket 033.
 - Confirmed EOS belongs in the stack as an optimizer API, not as the orchestration layer.
+- Marked the first EOS rollout as advisory/read-only.
+- Deferred applying optimizer output to any real device until a later active-control ticket.
 
 ## Validation Notes
 

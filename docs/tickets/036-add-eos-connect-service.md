@@ -6,7 +6,7 @@
 
 ## Task
 
-Add EOS Connect as the orchestration service between Akkudoktor-EOS, evcc, Home Assistant, and MQTT.
+Add EOS Connect as the read-only orchestration and observation service between Akkudoktor-EOS, evcc, Home Assistant, and MQTT.
 
 ## Implementation Plan
 
@@ -17,24 +17,27 @@ Add EOS Connect as the orchestration service between Akkudoktor-EOS, evcc, Home 
 5. Expose EOS Connect through Caddy at `https://eos-connect.frame1.hobitin.eu` and add a Homepage entry if the service exposes a UI.
 6. Wire EOS Connect to:
    - Akkudoktor-EOS at the local EOS API endpoint
-   - evcc at the local evcc API endpoint
-   - Home Assistant at the local Home Assistant endpoint
+   - evcc at the local evcc API endpoint for state reads only
+   - Home Assistant at the local Home Assistant endpoint for state/history reads only
    - Mosquitto for telemetry, state sharing, and selected override topics
 7. Extend secrets as needed:
-   - Home Assistant long-lived access token or equivalent API credential
+   - Home Assistant long-lived access token or equivalent API credential, read-only or least-privilege if supported
    - dedicated EOS Connect MQTT password
    - optional evcc credential if evcc API authentication is enabled later
 8. Extend the Mosquitto module with a dedicated `eos-connect` MQTT user, password-file option, and narrowly scoped ACLs.
 9. Define command ownership in docs:
-   - EOS Connect may command evcc for EV charging decisions.
-   - EOS Connect may command Home Assistant for heat pump and household device decisions.
+   - EOS Connect must not command evcc during the first rollout.
+   - EOS Connect must not call Home Assistant services during the first rollout.
    - MQTT is not the sole command path and must not create competing control loops.
+10. Configure EOS Connect in dry-run, advisory, simulation, or equivalent no-actuation mode if upstream supports it.
+11. If upstream cannot enforce no-actuation mode, omit write-capable credentials and document the missing active-control wiring.
 
 Control boundary:
 
-- EOS Connect is the only orchestration service that converts optimization results into commands.
-- Home Assistant automations may provide local fallbacks and manual overrides, but should not duplicate EOS Connect's active control logic.
+- EOS Connect may compute and publish advisory plans, but must not convert optimization results into commands during the first rollout.
+- Home Assistant automations may provide existing local behavior and manual overrides, but should not duplicate future EOS Connect active control logic.
 - MQTT topics should be used for state, diagnostics, dashboards, and explicit override signals.
+- MQTT command topics must not be subscribed by active automations in the first rollout.
 
 ## Work Log
 
@@ -43,6 +46,8 @@ Control boundary:
 - Created ticket from the hybrid integration decision in Ticket 033.
 - Chose EOS Connect instead of custom glue so the stack remains based on existing upstream components.
 - Chose dedicated MQTT identity and HA API credential handling for EOS Connect.
+- Marked the first EOS Connect rollout as read-only/advisory.
+- Deferred evcc commands, Home Assistant service calls, and MQTT command subscriptions to a later active-control ticket.
 
 ## Validation Notes
 

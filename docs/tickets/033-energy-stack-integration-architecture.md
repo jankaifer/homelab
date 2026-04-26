@@ -10,7 +10,7 @@ Define the integration architecture for replacing the bespoke energy scheduler w
 
 ## Implementation Plan
 
-Use the hybrid architecture:
+Use the hybrid architecture in an initial read-only deployment mode:
 
 1. evcc owns EV charging and loadpoint control.
 2. Home Assistant owns household device integration, including heat pump, sensors, helpers, and local automations.
@@ -18,14 +18,24 @@ Use the hybrid architecture:
 4. EOS Connect orchestrates between Home Assistant, evcc, EOS, and MQTT.
 5. MQTT is used for state propagation, observability, dashboards, and explicit override topics, but not as the only command/control path.
 
-Core control paths:
+Initial read-only constraints:
+
+- Run evcc without any write-capable real charger/loadpoint integration; use demo/offline/simulated configuration or state-only integrations only.
+- Do not allow EOS Connect to execute Home Assistant service calls.
+- Do not allow EOS Connect to change evcc loadpoint mode, current, target SoC, or charger state.
+- Do not subscribe any automation to MQTT command topics.
+- Use read-only or least-privilege credentials where supported.
+- If a component cannot enforce read-only permissions, omit its write-capable credential until the active-control phase.
+- Optimizer output may be logged, displayed, and published as advisory state only.
+
+Future active-control paths, after an explicit later ticket changes this policy:
 
 - EV charging commands flow from EOS Connect to evcc through evcc's direct API where supported.
 - Heat pump and household device commands flow from EOS Connect to Home Assistant.
 - Optimization requests flow from EOS Connect to Akkudoktor-EOS over HTTP.
 - MQTT carries telemetry and selected override/status topics for loose coupling and inspection.
 
-The implementation should avoid competing command paths. In particular, do not let Home Assistant automations, MQTT subscribers, and EOS Connect all command evcc independently.
+The implementation should avoid competing command paths. In particular, do not let Home Assistant automations, MQTT subscribers, and EOS Connect all command evcc independently. During the initial deployment there should be no automated command path at all.
 
 Follow-up implementation tickets:
 
@@ -48,6 +58,8 @@ Follow-up implementation tickets:
   - EOS remains a pure optimizer.
   - EOS Connect becomes the orchestration layer.
   - MQTT remains useful without becoming the fragile command backbone.
+- Tightened the first rollout to read-only mode.
+- Deferred all real-world control of EV charging, heat pump, and household devices to a later explicit active-control ticket.
 
 ## Validation Notes
 
