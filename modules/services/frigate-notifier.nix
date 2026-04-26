@@ -1,12 +1,74 @@
-# Frigate event email notifier
+# Frigate event notifier
 #
-# Consumes Frigate MQTT events and sends filtered object alerts via SMTP.
+# Consumes Frigate MQTT events and sends filtered object alerts via SMTP or ntfy.
 { config, lib, pkgs, ... }:
 
 let
   cfg = config.homelab.services.frigate-notifier;
   python = pkgs.python3.withPackages (ps: [ ps.paho-mqtt ps.pillow ]);
-  notifierScript = pkgs.writeText "frigate-email-notifier.py" ''
+  usesEmail = cfg.deliveryMode == "email" || cfg.deliveryMode == "both" || cfg.deliveryMode == "auto";
+  usesNtfy = cfg.deliveryMode == "ntfy" || cfg.deliveryMode == "both" || cfg.deliveryMode == "auto";
+  environmentFiles = lib.unique (
+    lib.optionals (cfg.smtpEnvironmentFile != null) [ cfg.smtpEnvironmentFile ]
+    ++ lib.optionals (cfg.ntfyEnvironmentFile != null) [ cfg.ntfyEnvironmentFile ]
+  );
+  notifierArgs =
+    [
+      "--delivery-mode"
+      cfg.deliveryMode
+      "--mqtt-host"
+      cfg.mqttHost
+      "--mqtt-port"
+      (toString cfg.mqttPort)
+      "--mqtt-user"
+      cfg.mqttUser
+      "--mqtt-password-file"
+      cfg.mqttPasswordFile
+      "--topic"
+      cfg.topic
+    ]
+    ++ lib.optionals (cfg.recipient != null) [
+      "--recipient"
+      cfg.recipient
+    ]
+    ++ [ "--labels" ]
+    ++ cfg.labels
+    ++ [ "--event-types" ]
+    ++ cfg.eventTypes
+    ++ [ "--active-only-labels" ]
+    ++ cfg.activeOnlyLabels
+    ++ [
+      "--cameras"
+    ]
+    ++ cfg.cameras
+    ++ [
+      "--frigate-url"
+      cfg.frigateUrl
+      "--frigate-api-url"
+      cfg.frigateApiUrl
+      "--snapshot-attempts"
+      (toString cfg.snapshotAttempts)
+      "--snapshot-timeout"
+      (toString cfg.snapshotTimeoutSeconds)
+      "--snapshot-retry-seconds"
+      (toString cfg.snapshotRetrySeconds)
+      "--cooldown-seconds"
+      (toString cfg.cooldownSeconds)
+    ]
+    ++ lib.optionals (cfg.ntfyTopicUrl != null) [
+      "--ntfy-topic-url"
+      cfg.ntfyTopicUrl
+    ]
+    ++ [
+      "--ntfy-priority"
+      (toString cfg.ntfyPriority)
+    ]
+    ++ lib.optionals (cfg.ntfyTags != [ ]) ([ "--ntfy-tags" ] ++ cfg.ntfyTags)
+    ++ [
+      "--ntfy-timeout"
+      (toString cfg.ntfyTimeoutSeconds)
+    ];
+  notifierScript = pkgs.writeText "frigate-notifier.py" ''
     import argparse
     import io
     import json
@@ -16,7 +78,7 @@ let
     import time
     from email.message import EmailMessage
     from urllib.error import URLError
-    from urllib.request import urlopen
+    from urllib.request import Request, urlopen
 
     import paho.mqtt.client as mqtt
     from PIL import Image, ImageDraw, ImageFont
@@ -122,29 +184,34 @@ let
         return output.getvalue()
 
 
-    def send_email(args, event):
+    def notification_parts(args, event):
         after = event.get("after") or {}
         label = after.get("label", "object")
         camera = after.get("camera", "camera")
         event_id = after.get("id", "unknown")
         score = after.get("top_score") or after.get("score")
         score_text = f" ({score:.0%})" if isinstance(score, (int, float)) else ""
+        title = f"Frigate {label} detected on {camera}{score_text}"
+        summary = f"Frigate detected {label} on {camera}{score_text}."
+        body = "\n".join(
+            [
+                summary,
+                f"Event ID: {event_id}",
+                f"Type: {event.get('type', 'unknown')}",
+                f"Score: {score_text.strip() or 'unknown'}",
+                f"Review: {args.frigate_url}/review?id={event_id}",
+            ]
+        )
+        return after, label, camera, event_id, score, title, summary, body
 
+
+    def send_email(args, event):
+        after, label, camera, event_id, score, title, summary, body = notification_parts(args, event)
         message = EmailMessage()
-        message["Subject"] = f"Frigate {label} detected on {camera}{score_text}"
+        message["Subject"] = title
         message["From"] = os.environ["SMTP_FROM"]
         message["To"] = args.recipient
-        message.set_content(
-            "\n".join(
-                [
-                    f"Frigate detected {label} on {camera}.",
-                    f"Event ID: {event_id}",
-                    f"Type: {event.get('type', 'unknown')}",
-                    f"Score: {score_text.strip() or 'unknown'}",
-                    f"Review: {args.frigate_url}/review?id={event_id}",
-                ]
-            )
-        )
+        message.set_content(body)
 
         snapshot = fetch_snapshot(args, camera, event_id)
         if snapshot is not None:
@@ -201,14 +268,92 @@ let
         )
 
 
+    def ntfy_topic_url(args):
+        return args.ntfy_topic_url or os.environ.get("NTFY_TOPIC_URL")
+
+
+    def send_ntfy(args, event):
+        after, label, camera, event_id, score, title, summary, body = notification_parts(args, event)
+        topic_url = ntfy_topic_url(args)
+        if not topic_url:
+            raise RuntimeError("NTFY_TOPIC_URL is not configured")
+
+        snapshot = fetch_snapshot(args, camera, event_id)
+        if snapshot is not None:
+            payload = annotated_snapshot(snapshot, after, label, score)
+            filename = f"{camera}-{event_id}-annotated.jpg"
+            content_type = "image/jpeg"
+            has_snapshot = True
+        else:
+            print(f"snapshot unavailable for event {event_id}", flush=True)
+            payload = body.encode("utf-8")
+            filename = None
+            content_type = "text/plain; charset=utf-8"
+            has_snapshot = False
+
+        headers = {
+            "Title": title,
+            "Message": summary,
+            "Priority": str(args.ntfy_priority),
+            "Click": f"{args.frigate_url}/review?id={event_id}",
+            "Content-Type": content_type,
+        }
+        if args.ntfy_tags:
+            headers["Tags"] = ",".join(args.ntfy_tags)
+        if filename is not None:
+            headers["Filename"] = filename
+
+        auth_header = os.environ.get("NTFY_AUTH_HEADER")
+        token = os.environ.get("NTFY_TOKEN")
+        if auth_header:
+            headers["Authorization"] = auth_header
+        elif token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        request = Request(topic_url, data=payload, headers=headers, method="POST")
+        with urlopen(request, timeout=args.ntfy_timeout) as response:
+            response.read()
+
+        print(
+            f"sent {label} ntfy notification for {camera} event {event_id} "
+            f"snapshot={has_snapshot}",
+            flush=True,
+        )
+
+
+    def send_notification(args, event):
+        if args.delivery_mode == "auto" and ntfy_topic_url(args):
+            try:
+                send_ntfy(args, event)
+                return True
+            except Exception as exc:
+                print(f"failed to send ntfy notification, falling back to email: {exc}", flush=True)
+
+        backends = []
+        if args.delivery_mode in ("email", "both", "auto"):
+            backends.append(("email", send_email))
+        if args.delivery_mode in ("ntfy", "both"):
+            backends.append(("ntfy", send_ntfy))
+
+        sent = False
+        for name, sender in backends:
+            try:
+                sender(args, event)
+                sent = True
+            except Exception as exc:
+                print(f"failed to send {name} notification: {exc}", flush=True)
+        return sent
+
+
     def main():
         parser = argparse.ArgumentParser()
+        parser.add_argument("--delivery-mode", choices=["email", "ntfy", "both", "auto"], required=True)
         parser.add_argument("--mqtt-host", required=True)
         parser.add_argument("--mqtt-port", type=int, required=True)
         parser.add_argument("--mqtt-user", required=True)
         parser.add_argument("--mqtt-password-file", required=True)
         parser.add_argument("--topic", required=True)
-        parser.add_argument("--recipient", required=True)
+        parser.add_argument("--recipient")
         parser.add_argument("--labels", nargs="+", required=True)
         parser.add_argument("--event-types", nargs="+", required=True)
         parser.add_argument("--active-only-labels", nargs="*", default=[])
@@ -219,6 +364,10 @@ let
         parser.add_argument("--snapshot-timeout", type=int, required=True)
         parser.add_argument("--snapshot-retry-seconds", type=int, required=True)
         parser.add_argument("--cooldown-seconds", type=int, required=True)
+        parser.add_argument("--ntfy-topic-url")
+        parser.add_argument("--ntfy-priority", type=int, required=True)
+        parser.add_argument("--ntfy-tags", nargs="*", default=[])
+        parser.add_argument("--ntfy-timeout", type=int, required=True)
         args = parser.parse_args()
 
         labels = set(args.labels)
@@ -261,8 +410,8 @@ let
                 if now - last_sent.get(key, 0) < args.cooldown_seconds:
                     return
 
-                send_email(args, event)
-                last_sent[key] = now
+                if send_notification(args, event):
+                    last_sent[key] = now
             except Exception as exc:
                 print(f"failed to process MQTT event: {exc}", flush=True)
 
@@ -280,7 +429,16 @@ let
 in
 {
   options.homelab.services.frigate-notifier = {
-    enable = lib.mkEnableOption "Frigate MQTT event email notifications";
+    enable = lib.mkEnableOption "Frigate MQTT event notifications";
+
+    deliveryMode = lib.mkOption {
+      type = lib.types.enum [ "email" "ntfy" "both" "auto" ];
+      default = "email";
+      description = ''
+        Notification delivery backend. `auto` sends ntfy push notifications when
+        NTFY_TOPIC_URL is available and falls back to email otherwise.
+      '';
+    };
 
     mqttHost = lib.mkOption {
       type = lib.types.str;
@@ -306,25 +464,57 @@ in
     };
 
     smtpEnvironmentFile = lib.mkOption {
-      type = lib.types.str;
+      type = lib.types.nullOr lib.types.str;
+      default = null;
       description = "Environment file containing SMTP_HOST, SMTP_FROM, and optional SMTP_* settings.";
     };
 
     recipient = lib.mkOption {
-      type = lib.types.str;
+      type = lib.types.nullOr lib.types.str;
+      default = null;
       description = "Email recipient for Frigate notifications.";
+    };
+
+    ntfyTopicUrl = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "ntfy topic URL used for push notifications. Can also be supplied as NTFY_TOPIC_URL in ntfyEnvironmentFile.";
+    };
+
+    ntfyEnvironmentFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Optional environment file containing NTFY_TOPIC_URL, NTFY_TOKEN, or NTFY_AUTH_HEADER.";
+    };
+
+    ntfyPriority = lib.mkOption {
+      type = lib.types.ints.between 1 5;
+      default = 4;
+      description = "ntfy notification priority.";
+    };
+
+    ntfyTags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "camera" ];
+      description = "ntfy tags attached to Frigate notifications.";
+    };
+
+    ntfyTimeoutSeconds = lib.mkOption {
+      type = lib.types.ints.positive;
+      default = 20;
+      description = "HTTP timeout for publishing ntfy notifications.";
     };
 
     labels = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ "person" "car" ];
-      description = "Frigate object labels that should trigger email notifications.";
+      description = "Frigate object labels that should trigger notifications.";
     };
 
     eventTypes = lib.mkOption {
       type = lib.types.listOf (lib.types.enum [ "new" "update" "end" ]);
       default = [ "new" ];
-      description = "Frigate event types that should trigger email notifications.";
+      description = "Frigate event types that should trigger notifications.";
     };
 
     activeOnlyLabels = lib.mkOption {
@@ -348,7 +538,7 @@ in
     frigateUrl = lib.mkOption {
       type = lib.types.str;
       default = "https://frigate.frame1.hobitin.eu";
-      description = "External Frigate URL included in notification emails.";
+      description = "External Frigate URL included in notifications.";
     };
 
     frigateApiUrl = lib.mkOption {
@@ -383,40 +573,34 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = !usesEmail || (cfg.recipient != null && cfg.smtpEnvironmentFile != null);
+        message = "homelab.services.frigate-notifier email delivery requires recipient and smtpEnvironmentFile.";
+      }
+      {
+        assertion = !usesNtfy || (cfg.ntfyTopicUrl != null || cfg.ntfyEnvironmentFile != null || cfg.deliveryMode == "auto");
+        message = "homelab.services.frigate-notifier ntfy delivery requires ntfyTopicUrl or ntfyEnvironmentFile.";
+      }
+    ];
+
     systemd.services.frigate-notifier = {
-      description = "Frigate email notifications";
+      description = "Frigate notifications";
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" "mosquitto.service" "frigate.service" ];
       wants = [ "network-online.target" ];
       serviceConfig = {
         User = "frigate";
         Group = "frigate";
-        EnvironmentFile = cfg.smtpEnvironmentFile;
-        ExecStart = ''
-          ${python}/bin/python ${notifierScript} \
-            --mqtt-host ${lib.escapeShellArg cfg.mqttHost} \
-            --mqtt-port ${toString cfg.mqttPort} \
-            --mqtt-user ${lib.escapeShellArg cfg.mqttUser} \
-            --mqtt-password-file ${lib.escapeShellArg cfg.mqttPasswordFile} \
-            --topic ${lib.escapeShellArg cfg.topic} \
-            --recipient ${lib.escapeShellArg cfg.recipient} \
-            --labels ${lib.concatMapStringsSep " " lib.escapeShellArg cfg.labels} \
-            --event-types ${lib.concatMapStringsSep " " lib.escapeShellArg cfg.eventTypes} \
-            --active-only-labels ${lib.concatMapStringsSep " " lib.escapeShellArg cfg.activeOnlyLabels} \
-            --cameras ${lib.concatMapStringsSep " " lib.escapeShellArg cfg.cameras} \
-            --frigate-url ${lib.escapeShellArg cfg.frigateUrl} \
-            --frigate-api-url ${lib.escapeShellArg cfg.frigateApiUrl} \
-            --snapshot-attempts ${toString cfg.snapshotAttempts} \
-            --snapshot-timeout ${toString cfg.snapshotTimeoutSeconds} \
-            --snapshot-retry-seconds ${toString cfg.snapshotRetrySeconds} \
-            --cooldown-seconds ${toString cfg.cooldownSeconds}
-        '';
+        ExecStart = "${python}/bin/python ${notifierScript} ${lib.concatMapStringsSep " " lib.escapeShellArg notifierArgs}";
         Restart = "always";
         RestartSec = 10;
         NoNewPrivileges = true;
         PrivateTmp = true;
         ProtectHome = true;
         ProtectSystem = "strict";
+      } // lib.optionalAttrs (environmentFiles != [ ]) {
+        EnvironmentFile = environmentFiles;
       };
     };
   };

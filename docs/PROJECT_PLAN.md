@@ -48,7 +48,7 @@ The system prioritizes reproducibility, backup/recovery, and stable day-to-day u
 1. Mixed exposure model with public-by-exception policy.
 2. Household/family usage is a primary audience.
 3. Centralized SSO/auth is a long-term target as service count grows.
-4. Alerting primary channel: email.
+4. Alerting primary channel: push notifications where practical, with email as fallback.
 
 ## Long-Term Service Portfolio
 

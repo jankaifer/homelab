@@ -20,7 +20,7 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 | MQTT Password (`zigbee2mqtt`) | `secrets/mqtt-zigbee2mqtt-password.age` | Zigbee2MQTT MQTT client |
 | MQTT Password (`frigate`) | `secrets/mqtt-frigate-password.age` | Frigate MQTT client |
 | Victron Einstein MQTT Password | `secrets/victron-einstein-mqtt-password.age` | Victron GX local MQTT broker on `einstein` / `192.168.2.31` |
-| Frigate Notifier SMTP Env | `secrets/frigate-notifier-smtp-env.age` | Frigate email notifications |
+| Frigate Notifier Env | `secrets/frigate-notifier-smtp-env.age` | Frigate email fallback and optional ntfy push notifications |
 | NAS SMB Password (`jankaifer`) | `secrets/nas-jankaifer-password.age` | Samba login for admin NAS access |
 | NAS SMB Password (`nasguest`) | `secrets/nas-guest-password.age` | Samba login for guest media access |
 | Restic Password | `secrets/restic-password.age` | Restic backup job |

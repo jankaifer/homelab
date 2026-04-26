@@ -391,9 +391,11 @@ in
 
   homelab.services.frigate-notifier = {
     enable = true;
+    deliveryMode = "auto";
     recipient = "jan@kaifer.cz";
     mqttPasswordFile = config.age.secrets.mqtt-frigate-password.path;
     smtpEnvironmentFile = config.age.secrets.frigate-notifier-smtp-env.path;
+    ntfyEnvironmentFile = config.age.secrets.frigate-notifier-smtp-env.path;
   };
 
   services.frigate.vaapiDriver = lib.mkIf pkgs.stdenv.hostPlatform.isx86_64 "iHD";
