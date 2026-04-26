@@ -23,6 +23,8 @@ in
     ../../modules/services/cert-monitoring.nix
     ../../modules/services/mosquitto.nix
     ../../modules/services/evcc.nix
+    ../../modules/services/akkudoktor-eos.nix
+    ../../modules/services/eos-connect.nix
     ../../modules/services/zigbee2mqtt.nix
     ../../modules/services/homeassistant.nix
     ../../modules/services/energy-scheduler.nix
@@ -172,6 +174,12 @@ in
       group = "root";
       mode = "0400";
     };
+    mqtt-eos-connect-password = {
+      file = ../../secrets/mqtt-eos-connect-password.age;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
     frigate-camera2-detect-url = {
       file = ../../secrets/frigate-camera2-detect-url.age;
       owner = "frigate";
@@ -312,16 +320,101 @@ in
     zigbee2mqttPasswordFile = config.age.secrets.mqtt-zigbee2mqtt-password.path;
     frigatePasswordFile = config.age.secrets.mqtt-frigate-password.path;
     evccPasswordFile = config.age.secrets.mqtt-evcc-password.path;
+    eosConnectPasswordFile = config.age.secrets.mqtt-eos-connect-password.path;
     loopbackPort = 1883;
     allowLAN = true;
     allowTailscale = true;
   };
 
-  # evcc - EV charging service, first rollout in simulated commissioning mode
+  # evcc - EV charging service with real Victron site telemetry and no active charger control yet
   homelab.services.evcc = {
     enable = true;
     domain = "evcc.frame1.hobitin.eu";
+    demoMode = false;
+    allowedNetworkCIDRs = [ "192.168.2.31/32" ];
     mqtt.passwordFile = config.age.secrets.mqtt-evcc-password.path;
+    settings = {
+      site = {
+        meters = {
+          grid = "victron-grid";
+          pv = [ "victron-pv" ];
+          battery = [ "victron-battery" ];
+        };
+      };
+      meters = [
+        {
+          name = "victron-grid";
+          type = "template";
+          template = "victron-energy";
+          usage = "grid";
+          host = "192.168.2.31";
+          port = 502;
+        }
+        {
+          name = "victron-pv";
+          type = "template";
+          template = "victron-energy";
+          usage = "pv";
+          host = "192.168.2.31";
+          port = 502;
+        }
+        {
+          name = "victron-battery";
+          type = "template";
+          template = "victron-energy";
+          usage = "battery";
+          host = "192.168.2.31";
+          port = 502;
+        }
+      ];
+      chargers = [
+        {
+          name = "commissioning-placeholder";
+          type = "template";
+          template = "demo-charger";
+          status = "A";
+          power = 0;
+          enabled = false;
+        }
+      ];
+      loadpoints = [
+        {
+          title = "Victron EVCS";
+          charger = "commissioning-placeholder";
+        }
+      ];
+      vehicles = [
+        {
+          name = "offline-ev";
+          type = "template";
+          template = "offline";
+          title = "EV";
+          capacity = 75;
+        }
+      ];
+      tariffs = {
+        currency = "CZK";
+        grid = {
+          type = "fixed";
+          price = 6.0;
+        };
+        feedin = {
+          type = "fixed";
+          price = 2.0;
+        };
+      };
+    };
+  };
+
+  homelab.services.akkudoktorEos = {
+    enable = true;
+    domain = "eos.frame1.hobitin.eu";
+  };
+
+  homelab.services.eosConnect = {
+    enable = true;
+    domain = "eos-connect.frame1.hobitin.eu";
+    mqtt.passwordFile = config.age.secrets.mqtt-eos-connect-password.path;
   };
 
   # Zigbee2MQTT - Sonoff coordinator bridge (containerized)

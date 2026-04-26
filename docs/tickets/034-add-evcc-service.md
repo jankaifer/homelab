@@ -59,6 +59,9 @@ Control boundary:
 - Added `secrets/mqtt-evcc-password.age` through agenix via Nix and documented the secret.
 - Added a runtime `evcc-mqtt-env` preparation unit so the MQTT password is substituted without entering the Nix store.
 - Confirmed evcc's `network.host` is advertised identity only; evcc listens on all interfaces by design, so the wrapper applies systemd loopback-only IP filtering during commissioning.
+- Switched production evcc out of demo mode for real Victron GX grid, PV, and battery telemetry.
+- Allowed evcc to reach only `192.168.2.31/32` in addition to localhost through systemd IP filtering.
+- Kept the loadpoint non-actuating with a disabled demo charger placeholder because the Victron EVCS charger probe through GX Modbus returned gateway path unavailable.
 
 ## Validation Notes
 

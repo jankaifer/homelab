@@ -1,6 +1,6 @@
 # Ticket 036: Add EOS Connect Service
 
-**Status**: PLANNING
+**Status**: IN_PROGRESS
 **Created**: 2026-04-26
 **Updated**: 2026-04-26
 
@@ -48,6 +48,12 @@ Control boundary:
 - Chose dedicated MQTT identity and HA API credential handling for EOS Connect.
 - Marked the first EOS Connect rollout as read-only/advisory.
 - Deferred evcc commands, Home Assistant service calls, and MQTT command subscriptions to a later active-control ticket.
+- Added `modules/services/eos-connect.nix` as an OCI container module.
+- Configured EOS Connect with persistent `/app/data`, a generated `/etc/eos-connect/config.yaml`, host networking, and Caddy routing at `https://eos-connect.frame1.hobitin.eu`.
+- Added the `eos-connect` Mosquitto user with read access to existing telemetry topics and write access only under `eos-connect/#`.
+- Added `secrets/mqtt-eos-connect-password.age` wiring through agenix.
+- Documented the service in `docs/services/eos-connect.md`.
+- Checked GHCR tags and used `ghcr.io/ohand/eos_connect:latest`; the `snapshot` tag from the upstream compose file was not published.
 
 ## Validation Notes
 

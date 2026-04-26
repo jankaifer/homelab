@@ -48,6 +48,9 @@ in
   # MQTT password for evcc MQTT client
   "mqtt-evcc-password.age".publicKeys = allKeys;
 
+  # MQTT password for EOS Connect MQTT client
+  "mqtt-eos-connect-password.age".publicKeys = allKeys;
+
   # Victron Einstein GX MQTT password
   "victron-einstein-mqtt-password.age".publicKeys = allKeys;
 

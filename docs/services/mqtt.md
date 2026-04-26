@@ -1,6 +1,6 @@
 # MQTT (Mosquitto)
 
-TLS-enabled MQTT broker for Home Assistant, Zigbee2MQTT, Frigate, and evcc.
+TLS-enabled MQTT broker for Home Assistant, Zigbee2MQTT, Frigate, evcc, and EOS Connect.
 
 ## Status
 
@@ -30,6 +30,7 @@ TLS-enabled MQTT broker for Home Assistant, Zigbee2MQTT, Frigate, and evcc.
 | `homelab.services.mosquitto.zigbee2mqttPasswordFile` | path or null | null | Password file for `zigbee2mqtt` user |
 | `homelab.services.mosquitto.frigatePasswordFile` | path or null | null | Password file for `frigate` user |
 | `homelab.services.mosquitto.evccPasswordFile` | path or null | null | Password file for `evcc` user |
+| `homelab.services.mosquitto.eosConnectPasswordFile` | path or null | null | Password file for `eos-connect` user |
 | `homelab.services.mosquitto.allowLAN` | bool | true | Open listener for LAN clients |
 | `homelab.services.mosquitto.allowTailscale` | bool | true | Allow listener via tailscale interface |
 
@@ -46,6 +47,7 @@ homelab.services.mosquitto = {
   zigbee2mqttPasswordFile = config.age.secrets.mqtt-zigbee2mqtt-password.path;
   frigatePasswordFile = config.age.secrets.mqtt-frigate-password.path;
   evccPasswordFile = config.age.secrets.mqtt-evcc-password.path;
+  eosConnectPasswordFile = config.age.secrets.mqtt-eos-connect-password.path;
 };
 ```
 
@@ -68,16 +70,20 @@ On renewal, Mosquitto is reloaded automatically.
 Configured users:
 - `homeassistant`
 - `evcc`
+- `eos-connect`
 - `frigate`
 - `zigbee2mqtt`
 
 ACL scope:
 - `evcc/#`
+- `eos-connect/#`
 - `homeassistant/#`
 - `frigate/#`
 - `zigbee2mqtt/#`
 
-Home Assistant is also granted read access to `evcc/#` and `frigate/#` so MQTT-backed EV charging state, Frigate entities, and Frigate events can flow into Home Assistant without broadening those clients' own write scopes.
+Home Assistant is also granted read access to `evcc/#`, `eos-connect/#`, and `frigate/#` so MQTT-backed EV charging state, advisory energy plans, Frigate entities, and Frigate events can flow into Home Assistant without broadening those clients' own write scopes.
+
+EOS Connect can read `evcc/#`, `homeassistant/#`, and `frigate/#`, and can publish under `eos-connect/#`. It is not granted broad MQTT command-topic access.
 
 ## Access
 

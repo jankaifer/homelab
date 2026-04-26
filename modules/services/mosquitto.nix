@@ -7,6 +7,7 @@
 let
   cfg = config.homelab.services.mosquitto;
   evccEnabled = lib.attrByPath [ "homelab" "services" "evcc" "enable" ] false config;
+  eosConnectEnabled = lib.attrByPath [ "homelab" "services" "eosConnect" "enable" ] false config;
   acmeEnvService = "mosquitto-acme-cloudflare-env-${builtins.replaceStrings [ "." "*" ] [ "-" "wildcard" ] cfg.domain}";
   acmeEnvFile = "/run/${acmeEnvService}.env";
   acmeRenewService = "acme-order-renew-${cfg.domain}";
@@ -105,6 +106,12 @@ in
       description = "Path to evcc MQTT user password (agenix secret).";
     };
 
+    eosConnectPasswordFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to EOS Connect MQTT user password (agenix secret).";
+    };
+
     allowLAN = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -145,6 +152,10 @@ in
       {
         assertion = evccEnabled -> cfg.evccPasswordFile != null;
         message = "homelab.services.mosquitto.evccPasswordFile must be set when evcc is enabled.";
+      }
+      {
+        assertion = eosConnectEnabled -> cfg.eosConnectPasswordFile != null;
+        message = "homelab.services.mosquitto.eosConnectPasswordFile must be set when EOS Connect is enabled.";
       }
     ];
 
@@ -219,6 +230,7 @@ in
               acl = [
                 "readwrite homeassistant/#"
                 "read evcc/#"
+                "read eos-connect/#"
                 "read frigate/#"
                 "readwrite zigbee2mqtt/#"
               ];
@@ -244,6 +256,16 @@ in
                 "readwrite evcc/#"
               ];
             };
+          } // lib.optionalAttrs (cfg.eosConnectPasswordFile != null) {
+            "eos-connect" = {
+              passwordFile = cfg.eosConnectPasswordFile;
+              acl = [
+                "read evcc/#"
+                "read homeassistant/#"
+                "read frigate/#"
+                "readwrite eos-connect/#"
+              ];
+            };
           };
           acl = cfg.extraAcl;
           settings = {
@@ -262,6 +284,7 @@ in
             acl = [
               "readwrite homeassistant/#"
               "read evcc/#"
+              "read eos-connect/#"
               "read frigate/#"
               "readwrite zigbee2mqtt/#"
             ];
@@ -278,6 +301,16 @@ in
             passwordFile = cfg.evccPasswordFile;
             acl = [
               "readwrite evcc/#"
+            ];
+          };
+        } // lib.optionalAttrs (cfg.eosConnectPasswordFile != null) {
+          "eos-connect" = {
+            passwordFile = cfg.eosConnectPasswordFile;
+            acl = [
+              "read evcc/#"
+              "read homeassistant/#"
+              "read frigate/#"
+              "readwrite eos-connect/#"
             ];
           };
         };

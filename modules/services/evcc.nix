@@ -82,6 +82,13 @@ in
       description = "Restrict evcc network access to loopback using systemd IP address filtering.";
     };
 
+    allowedNetworkCIDRs = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [ "192.168.2.31/32" ];
+      description = "Additional network CIDRs evcc may access when loopback restriction is enabled.";
+    };
+
     settings = lib.mkOption {
       type = lib.types.attrs;
       default = { };
@@ -169,7 +176,7 @@ in
         config.systemd.services.evcc-mqtt-env.script
       ];
       serviceConfig = lib.mkIf cfg.restrictNetworkToLoopback {
-        IPAddressAllow = [ "localhost" ];
+        IPAddressAllow = [ "localhost" ] ++ cfg.allowedNetworkCIDRs;
         IPAddressDeny = [ "any" ];
       };
     };

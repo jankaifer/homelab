@@ -1,6 +1,6 @@
 # Ticket 035: Add Akkudoktor-EOS Service
 
-**Status**: PLANNING
+**Status**: IN_PROGRESS
 **Created**: 2026-04-26
 **Updated**: 2026-04-26
 
@@ -39,6 +39,10 @@ Control boundary:
 - Confirmed EOS belongs in the stack as an optimizer API, not as the orchestration layer.
 - Marked the first EOS rollout as advisory/read-only.
 - Deferred applying optimizer output to any real device until a later active-control ticket.
+- Added `modules/services/akkudoktor-eos.nix` as an OCI container module.
+- Configured the upstream `akkudoktor/eos` image with persistent `/data`, host-local API port `8503`, and host-local dashboard port `8504`.
+- Routed the dashboard through Caddy at `https://eos.frame1.hobitin.eu` and added a Homepage entry.
+- Documented the service in `docs/services/akkudoktor-eos.md`.
 
 ## Validation Notes
 

@@ -4,7 +4,7 @@ EV charging and loadpoint service for the homelab energy stack.
 
 ## Status
 
-**Enabled:** Yes, in first-rollout commissioning mode
+**Enabled:** Yes, with real Victron site telemetry and no active charger control
 
 ## Configuration
 
@@ -22,6 +22,7 @@ EV charging and loadpoint service for the homelab energy stack.
 | `homelab.services.evcc.siteTitle` | string | `Frame1` | UI site title |
 | `homelab.services.evcc.demoMode` | bool | true | Run with simulated demo devices |
 | `homelab.services.evcc.restrictNetworkToLoopback` | bool | true | Restrict evcc networking to loopback with systemd filtering |
+| `homelab.services.evcc.allowedNetworkCIDRs` | list of string | `[]` | Additional CIDRs allowed through the systemd IP filter |
 | `homelab.services.evcc.settings` | attrs | `{}` | Extra evcc YAML settings merged over defaults |
 | `homelab.services.evcc.mqtt.enable` | bool | true | Publish evcc state to MQTT |
 | `homelab.services.evcc.mqtt.host` | string | `127.0.0.1` | MQTT broker host |
@@ -36,7 +37,17 @@ Current production wiring:
 homelab.services.evcc = {
   enable = true;
   domain = "evcc.frame1.hobitin.eu";
+  demoMode = false;
+  allowedNetworkCIDRs = [ "192.168.2.31/32" ];
   mqtt.passwordFile = config.age.secrets.mqtt-evcc-password.path;
+
+  settings = {
+    site.meters = {
+      grid = "victron-grid";
+      pv = [ "victron-pv" ];
+      battery = [ "victron-battery" ];
+    };
+  };
 };
 ```
 
@@ -49,22 +60,31 @@ homelab.services.evcc = {
 
 The service is exposed through Caddy and is not opened directly in the firewall.
 evcc itself listens on all interfaces for its configured port, so the homelab
-wrapper also applies systemd `IPAddressDeny=any` with `IPAddressAllow=localhost`
-by default during commissioning.
+wrapper applies systemd `IPAddressDeny=any` and explicitly allows only localhost
+plus required device CIDRs. Production allows `192.168.2.31/32` so evcc can read
+the Victron GX Modbus TCP endpoint.
 
-## First-Rollout Boundary
+## Production Wiring
 
-The first rollout is intentionally non-actuating:
+evcc now reads real site telemetry from the Victron GX at `192.168.2.31:502`
+using the upstream `victron-energy` templates:
 
-- `demoMode = true` starts evcc with simulated devices.
-- No real charger is configured.
-- No real loadpoint is configured with a write-capable charger.
+- `victron-grid` for grid import/export
+- `victron-pv` for solar production
+- `victron-battery` for battery power and state of charge
+
+The charger path is still intentionally non-actuating:
+
+- `demoMode = false`, so site meters are real.
+- The loadpoint uses a disabled `demo-charger` placeholder.
 - No wallbox API credentials are present.
 - No OCPP endpoint is configured for a real charger.
 - No vehicle API credentials are present.
 - MQTT is used for EVCC state under `evcc/#`; no MQTT command topics are wired to automations.
 
-Future active-control work must be tracked in a separate ticket before adding charger, vehicle, wallbox, OCPP, or write-capable API credentials.
+The Victron EVCS Modbus charger probe through the GX endpoint returned Modbus
+gateway path unavailable during commissioning, so real charger control remains
+deferred until the direct EVCS endpoint or supported GX unit ID is confirmed.
 
 ## MQTT
 
