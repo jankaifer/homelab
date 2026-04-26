@@ -22,6 +22,7 @@ in
     ../../modules/services/backup.nix
     ../../modules/services/cert-monitoring.nix
     ../../modules/services/mosquitto.nix
+    ../../modules/services/evcc.nix
     ../../modules/services/zigbee2mqtt.nix
     ../../modules/services/homeassistant.nix
     ../../modules/services/energy-scheduler.nix
@@ -165,6 +166,12 @@ in
       group = "frigate";
       mode = "0400";
     };
+    mqtt-evcc-password = {
+      file = ../../secrets/mqtt-evcc-password.age;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
     frigate-camera2-detect-url = {
       file = ../../secrets/frigate-camera2-detect-url.age;
       owner = "frigate";
@@ -304,9 +311,17 @@ in
     homeAssistantPasswordFile = config.age.secrets.mqtt-homeassistant-password.path;
     zigbee2mqttPasswordFile = config.age.secrets.mqtt-zigbee2mqtt-password.path;
     frigatePasswordFile = config.age.secrets.mqtt-frigate-password.path;
+    evccPasswordFile = config.age.secrets.mqtt-evcc-password.path;
     loopbackPort = 1883;
     allowLAN = true;
     allowTailscale = true;
+  };
+
+  # evcc - EV charging service, first rollout in simulated commissioning mode
+  homelab.services.evcc = {
+    enable = true;
+    domain = "evcc.frame1.hobitin.eu";
+    mqtt.passwordFile = config.age.secrets.mqtt-evcc-password.path;
   };
 
   # Zigbee2MQTT - Sonoff coordinator bridge (containerized)

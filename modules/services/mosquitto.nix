@@ -6,6 +6,7 @@
 
 let
   cfg = config.homelab.services.mosquitto;
+  evccEnabled = lib.attrByPath [ "homelab" "services" "evcc" "enable" ] false config;
   acmeEnvService = "mosquitto-acme-cloudflare-env-${builtins.replaceStrings [ "." "*" ] [ "-" "wildcard" ] cfg.domain}";
   acmeEnvFile = "/run/${acmeEnvService}.env";
   acmeRenewService = "acme-order-renew-${cfg.domain}";
@@ -98,6 +99,12 @@ in
       description = "Path to Frigate MQTT user password (agenix secret).";
     };
 
+    evccPasswordFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Path to evcc MQTT user password (agenix secret).";
+    };
+
     allowLAN = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -134,6 +141,10 @@ in
       {
         assertion = cfg.zigbee2mqttPasswordFile != null;
         message = "homelab.services.mosquitto.zigbee2mqttPasswordFile must be set when Mosquitto is enabled.";
+      }
+      {
+        assertion = evccEnabled -> cfg.evccPasswordFile != null;
+        message = "homelab.services.mosquitto.evccPasswordFile must be set when evcc is enabled.";
       }
     ];
 
@@ -207,6 +218,7 @@ in
               passwordFile = cfg.homeAssistantPasswordFile;
               acl = [
                 "readwrite homeassistant/#"
+                "read evcc/#"
                 "read frigate/#"
                 "readwrite zigbee2mqtt/#"
               ];
@@ -223,6 +235,13 @@ in
               passwordFile = cfg.frigatePasswordFile;
               acl = [
                 "readwrite frigate/#"
+              ];
+            };
+          } // lib.optionalAttrs (cfg.evccPasswordFile != null) {
+            evcc = {
+              passwordFile = cfg.evccPasswordFile;
+              acl = [
+                "readwrite evcc/#"
               ];
             };
           };
@@ -242,6 +261,7 @@ in
             passwordFile = cfg.homeAssistantPasswordFile;
             acl = [
               "readwrite homeassistant/#"
+              "read evcc/#"
               "read frigate/#"
               "readwrite zigbee2mqtt/#"
             ];
@@ -251,6 +271,13 @@ in
             passwordFile = cfg.frigatePasswordFile;
             acl = [
               "readwrite frigate/#"
+            ];
+          };
+        } // lib.optionalAttrs (cfg.evccPasswordFile != null) {
+          evcc = {
+            passwordFile = cfg.evccPasswordFile;
+            acl = [
+              "readwrite evcc/#"
             ];
           };
         };

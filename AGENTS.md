@@ -49,6 +49,11 @@ Services use `homelab.services.<name>.enable`. Machines import modules and enabl
 
 Keep docs current when behavior changes.
 
+## Secrets Rules
+
+Use agenix directly through Nix for encrypted secret operations. Do not hand-roll
+low-level `age` commands for repository secrets.
+
 ### When adding a new service
 
 1. Create module: `modules/services/<name>.nix`

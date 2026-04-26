@@ -1,6 +1,6 @@
 # Ticket 034: Add evcc Service
 
-**Status**: PLANNING
+**Status**: DONE
 **Created**: 2026-04-26
 **Updated**: 2026-04-26
 
@@ -51,14 +51,26 @@ Control boundary:
 - Deferred charger control and command-capable MQTT wiring to a later active-control phase.
 - Made the evcc no-actuation requirement explicit: no real charger/loadpoint write path in the first rollout.
 - Allowed only demo/offline/simulated evcc behavior, plus real read-only telemetry where feasible.
+- Added `modules/services/evcc.nix` as a homelab wrapper around upstream `services.evcc`.
+- Imported and enabled evcc on `frame1` at `https://evcc.frame1.hobitin.eu`.
+- Added Caddy and Homepage registration for evcc.
+- Configured evcc in demo mode with MQTT publishing to the local Mosquitto loopback listener.
+- Added a dedicated `evcc` Mosquitto user, scoped ACLs for `evcc/#`, and Home Assistant read access to `evcc/#`.
+- Added `secrets/mqtt-evcc-password.age` through agenix via Nix and documented the secret.
+- Added a runtime `evcc-mqtt-env` preparation unit so the MQTT password is substituted without entering the Nix store.
+- Confirmed evcc's `network.host` is advertised identity only; evcc listens on all interfaces by design, so the wrapper applies systemd loopback-only IP filtering during commissioning.
 
 ## Validation Notes
 
-Planned validation:
+Validation completed:
 
+- `nix fmt`
 - `nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x: x.drvPath'`
 - `./scripts/run-vm-docker.sh --build`
-- Runtime check after deploy:
-  - `systemctl status evcc`
-  - `journalctl -u evcc -n 200 --no-pager`
-  - open `https://evcc.frame1.hobitin.eu`
+- Booted VM with `./scripts/run-vm-docker.sh`
+- Verified in the VM:
+  - `mosquitto.service` active
+  - `evcc-mqtt-env.service` completed successfully
+  - `evcc.service` active with `--demo`
+  - evcc route returns `HTTP/2 200` through Caddy at `https://evcc.frame1.hobitin.eu:8443`
+  - `evcc.service` has `IPAddressDeny=any` and `IPAddressAllow=localhost`

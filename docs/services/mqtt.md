@@ -1,6 +1,6 @@
 # MQTT (Mosquitto)
 
-TLS-enabled MQTT broker for Home Assistant and Zigbee2MQTT.
+TLS-enabled MQTT broker for Home Assistant, Zigbee2MQTT, Frigate, and evcc.
 
 ## Status
 
@@ -29,6 +29,7 @@ TLS-enabled MQTT broker for Home Assistant and Zigbee2MQTT.
 | `homelab.services.mosquitto.homeAssistantPasswordFile` | path or null | null | Password file for `homeassistant` user |
 | `homelab.services.mosquitto.zigbee2mqttPasswordFile` | path or null | null | Password file for `zigbee2mqtt` user |
 | `homelab.services.mosquitto.frigatePasswordFile` | path or null | null | Password file for `frigate` user |
+| `homelab.services.mosquitto.evccPasswordFile` | path or null | null | Password file for `evcc` user |
 | `homelab.services.mosquitto.allowLAN` | bool | true | Open listener for LAN clients |
 | `homelab.services.mosquitto.allowTailscale` | bool | true | Allow listener via tailscale interface |
 
@@ -44,6 +45,7 @@ homelab.services.mosquitto = {
   homeAssistantPasswordFile = config.age.secrets.mqtt-homeassistant-password.path;
   zigbee2mqttPasswordFile = config.age.secrets.mqtt-zigbee2mqtt-password.path;
   frigatePasswordFile = config.age.secrets.mqtt-frigate-password.path;
+  evccPasswordFile = config.age.secrets.mqtt-evcc-password.path;
 };
 ```
 
@@ -65,15 +67,17 @@ On renewal, Mosquitto is reloaded automatically.
 
 Configured users:
 - `homeassistant`
+- `evcc`
 - `frigate`
 - `zigbee2mqtt`
 
 ACL scope:
+- `evcc/#`
 - `homeassistant/#`
 - `frigate/#`
 - `zigbee2mqtt/#`
 
-Home Assistant is also granted read access to `frigate/#` so MQTT-backed Frigate entities and events can flow into Home Assistant without broadening the Frigate client's own write scope.
+Home Assistant is also granted read access to `evcc/#` and `frigate/#` so MQTT-backed EV charging state, Frigate entities, and Frigate events can flow into Home Assistant without broadening those clients' own write scopes.
 
 ## Access
 
@@ -83,7 +87,7 @@ MQTT over TLS:
 
 Loopback-only plaintext listener:
 - `127.0.0.1:1883`
-- Intended only for Home Assistant running on `frame1`
+- Intended only for host-local services running on `frame1`
 - Not exposed on LAN or Tailscale
 
 ## Troubleshooting

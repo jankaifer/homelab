@@ -45,6 +45,9 @@ in
   # MQTT password for Frigate MQTT client
   "mqtt-frigate-password.age".publicKeys = allKeys;
 
+  # MQTT password for evcc MQTT client
+  "mqtt-evcc-password.age".publicKeys = allKeys;
+
   # Victron Einstein GX MQTT password
   "victron-einstein-mqtt-password.age".publicKeys = allKeys;
 

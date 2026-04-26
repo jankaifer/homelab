@@ -68,6 +68,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Loki | 3100 (internal) | https://logs.local.hobitin.eu | [docs/services/loki.md](services/loki.md) |
 | Alloy | 12345 (internal) | (telemetry collector) | [docs/services/alloy.md](services/alloy.md) |
 | MQTT (Mosquitto) | 8883 | `mqtt.frame1.hobitin.eu:8883` | [docs/services/mqtt.md](services/mqtt.md) |
+| evcc | 7070 (internal) | https://evcc.frame1.hobitin.eu | [docs/services/evcc.md](services/evcc.md) |
 | Zigbee2MQTT | 8080 (internal) | https://zigbee.frame1.hobitin.eu | [docs/services/zigbee2mqtt.md](services/zigbee2mqtt.md) |
 | Home Assistant | 8123 (internal) | https://home.frame1.hobitin.eu | [docs/services/homeassistant.md](services/homeassistant.md) |
 | Energy Scheduler | systemd only | planner daemon behind the UI/API | [docs/services/energy-scheduler.md](services/energy-scheduler.md) |
@@ -136,6 +137,7 @@ homelab/
 │       ├── cert-monitoring.nix
 │       ├── energy-scheduler.nix
 │       ├── energy-scheduler-ui.nix
+│       ├── evcc.nix
 │       ├── frigate.nix
 │       ├── grafana.nix
 │       ├── homeassistant.nix

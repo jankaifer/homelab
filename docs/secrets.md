@@ -19,6 +19,7 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 | MQTT Password (`homeassistant`) | `secrets/mqtt-homeassistant-password.age` | Home Assistant MQTT client |
 | MQTT Password (`zigbee2mqtt`) | `secrets/mqtt-zigbee2mqtt-password.age` | Zigbee2MQTT MQTT client |
 | MQTT Password (`frigate`) | `secrets/mqtt-frigate-password.age` | Frigate MQTT client |
+| MQTT Password (`evcc`) | `secrets/mqtt-evcc-password.age` | evcc MQTT client |
 | Victron Einstein MQTT Password | `secrets/victron-einstein-mqtt-password.age` | Victron GX local MQTT broker on `einstein` / `192.168.2.31` |
 | Frigate Notifier Env | `secrets/frigate-notifier-smtp-env.age` | Frigate email fallback and optional ntfy push notifications |
 | NAS SMB Password (`jankaifer`) | `secrets/nas-jankaifer-password.age` | Samba login for admin NAS access |
@@ -57,10 +58,7 @@ The VM setup is configured in `machines/frame1/vm.nix` which is only included in
 cd secrets
 
 # Create or edit (opens $EDITOR)
-agenix -e secret-name.age
-
-# Or encrypt directly
-echo "my-secret-value" | age -r "ssh-ed25519 AAAA..." -o secret-name.age
+nix run github:ryantm/agenix -- -e secret-name.age
 ```
 
 ### Adding a New Secret
@@ -72,7 +70,7 @@ echo "my-secret-value" | age -r "ssh-ed25519 AAAA..." -o secret-name.age
 
 2. Create the encrypted file:
 ```bash
-cd secrets && agenix -e new-secret.age
+cd secrets && nix run github:ryantm/agenix -- -e new-secret.age
 ```
 
 3. Reference in NixOS config:
@@ -87,7 +85,7 @@ age.secrets.new-secret = {
 
 If keys change in `secrets.nix`:
 ```bash
-cd secrets && agenix -r
+cd secrets && nix run github:ryantm/agenix -- -r
 ```
 
 ## Production Deployment
@@ -95,7 +93,7 @@ cd secrets && agenix -r
 For production, you need to:
 
 1. Add the server's SSH host public key to `secrets/secrets.nix`
-2. Re-encrypt secrets: `agenix -r`
+2. Re-encrypt secrets: `nix run github:ryantm/agenix -- -r`
 3. Uncomment `age.secrets` in server config
 4. Switch to `apiTokenFile`/`adminPasswordFile`
 
