@@ -77,3 +77,10 @@ Validation completed:
   - `evcc.service` active with `--demo`
   - evcc route returns `HTTP/2 200` through Caddy at `https://evcc.frame1.hobitin.eu:8443`
   - `evcc.service` has `IPAddressDeny=any` and `IPAddressAllow=localhost`
+- Verified in production after Victron integration:
+  - evcc runs without `--demo`
+  - `evcc.service` active
+  - `IPAddressAllow` includes localhost and `192.168.2.31/32`
+  - logs show `meters: grid ✓ pv ✓ battery ✓`
+  - logs show live Victron grid, PV, battery power, and battery SOC readings
+  - `https://evcc.frame1.hobitin.eu` returns HTTP 200

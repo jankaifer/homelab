@@ -1,6 +1,6 @@
 # Ticket 035: Add Akkudoktor-EOS Service
 
-**Status**: IN_PROGRESS
+**Status**: DONE
 **Created**: 2026-04-26
 **Updated**: 2026-04-26
 
@@ -46,12 +46,13 @@ Control boundary:
 
 ## Validation Notes
 
-Planned validation:
+Validation completed:
 
+- `nix fmt`
 - `nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x: x.drvPath'`
 - `./scripts/run-vm-docker.sh --build`
-- Runtime check after deploy:
-  - `systemctl status podman-akkudoktor-eos`
-  - `journalctl -u podman-akkudoktor-eos -n 200 --no-pager`
-  - open `https://eos.frame1.hobitin.eu`
-  - verify EOS API health/version endpoint if provided by upstream
+- Deployed with `nix run .#deploy -- .#frame1 --skip-checks`
+- Verified `podman-akkudoktor-eos.service` active
+- Verified EOS logs show the API on `0.0.0.0:8503` and EOSdash on `0.0.0.0:8504`
+- Verified `https://eos.frame1.hobitin.eu` returns HTTP 200
+- Verified Homepage contains the `Akkudoktor EOS` link

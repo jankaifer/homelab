@@ -1,6 +1,6 @@
 # Ticket 036: Add EOS Connect Service
 
-**Status**: IN_PROGRESS
+**Status**: DONE
 **Created**: 2026-04-26
 **Updated**: 2026-04-26
 
@@ -60,11 +60,18 @@ Control boundary:
 
 ## Validation Notes
 
-Planned validation:
+Validation completed:
 
+- `nix fmt`
 - `nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x: x.drvPath'`
 - `./scripts/run-vm-docker.sh --build`
-- Runtime check after deploy:
-  - `systemctl status podman-eos-connect`
-  - `journalctl -u podman-eos-connect -n 200 --no-pager`
-  - verify EOS Connect can reach EOS, evcc, Home Assistant, and Mosquitto
+- Deployed with `nix run .#deploy -- .#frame1 --skip-checks`
+- Verified `eos-connect-bootstrap-config.service` completed successfully
+- Verified `podman-eos-connect.service` active
+- Verified EOS Connect logs show:
+  - EOS version fetched from `127.0.0.1:8503`
+  - MQTT connected to `127.0.0.1:1883`
+  - evcc connected at `http://127.0.0.1:7070`
+  - optimizer requests sent to `http://127.0.0.1:8503/optimize`
+- Verified `https://eos-connect.frame1.hobitin.eu` returns HTTP 200
+- Verified Homepage contains the `EOS Connect` link
