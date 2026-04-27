@@ -5,6 +5,8 @@
 let
   sshKeys = import ../../lib/ssh-keys.nix;
   allUserKeys = builtins.attrValues sshKeys;
+  evccTeslaEnvSecret = ../../secrets/evcc-tesla.env.age;
+  evccTeslaEnvSecretExists = builtins.pathExists evccTeslaEnvSecret;
 in
 {
   imports = [
@@ -228,6 +230,13 @@ in
       group = "root";
       mode = "0400";
     };
+  } // lib.optionalAttrs evccTeslaEnvSecretExists {
+    evcc-tesla-env = {
+      file = evccTeslaEnvSecret;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
   };
 
   # ===================
@@ -340,6 +349,9 @@ in
     allowedNetworkCIDRs = [ "192.168.2.31/32" ];
     mqtt.passwordFile = config.age.secrets.mqtt-evcc-password.path;
     auth.adminPasswordFile = config.age.secrets.evcc-admin-password.path;
+    extraEnvironmentFiles = lib.optionals evccTeslaEnvSecretExists [
+      config.age.secrets.evcc-tesla-env.path
+    ];
     settings = {
       site = {
         meters = {
@@ -391,13 +403,25 @@ in
         }
       ];
       vehicles = [
-        {
+        ({
           name = "tesla-model-3";
           type = "template";
-          template = "offline";
           title = "Tesla Model 3";
           capacity = 75;
-        }
+        } // (
+          if evccTeslaEnvSecretExists then
+            {
+              template = "tesla";
+              clientId = "$EVCC_TESLA_CLIENT_ID";
+              accessToken = "$EVCC_TESLA_ACCESS_TOKEN";
+              refreshToken = "$EVCC_TESLA_REFRESH_TOKEN";
+              vin = "$EVCC_TESLA_VIN";
+            }
+          else
+            {
+              template = "offline";
+            }
+        ))
       ];
       tariffs = {
         currency = "CZK";

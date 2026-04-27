@@ -105,7 +105,8 @@ The production config has one vehicle slot for `Tesla Model 3`. Until Tesla API
 credentials are added, it uses evcc's `offline` vehicle template so the UI does
 not show a generic `offline-ev` placeholder.
 
-Live Tesla data should be stored in `secrets/evcc-tesla.env.age` as:
+When `secrets/evcc-tesla.env.age` exists, the frame1 config automatically
+switches that vehicle slot to evcc's Tesla API template. Store the secret as:
 
 ```env
 EVCC_TESLA_CLIENT_ID=...
