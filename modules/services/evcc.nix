@@ -207,14 +207,18 @@ in
         log_user 0
         set timeout 30
         set password $env(EVCC_ADMIN_PASSWORD)
+        set sent_password 0
         spawn ${config.services.evcc.package}/bin/evcc --database $env(EVCC_DATABASE_DSN) password set
         expect {
-          "\033\[6n" {
-            send -- "\033\[1;1R"
+          -re "Password" {
+            if {$sent_password == 0} {
+              send -- "$password\r"
+              set sent_password 1
+            }
             exp_continue
           }
-          -re "Password" {
-            send -- "$password\r"
+          -ex "\033\[6n" {
+            send -- "\033\[1;1R"
             exp_continue
           }
           eof {
