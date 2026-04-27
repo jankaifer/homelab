@@ -51,6 +51,9 @@ in
   # Admin password for evcc UI
   "evcc-admin-password.age".publicKeys = allKeys;
 
+  # Tesla vehicle API credentials for evcc
+  "evcc-tesla.env.age".publicKeys = allKeys;
+
   # MQTT password for EOS Connect MQTT client
   "mqtt-eos-connect-password.age".publicKeys = allKeys;
 

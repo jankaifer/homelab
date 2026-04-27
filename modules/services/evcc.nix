@@ -99,6 +99,12 @@ in
       description = "Additional evcc YAML settings merged over the commissioning defaults.";
     };
 
+    extraEnvironmentFiles = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Additional raw environment files appended to the runtime-only evcc environment file.";
+    };
+
     mqtt = {
       enable = lib.mkOption {
         type = lib.types.bool;
@@ -156,13 +162,13 @@ in
 
     services.evcc = {
       enable = true;
-      environmentFile = lib.mkIf cfg.mqtt.enable mqttEnvFile;
+      environmentFile = lib.mkIf (cfg.mqtt.enable || cfg.extraEnvironmentFiles != [ ]) mqttEnvFile;
       extraArgs = lib.optional cfg.demoMode "--demo";
       settings = lib.recursiveUpdate defaultSettings cfg.settings;
     };
 
-    systemd.services.evcc-mqtt-env = lib.mkIf cfg.mqtt.enable {
-      description = "Prepare evcc MQTT environment";
+    systemd.services.evcc-mqtt-env = lib.mkIf (cfg.mqtt.enable || cfg.extraEnvironmentFiles != [ ]) {
+      description = "Prepare evcc runtime environment";
       before = [ "evcc.service" ];
       requiredBy = [ "evcc.service" ];
       serviceConfig = {
@@ -172,12 +178,16 @@ in
         set -euo pipefail
 
         install -d -m 0700 ${mqttEnvDir}
-        password="$(tr -d '\n' < ${lib.escapeShellArg cfg.mqtt.passwordFile})"
-        escaped="$(printf '%s' "$password" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\$/\\$/g; s/`/\\`/g')"
 
         umask 0077
-        printf 'EVCC_MQTT_PASSWORD="%s"\n' "$escaped" > ${mqttEnvFile}
-      '';
+        : > ${mqttEnvFile}
+      '' + lib.optionalString cfg.mqtt.enable ''
+        password="$(tr -d '\n' < ${lib.escapeShellArg cfg.mqtt.passwordFile})"
+        escaped="$(printf '%s' "$password" | sed 's/\\/\\\\/g; s/"/\\"/g; s/\$/\\$/g; s/`/\\`/g')"
+        printf 'EVCC_MQTT_PASSWORD="%s"\n' "$escaped" >> ${mqttEnvFile}
+      '' + lib.concatMapStringsSep "\n" (file: ''
+        sed -e '/^[[:space:]]*#/d' -e '/^[[:space:]]*$/d' ${lib.escapeShellArg file} >> ${mqttEnvFile}
+      '') cfg.extraEnvironmentFiles;
     };
 
     systemd.services.evcc-admin-password = lib.mkIf (cfg.auth.adminPasswordFile != null) {
@@ -244,6 +254,9 @@ in
       restartTriggers =
         lib.optionals cfg.mqtt.enable [
           cfg.mqtt.passwordFile
+        ]
+        ++ cfg.extraEnvironmentFiles
+        ++ lib.optionals (cfg.mqtt.enable || cfg.extraEnvironmentFiles != [ ]) [
           config.systemd.services.evcc-mqtt-env.script
         ]
         ++ lib.optionals (cfg.auth.adminPasswordFile != null) [

@@ -24,6 +24,7 @@ EV charging and loadpoint service for the homelab energy stack.
 | `homelab.services.evcc.restrictNetworkToLoopback` | bool | true | Restrict evcc networking to loopback with systemd filtering |
 | `homelab.services.evcc.allowedNetworkCIDRs` | list of string | `[]` | Additional CIDRs allowed through the systemd IP filter |
 | `homelab.services.evcc.settings` | attrs | `{}` | Extra evcc YAML settings merged over defaults |
+| `homelab.services.evcc.extraEnvironmentFiles` | list of path | `[]` | Additional raw env files for secrets used by evcc config interpolation |
 | `homelab.services.evcc.mqtt.enable` | bool | true | Publish evcc state to MQTT |
 | `homelab.services.evcc.mqtt.host` | string | `127.0.0.1` | MQTT broker host |
 | `homelab.services.evcc.mqtt.port` | int | 1883 | MQTT broker port |
@@ -81,7 +82,7 @@ The charger path is still intentionally non-actuating:
 - The loadpoint uses a disabled `demo-charger` placeholder.
 - No wallbox API credentials are present.
 - No OCPP endpoint is configured for a real charger.
-- No vehicle API credentials are present.
+- The placeholder vehicle is labelled `Tesla Model 3`; live Tesla API data requires `secrets/evcc-tesla.env.age`.
 - MQTT is used for EVCC state under `evcc/#`; no MQTT command topics are wired to automations.
 
 The Victron EVCS Modbus charger probe through the GX endpoint returned Modbus
@@ -97,6 +98,25 @@ evcc uses the dedicated `evcc` MQTT user against the loopback Mosquitto listener
 - Password secret: `secrets/mqtt-evcc-password.age`
 
 The homelab wrapper generates a runtime-only environment file at `/run/evcc-secrets/mqtt.env` from the raw agenix password so the MQTT password is substituted into the generated evcc config without entering the Nix store.
+
+## Tesla Model 3
+
+The production config has one vehicle slot for `Tesla Model 3`. Until Tesla API
+credentials are added, it uses evcc's `offline` vehicle template so the UI does
+not show a generic `offline-ev` placeholder.
+
+Live Tesla data should be stored in `secrets/evcc-tesla.env.age` as:
+
+```env
+EVCC_TESLA_CLIENT_ID=...
+EVCC_TESLA_ACCESS_TOKEN=...
+EVCC_TESLA_REFRESH_TOKEN=...
+EVCC_TESLA_VIN=...
+```
+
+evcc's current Tesla template uses `clientId`, `accessToken`, and
+`refreshToken`. `vin` should be set when the Tesla account has more than one
+vehicle.
 
 ## Admin Password
 

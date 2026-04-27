@@ -392,10 +392,10 @@ in
       ];
       vehicles = [
         {
-          name = "offline-ev";
+          name = "tesla-model-3";
           type = "template";
           template = "offline";
-          title = "EV";
+          title = "Tesla Model 3";
           capacity = 75;
         }
       ];

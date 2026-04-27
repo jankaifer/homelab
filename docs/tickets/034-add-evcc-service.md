@@ -85,3 +85,4 @@ Validation completed:
   - logs show live Victron grid, PV, battery power, and battery SOC readings
   - `https://evcc.frame1.hobitin.eu` returns HTTP 200
 - Added `secrets/evcc-admin-password.age` and `evcc-admin-password.service` to apply the UI admin password from agenix with `evcc password set`.
+- Renamed the placeholder vehicle to `Tesla Model 3`, added `secrets/evcc-tesla.env.age` to the agenix rules, and made the evcc wrapper able to append extra runtime secret env files for Tesla API credentials.
