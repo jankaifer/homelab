@@ -341,13 +341,13 @@ in
     allowTailscale = true;
   };
 
-  # evcc - EV charging service with real Victron site telemetry and no active charger control yet
+  # evcc - EV charging service with real Victron site telemetry and Victron EVCS control
   homelab.services.evcc = {
     enable = true;
     domain = "evcc.frame1.hobitin.eu";
     demoMode = false;
     restrictNetworkToLoopback = false;
-    allowedNetworkCIDRs = [ "192.168.2.31/32" ];
+    allowedNetworkCIDRs = [ "192.168.2.31/32" "192.168.2.32/32" ];
     mqtt.passwordFile = config.age.secrets.mqtt-evcc-password.path;
     auth.adminPasswordFile = config.age.secrets.evcc-admin-password.path;
     extraEnvironmentFiles = lib.optionals evccTeslaEnvSecretExists [
@@ -389,18 +389,19 @@ in
       ];
       chargers = [
         {
-          name = "commissioning-placeholder";
+          name = "victron-evcs";
           type = "template";
-          template = "demo-charger";
-          status = "A";
-          power = 0;
-          enabled = false;
+          template = "victron-evcs";
+          modbus = "tcpip";
+          id = 1;
+          host = "192.168.2.32";
+          port = 502;
         }
       ];
       loadpoints = [
         {
           title = "Victron EVCS";
-          charger = "commissioning-placeholder";
+          charger = "victron-evcs";
           vehicle = "tesla-model-3";
           soc = {
             poll = {

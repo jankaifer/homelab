@@ -4,7 +4,7 @@ EV charging and loadpoint service for the homelab energy stack.
 
 ## Status
 
-**Enabled:** Yes, with real Victron site telemetry and no active charger control
+**Enabled:** Yes, with real Victron site telemetry, Tesla vehicle telemetry, and Victron EVCS control
 
 ## Configuration
 
@@ -41,7 +41,7 @@ homelab.services.evcc = {
   domain = "evcc.frame1.hobitin.eu";
   demoMode = false;
   restrictNetworkToLoopback = false;
-  allowedNetworkCIDRs = [ "192.168.2.31/32" ];
+  allowedNetworkCIDRs = [ "192.168.2.31/32" "192.168.2.32/32" ];
   mqtt.passwordFile = config.age.secrets.mqtt-evcc-password.path;
   auth.adminPasswordFile = config.age.secrets.evcc-admin-password.path;
 
@@ -77,21 +77,21 @@ using the upstream `victron-energy` templates:
 - `victron-pv` for solar production
 - `victron-battery` for battery power and state of charge
 
-The charger path is still intentionally non-actuating:
+The charger path is controlled by evcc through the direct Victron EVCS Modbus
+TCP endpoint at `192.168.2.32:502` using the upstream `victron-evcs` template:
 
 - `demoMode = false`, so site meters are real.
-- The loadpoint uses a disabled `demo-charger` placeholder.
+- The loadpoint uses the real `victron-evcs` charger.
 - The loadpoint assigns `Tesla Model 3` as its default vehicle and polls vehicle
-  SoC hourly so EVCC can show vehicle data even while charger control is still
-  disabled.
+  SoC hourly so EVCC can show vehicle data even when the car is unplugged.
 - No wallbox API credentials are present.
 - No OCPP endpoint is configured for a real charger.
-- The placeholder vehicle is labelled `Tesla Model 3`; live Tesla API data requires `secrets/evcc-tesla.env.age`.
+- Live Tesla API data requires `secrets/evcc-tesla.env.age`.
 - MQTT is used for EVCC state under `evcc/#`; no MQTT command topics are wired to automations.
 
-The Victron EVCS Modbus charger probe through the GX endpoint returned Modbus
-gateway path unavailable during commissioning, so real charger control remains
-deferred until the direct EVCS endpoint or supported GX unit ID is confirmed.
+The older GX-routed EVCS probe returned Modbus gateway path unavailable during
+commissioning. The direct wallbox endpoint at `192.168.2.32` responds to EVCC's
+charger probe and is the configured control path.
 
 ## MQTT
 
