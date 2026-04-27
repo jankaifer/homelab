@@ -40,10 +40,16 @@ homelab.services.eosConnect = {
 - URL: `https://eos-connect.frame1.hobitin.eu`
 - Internal UI/API: `127.0.0.1:8081`
 - Systemd service: `podman-eos-connect.service`
+- Declarative config seed: `eos-connect-bootstrap-config.service`
 - State directory: `/var/lib/eos-connect`
 - Config file: `/etc/eos-connect/config.yaml`
 
 The container uses host networking so it can reach host-local services such as Akkudoktor EOS, evcc, Home Assistant, and the Mosquitto loopback listener.
+
+EOS Connect persists most settings in `/var/lib/eos-connect/eos_connect.db`.
+The homelab module applies the local EOS, evcc, and MQTT settings to that
+database before the container starts. The MQTT password is read from agenix at
+runtime and is not written into the Nix store.
 
 ## MQTT
 
@@ -70,6 +76,7 @@ If active control is added later, it must be handled in a separate ticket with e
 ## Troubleshooting
 
 ```bash
+systemctl status eos-connect-bootstrap-config
 systemctl status podman-eos-connect
 journalctl -u podman-eos-connect -n 200 --no-pager
 ss -ltnp | grep ':8081'

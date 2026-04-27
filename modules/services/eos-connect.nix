@@ -1,8 +1,9 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.homelab.services.eosConnect;
   eosCfg = config.homelab.services.akkudoktorEos;
+  mqttPasswordFile = if cfg.mqtt.passwordFile == null then "/dev/null" else toString cfg.mqtt.passwordFile;
   homepageHttpsPort = lib.attrByPath [ "homelab" "services" "homepage" "publicHttpsPort" ] null config;
   homepageHref = "https://${cfg.domain}"
     + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
@@ -82,7 +83,99 @@ in
       eos_connect_web_port: ${toString cfg.port}
       time_zone: ${cfg.timeZone}
       log_level: ${lib.toLower cfg.logLevel}
+
+      eos:
+        source: eos_server
+        server: 127.0.0.1
+        port: ${toString eosCfg.apiPort}
+        timeout: 180
+        time_frame: 3600
+
+      evcc:
+        url: http://127.0.0.1:7070
+
+      mqtt:
+        enabled: ${if cfg.mqtt.enable then "true" else "false"}
+        broker: 127.0.0.1
+        port: 1883
+        user: eos-connect
+        password: ""
+        tls: false
+        ha_mqtt_auto_discovery: true
+        ha_mqtt_auto_discovery_prefix: homeassistant
     '';
+
+    systemd.services.eos-connect-bootstrap-config = {
+      description = "Apply declarative EOS Connect configuration";
+      before = [ "podman-eos-connect.service" ];
+      requiredBy = [ "podman-eos-connect.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+      };
+      path = [ pkgs.python3 ];
+      script = ''
+        set -euo pipefail
+
+        install -d -m 0750 ${lib.escapeShellArg cfg.dataDir}
+
+        python3 - ${lib.escapeShellArg "${cfg.dataDir}/eos_connect.db"} ${lib.escapeShellArg mqttPasswordFile} <<'PY'
+        import json
+        import sqlite3
+        import sys
+        from datetime import datetime, timezone
+
+        db_path = sys.argv[1]
+        password_path = sys.argv[2]
+
+        with open(password_path, "r", encoding="utf-8") as f:
+            mqtt_password = f.read().strip()
+
+        settings = {
+            "_wizard_completed": True,
+            "eos.source": "eos_server",
+            "eos.server": "127.0.0.1",
+            "eos.port": ${toString eosCfg.apiPort},
+            "eos.timeout": 180,
+            "eos.time_frame": 3600,
+            "evcc.url": "http://127.0.0.1:7070",
+            "mqtt.enabled": ${if cfg.mqtt.enable then "True" else "False"},
+            "mqtt.broker": "127.0.0.1",
+            "mqtt.port": 1883,
+            "mqtt.user": "eos-connect",
+            "mqtt.password": mqtt_password,
+            "mqtt.tls": False,
+            "mqtt.ha_mqtt_auto_discovery": True,
+            "mqtt.ha_mqtt_auto_discovery_prefix": "homeassistant",
+            "inverter.type": "default",
+        }
+
+        conn = sqlite3.connect(db_path)
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)")
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS settings ("
+                "key TEXT PRIMARY KEY, "
+                "value TEXT NOT NULL, "
+                "updated_at TEXT NOT NULL)"
+            )
+            if conn.execute("SELECT version FROM schema_version").fetchone() is None:
+                conn.execute("INSERT INTO schema_version (version) VALUES (1)")
+
+            now = datetime.now(timezone.utc).isoformat()
+            for key, value in settings.items():
+                conn.execute(
+                    "INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?) "
+                    "ON CONFLICT(key) DO UPDATE SET "
+                    "value = excluded.value, updated_at = excluded.updated_at",
+                    (key, json.dumps(value), now),
+                )
+            conn.commit()
+        finally:
+            conn.close()
+        PY
+      '';
+    };
 
     virtualisation.oci-containers.containers.eos-connect = {
       image = cfg.image;
@@ -107,12 +200,14 @@ in
 
     systemd.services.podman-eos-connect = {
       after = [
+        "eos-connect-bootstrap-config.service"
         "podman-akkudoktor-eos.service"
         "evcc.service"
         "podman-homeassistant.service"
         "mosquitto.service"
       ];
       wants = [
+        "eos-connect-bootstrap-config.service"
         "podman-akkudoktor-eos.service"
         "evcc.service"
         "podman-homeassistant.service"
@@ -120,6 +215,7 @@ in
       ];
       restartTriggers = [
         config.environment.etc."eos-connect/config.yaml".source
+        config.systemd.services.eos-connect-bootstrap-config.script
       ];
       serviceConfig = {
         Restart = lib.mkForce "always";
