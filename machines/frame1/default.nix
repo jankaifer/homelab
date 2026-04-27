@@ -7,6 +7,8 @@ let
   allUserKeys = builtins.attrValues sshKeys;
   evccTeslaEnvSecret = ../../secrets/evcc-tesla.env.age;
   evccTeslaEnvSecretExists = builtins.pathExists evccTeslaEnvSecret;
+  evccTessieEnvSecret = ../../secrets/evcc-tessie.env.age;
+  evccTessieEnvSecretExists = builtins.pathExists evccTessieEnvSecret;
 in
 {
   imports = [
@@ -237,6 +239,13 @@ in
       group = "root";
       mode = "0400";
     };
+  } // lib.optionalAttrs evccTessieEnvSecretExists {
+    evcc-tessie-env = {
+      file = evccTessieEnvSecret;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
   };
 
   # ===================
@@ -352,6 +361,8 @@ in
     auth.adminPasswordFile = config.age.secrets.evcc-admin-password.path;
     extraEnvironmentFiles = lib.optionals evccTeslaEnvSecretExists [
       config.age.secrets.evcc-tesla-env.path
+    ] ++ lib.optionals evccTessieEnvSecretExists [
+      config.age.secrets.evcc-tessie-env.path
     ];
     settings = {
       site = {
@@ -405,8 +416,8 @@ in
           vehicle = "tesla-model-3";
           soc = {
             poll = {
-              mode = "always";
-              interval = "60m";
+              mode = if evccTessieEnvSecretExists then "always" else "charging";
+              interval = if evccTessieEnvSecretExists then "1m" else "60m";
             };
             estimate = true;
           };
@@ -419,7 +430,13 @@ in
           title = "Tesla Model 3";
           capacity = 75;
         } // (
-          if evccTeslaEnvSecretExists then
+          if evccTessieEnvSecretExists then
+            {
+              template = "tessie";
+              token = "$EVCC_TESSIE_TOKEN";
+              vin = "$EVCC_TESSIE_VIN";
+            }
+          else if evccTeslaEnvSecretExists then
             {
               template = "tesla";
               clientId = "$EVCC_TESLA_CLIENT_ID";
