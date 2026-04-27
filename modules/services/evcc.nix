@@ -203,19 +203,23 @@ in
         export EVCC_ADMIN_PASSWORD="$password"
         export EVCC_DATABASE_DSN="$db"
 
-        expect <<EOF
+        expect <<'EOF'
         log_user 0
         set timeout 30
-        set password \$env(EVCC_ADMIN_PASSWORD)
-        spawn ${config.services.evcc.package}/bin/evcc --database \$env(EVCC_DATABASE_DSN) password set
+        set password $env(EVCC_ADMIN_PASSWORD)
+        spawn ${config.services.evcc.package}/bin/evcc --database $env(EVCC_DATABASE_DSN) password set
         expect {
+          "\033\[6n" {
+            send -- "\033\[1;1R"
+            exp_continue
+          }
           -re "Password" {
-            send -- "\$password\r"
+            send -- "$password\r"
             exp_continue
           }
           eof {
             catch wait result
-            exit [lindex \$result 3]
+            exit [lindex $result 3]
           }
           timeout {
             puts stderr "timed out setting evcc admin password"
