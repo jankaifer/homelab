@@ -12,8 +12,9 @@ wake or keep the Model 3 awake.
 ## Implementation Plan
 
 - Keep the direct Tesla API integration.
-- Poll vehicle SoC hourly even when unplugged.
-- Document that this intentionally accepts EVCC's polling warning.
+- Poll vehicle SoC only while charging.
+- Document that unplugged vehicle state may be stale until the next charging
+  session.
 
 ## Work Log
 
@@ -29,3 +30,5 @@ wake or keep the Model 3 awake.
 - Built the VM successfully with `./scripts/run-vm-docker.sh --build`.
 - Reverted the Tessie path and restored direct Tesla `poll.mode = always` with a
   60m interval by operator preference.
+- Switched direct Tesla polling back to `poll.mode = charging` by operator
+  preference to reduce unnecessary Tesla API use and avoid unplugged polling.

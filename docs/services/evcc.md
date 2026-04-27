@@ -83,7 +83,8 @@ TCP endpoint at `192.168.2.32:502` using the upstream `victron-evcs` template:
 - `demoMode = false`, so site meters are real.
 - The loadpoint uses the real `victron-evcs` charger.
 - The loadpoint assigns `Tesla Model 3` as its default vehicle and polls vehicle
-  SoC hourly so EVCC can show vehicle data even when the car is unplugged.
+  SoC only while charging, reducing unnecessary Tesla API use and avoiding EVCC's
+  unplugged polling battery-drain warning.
 - No wallbox API credentials are present.
 - No OCPP endpoint is configured for a real charger.
 - Live Tesla API data requires `secrets/evcc-tesla.env.age`.
@@ -123,9 +124,9 @@ evcc's current Tesla template uses `clientId`, `accessToken`, and
 `refreshToken`. `vin` should be set when the Tesla account has more than one
 vehicle.
 
-The loadpoint intentionally uses `soc.poll.mode = "always"` with a `60m`
-interval despite EVCC's battery-drain warning, so the UI can retain hourly
-vehicle SoC visibility while the car is unplugged.
+The loadpoint intentionally uses `soc.poll.mode = "charging"` so EVCC only asks
+the Tesla API for fresh SoC during active charging. Unplugged vehicle state may
+therefore be stale until the next charging session.
 
 ## Admin Password
 

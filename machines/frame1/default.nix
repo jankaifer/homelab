@@ -405,7 +405,7 @@ in
           vehicle = "tesla-model-3";
           soc = {
             poll = {
-              mode = "always";
+              mode = "charging";
               interval = "60m";
             };
             estimate = true;
