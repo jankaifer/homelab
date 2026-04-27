@@ -401,6 +401,14 @@ in
         {
           title = "Victron EVCS";
           charger = "commissioning-placeholder";
+          vehicle = "tesla-model-3";
+          soc = {
+            poll = {
+              mode = "always";
+              interval = "60m";
+            };
+            estimate = true;
+          };
         }
       ];
       vehicles = [

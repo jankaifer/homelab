@@ -81,6 +81,9 @@ The charger path is still intentionally non-actuating:
 
 - `demoMode = false`, so site meters are real.
 - The loadpoint uses a disabled `demo-charger` placeholder.
+- The loadpoint assigns `Tesla Model 3` as its default vehicle and polls vehicle
+  SoC hourly so EVCC can show vehicle data even while charger control is still
+  disabled.
 - No wallbox API credentials are present.
 - No OCPP endpoint is configured for a real charger.
 - The placeholder vehicle is labelled `Tesla Model 3`; live Tesla API data requires `secrets/evcc-tesla.env.age`.
