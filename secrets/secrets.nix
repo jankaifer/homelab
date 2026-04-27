@@ -54,9 +54,6 @@ in
   # Tesla vehicle API credentials for evcc
   "evcc-tesla.env.age".publicKeys = allKeys;
 
-  # Tessie no-wake Tesla telemetry credentials for evcc
-  "evcc-tessie.env.age".publicKeys = allKeys;
-
   # MQTT password for EOS Connect MQTT client
   "mqtt-eos-connect-password.age".publicKeys = allKeys;
 

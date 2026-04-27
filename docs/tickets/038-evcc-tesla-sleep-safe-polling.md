@@ -1,4 +1,4 @@
-# Ticket 038: EVCC Tesla Sleep-Safe Polling
+# Ticket 038: EVCC Tesla Polling Policy
 
 **Status**: DONE
 **Created**: 2026-04-27
@@ -6,15 +6,14 @@
 
 ## Task
 
-Reduce EVCC Tesla polling that can wake or keep the Model 3 awake, while
-preserving a path to fresh driving SoC when the vehicle is already awake.
+Decide the EVCC Tesla polling behavior after EVCC warned that always polling can
+wake or keep the Model 3 awake.
 
 ## Implementation Plan
 
-- Stop direct Tesla Fleet API polling while the car is disconnected.
-- Add optional Tessie credentials support, because EVCC documents Tessie as
-  never waking the car and returning cached sleep-state data.
-- Document the operational tradeoff and secret format.
+- Keep the direct Tesla API integration.
+- Poll vehicle SoC hourly even when unplugged.
+- Document that this intentionally accepts EVCC's polling warning.
 
 ## Work Log
 
@@ -28,3 +27,5 @@ preserving a path to fresh driving SoC when the vehicle is already awake.
   interval.
 - Validated the direct Tesla and optional Tessie render paths with `nix eval`.
 - Built the VM successfully with `./scripts/run-vm-docker.sh --build`.
+- Reverted the Tessie path and restored direct Tesla `poll.mode = always` with a
+  60m interval by operator preference.

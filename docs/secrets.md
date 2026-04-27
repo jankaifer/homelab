@@ -22,7 +22,6 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 | MQTT Password (`evcc`) | `secrets/mqtt-evcc-password.age` | evcc MQTT client |
 | evcc Admin Password | `secrets/evcc-admin-password.age` | evcc web UI admin login |
 | evcc Tesla Env | `secrets/evcc-tesla.env.age` | Tesla Model 3 API credentials for evcc |
-| evcc Tessie Env | `secrets/evcc-tessie.env.age` | Optional no-wake Tesla telemetry credentials for evcc |
 | MQTT Password (`eos-connect`) | `secrets/mqtt-eos-connect-password.age` | EOS Connect MQTT client |
 | Victron Einstein MQTT Password | `secrets/victron-einstein-mqtt-password.age` | Victron GX local MQTT broker on `einstein` / `192.168.2.31` |
 | Frigate Notifier Env | `secrets/frigate-notifier-smtp-env.age` | Frigate email fallback and optional ntfy push notifications |

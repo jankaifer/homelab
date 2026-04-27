@@ -82,18 +82,11 @@ TCP endpoint at `192.168.2.32:502` using the upstream `victron-evcs` template:
 
 - `demoMode = false`, so site meters are real.
 - The loadpoint uses the real `victron-evcs` charger.
-- The loadpoint assigns `Tesla Model 3` as its default vehicle.
-- With the direct Tesla Fleet API, EVCC only polls vehicle SoC while charging to
-  avoid waking or keeping the car awake while disconnected.
-- When optional Tessie credentials are present, EVCC switches the vehicle to the
-  Tessie template and polls once per minute. Tessie's cached state endpoint does
-  not wake the car: awake/driving data stays fresh, while sleeping vehicles
-  report the last state from when they went to sleep.
+- The loadpoint assigns `Tesla Model 3` as its default vehicle and polls vehicle
+  SoC hourly so EVCC can show vehicle data even when the car is unplugged.
 - No wallbox API credentials are present.
 - No OCPP endpoint is configured for a real charger.
-- Live Tesla telemetry requires either `secrets/evcc-tessie.env.age` for
-  no-wake cached polling or `secrets/evcc-tesla.env.age` for direct Tesla Fleet
-  API polling while charging.
+- Live Tesla API data requires `secrets/evcc-tesla.env.age`.
 - MQTT is used for EVCC state under `evcc/#`; no MQTT command topics are wired to automations.
 
 The older GX-routed EVCS probe returned Modbus gateway path unavailable during
@@ -116,18 +109,8 @@ The production config has one vehicle slot for `Tesla Model 3`. Until Tesla API
 credentials are added, it uses evcc's `offline` vehicle template so the UI does
 not show a generic `offline-ev` placeholder.
 
-When `secrets/evcc-tessie.env.age` exists, the frame1 config automatically
-switches that vehicle slot to evcc's Tessie template and enables no-wake
-once-per-minute polling. Store the secret as:
-
-```env
-EVCC_TESSIE_TOKEN=...
-EVCC_TESSIE_VIN=...
-```
-
-If the Tessie secret is absent and `secrets/evcc-tesla.env.age` exists, the
-frame1 config uses evcc's direct Tesla API template. Store the direct Tesla
-secret as:
+When `secrets/evcc-tesla.env.age` exists, the frame1 config automatically
+switches that vehicle slot to evcc's Tesla API template. Store the secret as:
 
 ```env
 EVCC_TESLA_CLIENT_ID=...
@@ -138,9 +121,11 @@ EVCC_TESLA_VIN=...
 
 evcc's current Tesla template uses `clientId`, `accessToken`, and
 `refreshToken`. `vin` should be set when the Tesla account has more than one
-vehicle. Direct Tesla API polling is intentionally limited to active charging,
-because EVCC cannot express "poll only if the vehicle is already awake" for this
-template.
+vehicle.
+
+The loadpoint intentionally uses `soc.poll.mode = "always"` with a `60m`
+interval despite EVCC's battery-drain warning, so the UI can retain hourly
+vehicle SoC visibility while the car is unplugged.
 
 ## Admin Password
 
