@@ -440,8 +440,10 @@ in
           price = 6.0;
         };
         feedin = {
-          type = "fixed";
-          price = 2.0;
+          type = "template";
+          template = "stekker";
+          region = "CZ";
+          formula = "price * 24.355";
         };
       };
     };

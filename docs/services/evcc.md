@@ -94,6 +94,19 @@ The older GX-routed EVCS probe returned Modbus gateway path unavailable during
 commissioning. The direct wallbox endpoint at `192.168.2.32` responds to EVCC's
 charger probe and is the configured control path.
 
+## Tariffs
+
+EVCC mirrors the Victron DESS tariff policy:
+
+- Grid import is a fixed buy tariff: `6.0 CZK/kWh`.
+- Grid feed-in uses Czech spot pricing through EVCC's `stekker` tariff template
+  with `region = "CZ"`.
+- The spot template returns EUR/kWh, so EVCC converts it to CZK/kWh with the
+  CNB EUR/CZK rate declared for 2026-04-27: `24.355`.
+
+This keeps EVCC's planning and savings calculations aligned with DESS' fixed
+buy / spot sell model.
+
 ## MQTT
 
 evcc uses the dedicated `evcc` MQTT user against the loopback Mosquitto listener:
