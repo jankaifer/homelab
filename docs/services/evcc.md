@@ -30,6 +30,7 @@ EV charging and loadpoint service for the homelab energy stack.
 | `homelab.services.evcc.mqtt.topic` | string | `evcc` | MQTT topic prefix |
 | `homelab.services.evcc.mqtt.username` | string | `evcc` | MQTT username |
 | `homelab.services.evcc.mqtt.passwordFile` | path or null | null | Raw agenix password file for MQTT |
+| `homelab.services.evcc.auth.adminPasswordFile` | path or null | null | Raw agenix password file for the evcc admin UI password |
 
 Current production wiring:
 
@@ -40,6 +41,7 @@ homelab.services.evcc = {
   demoMode = false;
   allowedNetworkCIDRs = [ "192.168.2.31/32" ];
   mqtt.passwordFile = config.age.secrets.mqtt-evcc-password.path;
+  auth.adminPasswordFile = config.age.secrets.evcc-admin-password.path;
 
   settings = {
     site.meters = {
@@ -96,11 +98,19 @@ evcc uses the dedicated `evcc` MQTT user against the loopback Mosquitto listener
 
 The homelab wrapper generates a runtime-only environment file at `/run/evcc-secrets/mqtt.env` from the raw agenix password so the MQTT password is substituted into the generated evcc config without entering the Nix store.
 
+## Admin Password
+
+The evcc web UI admin password is stored in `secrets/evcc-admin-password.age`.
+`evcc-admin-password.service` runs before `evcc.service` and applies that secret
+to evcc's SQLite database with the upstream `evcc password set` command. This
+keeps the admin password out of `evcc.yaml` and the Nix store.
+
 ## Troubleshooting
 
 Check service status:
 
 ```bash
+systemctl status evcc-admin-password
 systemctl status evcc
 journalctl -u evcc -n 200 --no-pager
 ```
@@ -123,6 +133,7 @@ ss -ltnp | grep ':7070'
 - NixOS upstream `services.evcc`
 - Mosquitto loopback listener on `127.0.0.1:1883`
 - `secrets/mqtt-evcc-password.age`
+- `secrets/evcc-admin-password.age`
 - Caddy for external HTTPS routing
 
 ## Links

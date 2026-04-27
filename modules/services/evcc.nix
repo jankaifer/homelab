@@ -7,6 +7,10 @@ let
     + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
   mqttEnvDir = "/run/evcc-secrets";
   mqttEnvFile = "${mqttEnvDir}/mqtt.env";
+  adminPasswordFile =
+    if cfg.auth.adminPasswordFile == null
+    then "/dev/null"
+    else toString cfg.auth.adminPasswordFile;
   defaultSettings = {
     log = cfg.logLevel;
     interval = cfg.interval;
@@ -132,6 +136,14 @@ in
         description = "Path to the raw evcc MQTT password file.";
       };
     };
+
+    auth = {
+      adminPasswordFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Path to the raw evcc admin UI password file.";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -168,13 +180,68 @@ in
       '';
     };
 
+    systemd.services.evcc-admin-password = lib.mkIf (cfg.auth.adminPasswordFile != null) {
+      description = "Set evcc admin password";
+      before = [ "evcc.service" ];
+      requiredBy = [ "evcc.service" ];
+      path = [ pkgs.coreutils pkgs.expect ];
+      serviceConfig = {
+        Type = "oneshot";
+      };
+      script = ''
+        set -euo pipefail
+
+        db="/var/lib/evcc/.evcc/evcc.db"
+        install -d -m 0700 "$(dirname "$db")"
+
+        password="$(tr -d '\n' < ${lib.escapeShellArg adminPasswordFile})"
+        if [ -z "$password" ]; then
+          echo "evcc admin password secret is empty" >&2
+          exit 1
+        fi
+
+        export EVCC_ADMIN_PASSWORD="$password"
+        export EVCC_DATABASE_DSN="$db"
+
+        expect <<EOF
+        log_user 0
+        set timeout 30
+        set password \$env(EVCC_ADMIN_PASSWORD)
+        spawn ${config.services.evcc.package}/bin/evcc --database \$env(EVCC_DATABASE_DSN) password set
+        expect {
+          -re "Password" {
+            send -- "\$password\r"
+            exp_continue
+          }
+          eof {
+            catch wait result
+            exit [lindex \$result 3]
+          }
+          timeout {
+            puts stderr "timed out setting evcc admin password"
+            exit 1
+          }
+        }
+        EOF
+      '';
+    };
+
     systemd.services.evcc = {
-      after = lib.mkIf cfg.mqtt.enable [ "mosquitto.service" "evcc-mqtt-env.service" ];
-      requires = lib.mkIf cfg.mqtt.enable [ "evcc-mqtt-env.service" ];
-      restartTriggers = lib.optionals cfg.mqtt.enable [
-        cfg.mqtt.passwordFile
-        config.systemd.services.evcc-mqtt-env.script
-      ];
+      after =
+        lib.optionals cfg.mqtt.enable [ "mosquitto.service" "evcc-mqtt-env.service" ]
+        ++ lib.optionals (cfg.auth.adminPasswordFile != null) [ "evcc-admin-password.service" ];
+      requires =
+        lib.optionals cfg.mqtt.enable [ "evcc-mqtt-env.service" ]
+        ++ lib.optionals (cfg.auth.adminPasswordFile != null) [ "evcc-admin-password.service" ];
+      restartTriggers =
+        lib.optionals cfg.mqtt.enable [
+          cfg.mqtt.passwordFile
+          config.systemd.services.evcc-mqtt-env.script
+        ]
+        ++ lib.optionals (cfg.auth.adminPasswordFile != null) [
+          cfg.auth.adminPasswordFile
+          config.systemd.services.evcc-admin-password.script
+        ];
       serviceConfig = lib.mkIf cfg.restrictNetworkToLoopback {
         IPAddressAllow = [ "localhost" ] ++ cfg.allowedNetworkCIDRs;
         IPAddressDeny = [ "any" ];

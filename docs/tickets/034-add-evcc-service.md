@@ -84,3 +84,4 @@ Validation completed:
   - logs show `meters: grid ✓ pv ✓ battery ✓`
   - logs show live Victron grid, PV, battery power, and battery SOC readings
   - `https://evcc.frame1.hobitin.eu` returns HTTP 200
+- Added `secrets/evcc-admin-password.age` and `evcc-admin-password.service` to apply the UI admin password from agenix with `evcc password set`.

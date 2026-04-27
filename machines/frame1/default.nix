@@ -174,6 +174,12 @@ in
       group = "root";
       mode = "0400";
     };
+    evcc-admin-password = {
+      file = ../../secrets/evcc-admin-password.age;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
     mqtt-eos-connect-password = {
       file = ../../secrets/mqtt-eos-connect-password.age;
       owner = "root";
@@ -333,6 +339,7 @@ in
     demoMode = false;
     allowedNetworkCIDRs = [ "192.168.2.31/32" ];
     mqtt.passwordFile = config.age.secrets.mqtt-evcc-password.path;
+    auth.adminPasswordFile = config.age.secrets.evcc-admin-password.path;
     settings = {
       site = {
         meters = {

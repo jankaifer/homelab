@@ -20,6 +20,7 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 | MQTT Password (`zigbee2mqtt`) | `secrets/mqtt-zigbee2mqtt-password.age` | Zigbee2MQTT MQTT client |
 | MQTT Password (`frigate`) | `secrets/mqtt-frigate-password.age` | Frigate MQTT client |
 | MQTT Password (`evcc`) | `secrets/mqtt-evcc-password.age` | evcc MQTT client |
+| evcc Admin Password | `secrets/evcc-admin-password.age` | evcc web UI admin login |
 | MQTT Password (`eos-connect`) | `secrets/mqtt-eos-connect-password.age` | EOS Connect MQTT client |
 | Victron Einstein MQTT Password | `secrets/victron-einstein-mqtt-password.age` | Victron GX local MQTT broker on `einstein` / `192.168.2.31` |
 | Frigate Notifier Env | `secrets/frigate-notifier-smtp-env.age` | Frigate email fallback and optional ntfy push notifications |
