@@ -230,7 +230,7 @@ in
               acl = [
                 "readwrite homeassistant/#"
                 "read evcc/#"
-                "read eos-connect/#"
+                "read eos_connect/#"
                 "read frigate/#"
                 "readwrite zigbee2mqtt/#"
               ];
@@ -261,9 +261,9 @@ in
               passwordFile = cfg.eosConnectPasswordFile;
               acl = [
                 "read evcc/#"
-                "read homeassistant/#"
+                "readwrite homeassistant/#"
                 "read frigate/#"
-                "readwrite eos-connect/#"
+                "readwrite eos_connect/#"
               ];
             };
           };
@@ -281,12 +281,12 @@ in
         users = {
           homeassistant = {
             passwordFile = cfg.homeAssistantPasswordFile;
-            acl = [
-              "readwrite homeassistant/#"
-              "read evcc/#"
-              "read eos-connect/#"
-              "read frigate/#"
-              "readwrite zigbee2mqtt/#"
+              acl = [
+                "readwrite homeassistant/#"
+                "read evcc/#"
+                "read eos_connect/#"
+                "read frigate/#"
+                "readwrite zigbee2mqtt/#"
             ];
           };
         } // lib.optionalAttrs (cfg.frigatePasswordFile != null) {
@@ -308,9 +308,9 @@ in
             passwordFile = cfg.eosConnectPasswordFile;
             acl = [
               "read evcc/#"
-              "read homeassistant/#"
+              "readwrite homeassistant/#"
               "read frigate/#"
-              "readwrite eos-connect/#"
+              "readwrite eos_connect/#"
             ];
           };
         };

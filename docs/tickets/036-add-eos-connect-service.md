@@ -56,6 +56,7 @@ Control boundary:
 - Checked GHCR tags and used `ghcr.io/ohand/eos_connect:latest`; the `snapshot` tag from the upstream compose file was not published.
 - Added `eos-connect-bootstrap-config.service` because EOS Connect migrates most configuration into SQLite on first boot and then ignores later YAML changes for non-bootstrap keys.
 - Seeded EOS Connect with local EOS API, evcc URL, and MQTT settings while reading the MQTT password from agenix at runtime.
+- Corrected the Mosquitto topic prefix to EOS Connect's actual `eos_connect/#` namespace.
 
 ## Validation Notes
 

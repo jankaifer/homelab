@@ -76,14 +76,14 @@ Configured users:
 
 ACL scope:
 - `evcc/#`
-- `eos-connect/#`
+- `eos_connect/#`
 - `homeassistant/#`
 - `frigate/#`
 - `zigbee2mqtt/#`
 
-Home Assistant is also granted read access to `evcc/#`, `eos-connect/#`, and `frigate/#` so MQTT-backed EV charging state, advisory energy plans, Frigate entities, and Frigate events can flow into Home Assistant without broadening those clients' own write scopes.
+Home Assistant is also granted read access to `evcc/#`, `eos_connect/#`, and `frigate/#` so MQTT-backed EV charging state, advisory energy plans, Frigate entities, and Frigate events can flow into Home Assistant without broadening those clients' own write scopes.
 
-EOS Connect can read `evcc/#`, `homeassistant/#`, and `frigate/#`, and can publish under `eos-connect/#`. It is not granted broad MQTT command-topic access.
+EOS Connect can read `evcc/#` and `frigate/#`, publish Home Assistant discovery under `homeassistant/#`, and read/write its own `eos_connect/#` status/control topic namespace. It is not granted broad MQTT command-topic access.
 
 ## Access
 

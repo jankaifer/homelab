@@ -58,7 +58,7 @@ EOS Connect has a dedicated MQTT identity:
 - Username: `eos-connect`
 - Password secret: `secrets/mqtt-eos-connect-password.age`
 - Read access: `evcc/#`, `homeassistant/#`, `frigate/#`
-- Write access: `eos-connect/#`
+- Write access: `eos_connect/#` and Home Assistant MQTT discovery/state under `homeassistant/#`
 
 No broad command-topic access is granted in the first rollout.
 
