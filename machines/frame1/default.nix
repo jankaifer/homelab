@@ -505,7 +505,7 @@ in
   };
 
   homelab.services.frigate-notifier = {
-    enable = true;
+    enable = false;
     deliveryMode = "auto";
     recipient = "jan@kaifer.cz";
     mqttPasswordFile = config.age.secrets.mqtt-frigate-password.path;

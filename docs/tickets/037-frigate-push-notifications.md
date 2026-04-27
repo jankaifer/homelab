@@ -2,7 +2,7 @@
 
 **Status**: DONE
 **Created**: 2026-04-26
-**Updated**: 2026-04-26
+**Updated**: 2026-04-27
 
 ## Task
 
@@ -20,3 +20,8 @@ Extend the existing MQTT-based Frigate notifier with ntfy delivery while keeping
 - In `auto` mode, the notifier sends ntfy push notifications when `NTFY_TOPIC_URL` is available and falls back to email otherwise.
 - ntfy notifications upload the annotated Frigate snapshot as the notification attachment and link taps to the Frigate review URL.
 - Updated frame1 to use `auto` mode with the existing notifier secret file, so adding `NTFY_TOPIC_URL` and `NTFY_TOKEN` to the secret enables push delivery without another Nix config change.
+
+### 2026-04-27
+
+- Paused `frigate-notifier.service` by setting `homelab.services.frigate-notifier.enable = false` on frame1 because the notification stream was too noisy.
+- Kept the auto-mode ntfy/email configuration in place so notifications can be re-enabled later without rebuilding the delivery setup.
