@@ -346,6 +346,7 @@ in
     enable = true;
     domain = "evcc.frame1.hobitin.eu";
     demoMode = false;
+    restrictNetworkToLoopback = false;
     allowedNetworkCIDRs = [ "192.168.2.31/32" ];
     mqtt.passwordFile = config.age.secrets.mqtt-evcc-password.path;
     auth.adminPasswordFile = config.age.secrets.evcc-admin-password.path;

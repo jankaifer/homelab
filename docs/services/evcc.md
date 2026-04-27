@@ -40,6 +40,7 @@ homelab.services.evcc = {
   enable = true;
   domain = "evcc.frame1.hobitin.eu";
   demoMode = false;
+  restrictNetworkToLoopback = false;
   allowedNetworkCIDRs = [ "192.168.2.31/32" ];
   mqtt.passwordFile = config.age.secrets.mqtt-evcc-password.path;
   auth.adminPasswordFile = config.age.secrets.evcc-admin-password.path;
@@ -62,10 +63,10 @@ homelab.services.evcc = {
 - State directory: `/var/lib/evcc`
 
 The service is exposed through Caddy and is not opened directly in the firewall.
-evcc itself listens on all interfaces for its configured port, so the homelab
-wrapper applies systemd `IPAddressDeny=any` and explicitly allows only localhost
-plus required device CIDRs. Production allows `192.168.2.31/32` so evcc can read
-the Victron GX Modbus TCP endpoint.
+evcc itself listens on all interfaces for its configured port, but production no
+longer applies systemd IP filtering because Tesla vehicle telemetry requires
+outbound HTTPS to Tesla cloud APIs. The UI remains exposed only through Caddy;
+the service port is not opened directly in the firewall.
 
 ## Production Wiring
 

@@ -86,3 +86,4 @@ Validation completed:
   - `https://evcc.frame1.hobitin.eu` returns HTTP 200
 - Added `secrets/evcc-admin-password.age` and `evcc-admin-password.service` to apply the UI admin password from agenix with `evcc password set`.
 - Renamed the placeholder vehicle to `Tesla Model 3`, added `secrets/evcc-tesla.env.age` to the agenix rules, made the evcc wrapper able to append extra runtime secret env files, and made frame1 automatically switch that vehicle to the Tesla API template once the encrypted env secret exists.
+- Added the Tesla API credentials secret for the Model 3 and relaxed EVCC's systemd IP filter on frame1 so it can reach Tesla cloud APIs while the charger path remains non-actuating.
