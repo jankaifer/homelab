@@ -436,14 +436,16 @@ in
       tariffs = {
         currency = "CZK";
         grid = {
-          type = "fixed";
-          price = 6.0;
+          type = "template";
+          template = "stekker";
+          region = "CZ";
+          formula = "price * 24.355";
         };
         feedin = {
           type = "template";
           template = "stekker";
           region = "CZ";
-          formula = "price * 24.355";
+          formula = "price * 24.355 - 0.3";
         };
       };
     };
