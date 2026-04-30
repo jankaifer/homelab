@@ -98,15 +98,18 @@ charger probe and is the configured control path.
 
 EVCC mirrors the Victron DESS tariff policy:
 
-- Grid import uses Czech spot pricing through EVCC's `stekker` tariff template
-  with `region = "CZ"`.
-- Grid feed-in uses the same Czech spot source, shifted down by
+- Grid import uses a fixed time-of-use buy tariff:
+  - `3.55 CZK/kWh` by default (`00:00-06:00`, `07:00-09:00`,
+    `10:00-13:00`, `14:00-16:00`, `17:00-23:59`)
+  - `4.33 CZK/kWh` during `06:00-07:00`, `09:00-10:00`,
+    `13:00-14:00`, and `16:00-17:00`
+- Grid feed-in uses Czech spot pricing, shifted down by
   `0.3 CZK/kWh` for sell-side fees.
 - The spot template returns EUR/kWh, so EVCC converts it to CZK/kWh with the
   CNB EUR/CZK rate declared for 2026-04-27: `24.355`.
 
-This keeps EVCC's planning and savings calculations aligned with DESS' spot
-pricing model and fixed exchange-rate conversion.
+This keeps EVCC's planning and savings calculations aligned with DESS' fixed
+buy tariff, spot sell tariff, and fixed exchange-rate conversion.
 
 ## MQTT
 

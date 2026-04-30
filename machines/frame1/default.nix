@@ -436,10 +436,26 @@ in
       tariffs = {
         currency = "CZK";
         grid = {
-          type = "template";
-          template = "stekker";
-          region = "CZ";
-          formula = "price * 24.355";
+          type = "fixed";
+          price = 3.55;
+          zones = [
+            {
+              hours = "6-7";
+              price = 4.33;
+            }
+            {
+              hours = "9-10";
+              price = 4.33;
+            }
+            {
+              hours = "13-14";
+              price = 4.33;
+            }
+            {
+              hours = "16-17";
+              price = 4.33;
+            }
+          ];
         };
         feedin = {
           type = "template";
