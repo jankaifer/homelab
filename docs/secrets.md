@@ -29,6 +29,13 @@ Secrets are managed using [agenix](https://github.com/ryantm/agenix) - age-encry
 | NAS SMB Password (`nasguest`) | `secrets/nas-guest-password.age` | Samba login for guest media access |
 | Restic Password | `secrets/restic-password.age` | Restic backup job |
 | Restic Repository Env | `secrets/restic-repository-env.age` | Restic repository URL and object-store credentials |
+| Authelia JWT Secret | `secrets/authelia-jwt-secret.age` | Authelia identity-validation JWT signing secret |
+| Authelia Session Secret | `secrets/authelia-session-secret.age` | Authelia session secret |
+| Authelia Storage Encryption Key | `secrets/authelia-storage-encryption-key.age` | Authelia local storage encryption |
+| Authelia OIDC HMAC Secret | `secrets/authelia-oidc-hmac-secret.age` | Authelia OIDC HMAC signing secret |
+| Authelia OIDC Issuer Private Key | `secrets/authelia-oidc-issuer-private-key.age` | Authelia OIDC issuer key |
+| Authelia Users Database | `secrets/authelia-users.age` | File authentication users and password hashes |
+| Grafana OIDC Client Secret | `secrets/grafana-oidc-client-secret.age` | Grafana confidential OIDC client secret |
 
 ## Encryption Keys
 
@@ -120,6 +127,28 @@ AWS_DEFAULT_REGION=eu-central-1
 ```
 
 See [restic-repository.env.example](/Users/jankaifer/dev/jankaifer/homelab/secrets/restic-repository.env.example) for the committed template.
+
+## Authelia Secret Formats
+
+Most Authelia secrets contain one random string only.
+
+`authelia-oidc-issuer-private-key.age` contains a PEM private key.
+
+`authelia-users.age` contains the Authelia file authentication database:
+
+```yaml
+users:
+  jankaifer:
+    disabled: false
+    displayname: Jan Kaifer
+    password: "$argon2id$..."
+    email: jan@kaifer.cz
+    groups:
+      - admins
+      - grafana-editors
+```
+
+`grafana-oidc-client-secret.age` contains the raw Grafana OIDC client secret. Its corresponding PBKDF2 digest is declared in `homelab.services.authelia.grafana.clientSecretDigest`.
 
 ## Links
 

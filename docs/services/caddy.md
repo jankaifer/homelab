@@ -21,6 +21,7 @@ Caddy is the reverse proxy and HTTPS termination point for web services. In prod
 | `homelab.services.caddy.cloudflareDns.apiToken` | string | null | Cloudflare API token (VM testing) |
 | `homelab.services.caddy.cloudflareDns.apiTokenFile` | string | null | Path to token file (production) |
 | `homelab.services.caddy.virtualHosts` | attrset | {} | Virtual host configurations |
+| `homelab.services.caddy.protectedVirtualHosts` | attrset | {} | Authelia-protected reverse proxy hosts |
 
 **Current configuration:**
 ```nix
@@ -45,14 +46,35 @@ Caddy serves as the main reverse proxy for all web services:
 - Single entry point for all HTTP/HTTPS traffic
 - Split-horizon hostname strategy for production (`frame1.hobitin.eu`)
 - Real certificates also work on local development (via `local.hobitin.eu` → 127.0.0.1)
+- Optional Authelia forward-auth helper for protected upstreams
 
 ## Architecture
 
 ```
 Internet → Caddy (:80/:443) → Homepage (:3000)
+                            → Authelia (:9091)
                             → Grafana (:3001)
                             → Other services...
 ```
+
+## Authelia Protected Hosts
+
+For services that should use Authelia forward-auth, declare them through `protectedVirtualHosts`:
+
+```nix
+homelab.services.caddy.protectedVirtualHosts."app.frame1.hobitin.eu" = {
+  upstream = "127.0.0.1:8080";
+};
+```
+
+The helper expands to:
+
+- `forward_auth 127.0.0.1:9091`
+- `uri /api/authz/forward-auth`
+- copied identity headers: `Remote-User`, `Remote-Groups`, `Remote-Email`, `Remote-Name`
+- `reverse_proxy <upstream>`
+
+Do not declare the same hostname in both `virtualHosts` and `protectedVirtualHosts`; the module asserts this during evaluation.
 
 ## TLS Setup
 

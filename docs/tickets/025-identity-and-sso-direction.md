@@ -1,6 +1,6 @@
 # Ticket 025: Authelia SSO Foundation
 
-**Status**: PLANNING
+**Status**: IN_PROGRESS
 **Created**: 2026-03-31
 **Updated**: 2026-05-01
 
@@ -97,3 +97,8 @@ The stable configuration should still be reproducible from:
 - Selected Authelia as the SSO foundation because it best matches the desired Nix-first, low-state, self-hosted operating model.
 - Defined initial rollout boundary: Grafana native OIDC, OpenClaw behind Caddy forward-auth, Home Assistant deferred.
 - Captured unavoidable state boundary and recovery requirements so SSO does not become an operational lockout risk.
+- Added `modules/services/authelia.nix`, enabled Authelia on `frame1` and `frame1-vm`, and exposed it at `auth.frame1.hobitin.eu`.
+- Added agenix-managed Authelia runtime secrets, the file-auth users database, and the Grafana OIDC client secret.
+- Added the reusable `homelab.services.caddy.protectedVirtualHosts` helper for Authelia forward-auth protected upstreams.
+- Enabled Grafana native OIDC against Authelia while keeping the local admin login available for break-glass recovery.
+- Documented user management, secret rotation, adding protected hosts, backup/restore, and recovery operations.

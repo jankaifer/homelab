@@ -19,19 +19,24 @@ Dashboards and visualization for metrics and logs.
 | `homelab.services.grafana.domain` | string | `grafana.local.hobitin.eu` | External domain via Caddy; production overrides this to `grafana.frame1.hobitin.eu` |
 | `homelab.services.grafana.adminPassword` | string or null | `admin` | Admin password for local/VM testing |
 | `homelab.services.grafana.adminPasswordFile` | string or null | null | File path for production secret (agenix) |
+| `homelab.services.grafana.oidc.enable` | bool | false | Enable Authelia OIDC login |
+| `homelab.services.grafana.oidc.issuerUrl` | string | `https://auth.frame1.hobitin.eu` | Authelia issuer URL |
+| `homelab.services.grafana.oidc.clientId` | string | `grafana` | OIDC client ID |
+| `homelab.services.grafana.oidc.clientSecretFile` | string or null | null | agenix-managed OIDC client secret |
+| `homelab.services.grafana.oidc.roleAttributePath` | string | group mapping | JMESPath role mapping from Authelia groups |
 
 **Current configuration:**
 ```nix
 homelab.services.grafana = {
   enable = true;
-  # port = 3001;                         # Web UI port
+  # port = 3001;
   domain = "grafana.frame1.hobitin.eu";
-
-  # For VM testing:
-  adminPassword = "admin";
-
-  # For production (with agenix):
-  # adminPasswordFile = config.age.secrets.grafana-admin-password.path;
+  adminPasswordFile = config.age.secrets.grafana-admin-password.path;
+  oidc = {
+    enable = true;
+    issuerUrl = "https://auth.frame1.hobitin.eu";
+    clientSecretFile = config.age.secrets.grafana-oidc-client-secret.path;
+  };
 };
 ```
 
@@ -42,7 +47,22 @@ homelab.services.grafana = {
 | VM (local) | https://grafana.local.hobitin.eu:8443 |
 | Production | https://grafana.frame1.hobitin.eu |
 
-- **Default login (VM/default):** admin / admin
+- **Login:** Authelia OIDC or local `admin` break-glass account
+- **Admin password:** `secrets/grafana-admin-password.age`
+
+## Authelia OIDC
+
+Grafana uses Authelia's native OIDC provider rather than only reverse-proxy auth, so Grafana can see user identity and map groups to roles.
+
+Role mapping:
+
+| Authelia group | Grafana role |
+|----------------|--------------|
+| `admins` | Admin |
+| `grafana-editors` | Editor |
+| all other authenticated users | Viewer |
+
+Local login remains enabled with the `admin` account for recovery if Authelia is unavailable.
 
 ## Data Sources
 
@@ -81,6 +101,7 @@ Current provisioned dashboard:
 - Homepage (for dashboard registration)
 - VictoriaMetrics (metrics data source)
 - Loki (logs data source)
+- Authelia (OIDC login)
 
 ## Links
 

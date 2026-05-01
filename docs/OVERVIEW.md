@@ -21,6 +21,10 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 │  │frame1.hobitin.eu │  │grafana.frame1...│  │metrics.frame1...│              │
 │  │ (internal:3000) │  │ (internal:3001) │  │ (internal:8428) │              │
 │  └─────────────────┘  └────────┬────────┘  └────────┬────────┘              │
+│                       ┌────────▼────────┐                                   │
+│                       │    Authelia     │  auth.frame1.hobitin.eu           │
+│                       │  SSO / OIDC     │  (internal:9091)                  │
+│                       └─────────────────┘                                   │
 │                                │ queries            │ scrapes               │
 │                       ┌────────▼────────┐  ┌────────▼────────┐              │
 │                       │      Loki       │  │  node_exporter  │              │
@@ -62,6 +66,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | Service | Port | URL | Documentation |
 |---------|------|-----|---------------|
 | Caddy | 80/443 | (reverse proxy) | [docs/services/caddy.md](services/caddy.md) |
+| Authelia | 9091 (internal) | https://auth.frame1.hobitin.eu | [docs/services/authelia.md](services/authelia.md) |
 | Homepage | 3000 (internal) | https://frame1.hobitin.eu (primary), https://local.hobitin.eu (compat) | [docs/services/homepage.md](services/homepage.md) |
 | Grafana | 3001 (internal) | https://grafana.frame1.hobitin.eu | [docs/services/grafana.md](services/grafana.md) |
 | VictoriaMetrics | 8428 (internal) | https://metrics.frame1.hobitin.eu | [docs/services/victoriametrics.md](services/victoriametrics.md) |
@@ -109,6 +114,7 @@ nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x
 # Access services (VM testing with port 8443)
 # Homepage: https://local.hobitin.eu:8443
 # Grafana: https://grafana.local.hobitin.eu:8443
+# Authelia: https://auth.frame1.hobitin.eu:8443
 # VictoriaMetrics: https://metrics.local.hobitin.eu:8443
 # Loki: https://logs.local.hobitin.eu:8443
 # Zigbee2MQTT: https://zigbee.frame1.hobitin.eu:8443
@@ -135,6 +141,7 @@ homelab/
 │   └── services/          # Reusable service modules
 │       ├── alloy.nix
 │       ├── akkudoktor-eos.nix
+│       ├── authelia.nix
 │       ├── backup.nix
 │       ├── caddy.nix
 │       ├── cert-monitoring.nix

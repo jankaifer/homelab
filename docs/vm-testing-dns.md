@@ -9,6 +9,7 @@ The VM uses these domains:
 - `grafana.local.hobitin.eu` (Grafana)
 - `metrics.local.hobitin.eu` (VictoriaMetrics)
 - `logs.local.hobitin.eu` (Loki)
+- `auth.frame1.hobitin.eu` (Authelia)
 - `zigbee.frame1.hobitin.eu` (Zigbee2MQTT)
 - `home.frame1.hobitin.eu` (Home Assistant)
 
@@ -25,6 +26,7 @@ sudo tee -a /etc/hosts <<EOF
 127.0.0.1 grafana.local.hobitin.eu
 127.0.0.1 metrics.local.hobitin.eu
 127.0.0.1 logs.local.hobitin.eu
+127.0.0.1 auth.frame1.hobitin.eu
 127.0.0.1 zigbee.frame1.hobitin.eu
 127.0.0.1 home.frame1.hobitin.eu
 EOF
@@ -44,6 +46,7 @@ curl -k https://local.hobitin.eu:8443
 curl -k https://grafana.local.hobitin.eu:8443
 curl -k https://metrics.local.hobitin.eu:8443
 curl -k https://logs.local.hobitin.eu:8443/ready
+curl -k https://auth.frame1.hobitin.eu:8443
 curl -k https://zigbee.frame1.hobitin.eu:8443
 curl -k https://home.frame1.hobitin.eu:8443
 ```
@@ -56,6 +59,7 @@ If you don't want to modify /etc/hosts, you can test using curl with Host header
 curl -k -H "Host: grafana.local.hobitin.eu" https://local.hobitin.eu:8443
 curl -k -H "Host: metrics.local.hobitin.eu" https://local.hobitin.eu:8443
 curl -k -H "Host: logs.local.hobitin.eu" https://local.hobitin.eu:8443/ready
+curl -k -H "Host: auth.frame1.hobitin.eu" https://local.hobitin.eu:8443
 curl -k -H "Host: zigbee.frame1.hobitin.eu" https://local.hobitin.eu:8443
 curl -k -H "Host: home.frame1.hobitin.eu" https://local.hobitin.eu:8443
 ```
@@ -65,7 +69,7 @@ curl -k -H "Host: home.frame1.hobitin.eu" https://local.hobitin.eu:8443
 To remove the entries from /etc/hosts when done testing:
 
 ```bash
-sudo sed -i.bak '/# Homelab VM testing/,+6d' /etc/hosts
+sudo sed -i.bak '/# Homelab VM testing/,+7d' /etc/hosts
 ```
 
 ## Production Note
