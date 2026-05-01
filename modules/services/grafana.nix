@@ -196,7 +196,7 @@ in
     };
 
     # Register with Caddy reverse proxy
-    homelab.services.caddy.virtualHosts.${cfg.domain} = "reverse_proxy localhost:${toString cfg.port}";
+    homelab.services.caddy.virtualHosts.${cfg.domain} = "reverse_proxy 127.0.0.1:${toString cfg.port}";
 
     # Register with Homepage dashboard
     homelab.homepage.services = [{

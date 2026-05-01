@@ -102,3 +102,4 @@ The stable configuration should still be reproducible from:
 - Added the reusable `homelab.services.caddy.protectedVirtualHosts` helper for Authelia forward-auth protected upstreams.
 - Enabled Grafana native OIDC against Authelia while keeping the local admin login available for break-glass recovery.
 - Documented user management, secret rotation, adding protected hosts, backup/restore, and recovery operations.
+- During VM smoke testing, tightened Grafana's Caddy upstream from `localhost` to `127.0.0.1` because Caddy initially tried `::1` while Grafana listens on IPv4 loopback.
