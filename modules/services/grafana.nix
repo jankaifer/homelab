@@ -77,9 +77,48 @@ in
       default = null;
       description = "Path to file containing admin password (for production with agenix)";
     };
+
+    oidc = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Enable Authelia OIDC login";
+      };
+
+      issuerUrl = lib.mkOption {
+        type = lib.types.str;
+        default = "https://auth.frame1.hobitin.eu";
+        description = "Authelia issuer URL";
+      };
+
+      clientId = lib.mkOption {
+        type = lib.types.str;
+        default = "grafana";
+        description = "OIDC client ID registered in Authelia";
+      };
+
+      clientSecretFile = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Path to file containing the Grafana OIDC client secret";
+      };
+
+      roleAttributePath = lib.mkOption {
+        type = lib.types.str;
+        default = "contains(groups[*], 'admins') && 'Admin' || contains(groups[*], 'grafana-editors') && 'Editor' || 'Viewer'";
+        description = "Grafana JMESPath role mapping expression for Authelia groups";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = (!cfg.oidc.enable) || cfg.oidc.clientSecretFile != null;
+        message = "homelab.services.grafana.oidc.clientSecretFile is required when Grafana OIDC is enabled";
+      }
+    ];
+
     services.grafana = {
       enable = true;
 
@@ -97,6 +136,32 @@ in
             if cfg.adminPasswordFile != null
             then "$__file{${cfg.adminPasswordFile}}"
             else cfg.adminPassword;
+        };
+
+        auth = {
+          disable_login_form = false;
+          oauth_auto_login = false;
+        };
+
+        "auth.generic_oauth" = lib.mkIf cfg.oidc.enable {
+          enabled = true;
+          name = "Authelia";
+          icon = "signin";
+          client_id = cfg.oidc.clientId;
+          client_secret = "$__file{${cfg.oidc.clientSecretFile}}";
+          scopes = "openid profile email groups";
+          empty_scopes = false;
+          auth_url = "${cfg.oidc.issuerUrl}/api/oidc/authorization";
+          token_url = "${cfg.oidc.issuerUrl}/api/oidc/token";
+          api_url = "${cfg.oidc.issuerUrl}/api/oidc/userinfo";
+          login_attribute_path = "preferred_username";
+          groups_attribute_path = "groups";
+          name_attribute_path = "name";
+          use_pkce = true;
+          role_attribute_path = cfg.oidc.roleAttributePath;
+          auth_style = "InHeader";
+          allow_sign_up = true;
+          skip_org_role_sync = false;
         };
 
         # Disable analytics

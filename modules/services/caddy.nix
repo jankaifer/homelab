@@ -11,7 +11,24 @@
 
 let
   cfg = config.homelab.services.caddy;
-  domains = builtins.attrNames cfg.virtualHosts;
+  protectedVirtualHostConfigs = lib.mapAttrs
+    (_: hostCfg: ''
+      forward_auth ${hostCfg.authUpstream} {
+        uri ${hostCfg.authUri}
+        copy_headers ${lib.concatStringsSep " " hostCfg.copyHeaders}
+      }
+
+      ${hostCfg.extraConfig}
+
+      reverse_proxy ${hostCfg.upstream}
+    '')
+    cfg.protectedVirtualHosts;
+  overlappingVirtualHosts =
+    lib.intersectLists
+      (builtins.attrNames cfg.virtualHosts)
+      (builtins.attrNames cfg.protectedVirtualHosts);
+  allVirtualHosts = cfg.virtualHosts // protectedVirtualHostConfigs;
+  domains = builtins.attrNames allVirtualHosts;
   acmeEnvService = "caddy-acme-cloudflare-env";
   acmeEnvFile = "/run/${acmeEnvService}.env";
   acmeIssueServices = map (domain: "acme-${domain}.service") domains;
@@ -85,6 +102,49 @@ in
       description = "Caddy virtual host configurations";
     };
 
+    protectedVirtualHosts = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.submodule {
+        options = {
+          upstream = lib.mkOption {
+            type = lib.types.str;
+            example = "localhost:8080";
+            description = "Backend upstream protected by Authelia forward-auth";
+          };
+
+          authUpstream = lib.mkOption {
+            type = lib.types.str;
+            default = "127.0.0.1:9091";
+            description = "Authelia upstream used by Caddy forward_auth";
+          };
+
+          authUri = lib.mkOption {
+            type = lib.types.str;
+            default = "/api/authz/forward-auth";
+            description = "Authelia authorization endpoint used by Caddy forward_auth";
+          };
+
+          copyHeaders = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ "Remote-User" "Remote-Groups" "Remote-Email" "Remote-Name" ];
+            description = "Headers copied from Authelia to the protected upstream";
+          };
+
+          extraConfig = lib.mkOption {
+            type = lib.types.lines;
+            default = "";
+            description = "Additional Caddy directives inserted before the protected reverse_proxy";
+          };
+        };
+      });
+      default = { };
+      example = {
+        "app.example.com" = {
+          upstream = "localhost:8080";
+        };
+      };
+      description = "Caddy virtual hosts protected by Authelia forward-auth";
+    };
+
     # Metrics for Prometheus
     metrics = {
       enable = lib.mkOption {
@@ -111,6 +171,10 @@ in
         assertion = cfg.cloudflareDns.enable -> cfg.acmeEmail != null;
         message = "homelab.services.caddy.acmeEmail must be set when cloudflareDns is enabled";
       }
+      {
+        assertion = overlappingVirtualHosts == [ ];
+        message = "Caddy virtual hosts cannot be declared in both virtualHosts and protectedVirtualHosts: ${lib.concatStringsSep ", " overlappingVirtualHosts}";
+      }
     ];
 
     services.caddy = {
@@ -135,7 +199,7 @@ in
               ${domainConfig}
             }
           '')
-          cfg.virtualHosts
+          allVirtualHosts
       );
     };
 

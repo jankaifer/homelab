@@ -18,6 +18,7 @@ in
     ../../modules/services/victoriametrics.nix
     ../../modules/services/loki.nix
     ../../modules/services/alloy.nix
+    ../../modules/services/authelia.nix
     ../../modules/services/grafana.nix
     ../../modules/services/nas.nix
     ../../modules/services/tailscale.nix
@@ -230,6 +231,48 @@ in
       group = "root";
       mode = "0400";
     };
+    authelia-jwt-secret = {
+      file = ../../secrets/authelia-jwt-secret.age;
+      owner = "authelia-main";
+      group = "authelia-main";
+      mode = "0400";
+    };
+    authelia-session-secret = {
+      file = ../../secrets/authelia-session-secret.age;
+      owner = "authelia-main";
+      group = "authelia-main";
+      mode = "0400";
+    };
+    authelia-storage-encryption-key = {
+      file = ../../secrets/authelia-storage-encryption-key.age;
+      owner = "authelia-main";
+      group = "authelia-main";
+      mode = "0400";
+    };
+    authelia-oidc-hmac-secret = {
+      file = ../../secrets/authelia-oidc-hmac-secret.age;
+      owner = "authelia-main";
+      group = "authelia-main";
+      mode = "0400";
+    };
+    authelia-oidc-issuer-private-key = {
+      file = ../../secrets/authelia-oidc-issuer-private-key.age;
+      owner = "authelia-main";
+      group = "authelia-main";
+      mode = "0400";
+    };
+    authelia-users = {
+      file = ../../secrets/authelia-users.age;
+      owner = "authelia-main";
+      group = "authelia-main";
+      mode = "0400";
+    };
+    grafana-oidc-client-secret = {
+      file = ../../secrets/grafana-oidc-client-secret.age;
+      owner = "grafana";
+      group = "grafana";
+      mode = "0400";
+    };
   } // lib.optionalAttrs evccTeslaEnvSecretExists {
     evcc-tesla-env = {
       file = evccTeslaEnvSecret;
@@ -295,6 +338,31 @@ in
     # port = 3001; # Default
     domain = "grafana.frame1.hobitin.eu";
     adminPasswordFile = config.age.secrets.grafana-admin-password.path;
+    oidc = {
+      enable = true;
+      issuerUrl = "https://auth.frame1.hobitin.eu";
+      clientSecretFile = config.age.secrets.grafana-oidc-client-secret.path;
+    };
+  };
+
+  homelab.services.authelia = {
+    enable = true;
+    domain = "auth.frame1.hobitin.eu";
+    cookieDomain = "frame1.hobitin.eu";
+    defaultRedirectDomain = "frame1.hobitin.eu";
+    usersFile = config.age.secrets.authelia-users.path;
+    secrets = {
+      jwtSecretFile = config.age.secrets.authelia-jwt-secret.path;
+      sessionSecretFile = config.age.secrets.authelia-session-secret.path;
+      storageEncryptionKeyFile = config.age.secrets.authelia-storage-encryption-key.path;
+      oidcHmacSecretFile = config.age.secrets.authelia-oidc-hmac-secret.path;
+      oidcIssuerPrivateKeyFile = config.age.secrets.authelia-oidc-issuer-private-key.path;
+    };
+    grafana = {
+      enable = true;
+      domain = "grafana.frame1.hobitin.eu";
+      clientSecretDigest = "$pbkdf2-sha512$310000$9tPtfeUvsI4RD8YLA6MFtg$2VNtqiydLkUw1z/ED8K/zFORhRYJBfidEmkfUdMO5YztnzbcAFE7D.xw3aA34aPCs9aVjtcrQB3/NOo.M6wTSA";
+    };
   };
 
   homelab.services.nas = {

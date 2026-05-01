@@ -78,4 +78,13 @@ in
 
   # SMB password for guest NAS access
   "nas-guest-password.age".publicKeys = allKeys;
+
+  # Authelia SSO secrets and users database
+  "authelia-jwt-secret.age".publicKeys = allKeys;
+  "authelia-session-secret.age".publicKeys = allKeys;
+  "authelia-storage-encryption-key.age".publicKeys = allKeys;
+  "authelia-oidc-hmac-secret.age".publicKeys = allKeys;
+  "authelia-oidc-issuer-private-key.age".publicKeys = allKeys;
+  "authelia-users.age".publicKeys = allKeys;
+  "grafana-oidc-client-secret.age".publicKeys = allKeys;
 }
