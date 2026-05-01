@@ -97,10 +97,11 @@ Recently completed:
 Next execution candidates:
 1. Ticket 023: Operational alerting foundation
 2. Ticket 024: Network segmentation plan
+3. Ticket 025: Authelia SSO foundation
+4. Ticket 039: OpenClaw always-on personal assistant
 
 Still deferred for later:
-1. Ticket 025: Identity and SSO direction
-2. Ticket 026: Family-facing service expansion plan
+1. Ticket 026: Family-facing service expansion plan
 
 ## Tech Stack
 
