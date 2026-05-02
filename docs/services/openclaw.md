@@ -27,7 +27,9 @@ OpenClaw personal assistant gateway running as a Podman-managed OCI container.
 
 The container uses host networking so its loopback-bound gateway can be reached by host services and so it can talk to the host-side `signal-cli` daemon. The OpenClaw HTTP surface still binds to loopback, is not opened in the firewall, and is only proxied by Caddy after Authelia authorizes the request.
 
-When the UI is exposed, the module sets `gateway.controlUi.allowedOrigins` to include `https://openclaw.frame1.hobitin.eu`. This is required by OpenClaw's own browser-origin check; the error screen may display `controlUI`, but the valid config key is `controlUi`.
+When the UI is exposed, the module configures OpenClaw gateway auth in `trusted-proxy` mode. Caddy performs Authelia forward-auth, copies the Authelia identity headers, and injects `X-OpenClaw-Scopes: operator.admin,operator.write,operator.read` for the protected OpenClaw host. OpenClaw accepts only the configured Authelia user `jan@kaifer.cz` through loopback trusted proxies.
+
+The module also sets `gateway.controlUi.allowedOrigins` to include `https://openclaw.frame1.hobitin.eu`. This is required by OpenClaw's own browser-origin check; the error screen may display `controlUI`, but the valid config key is `controlUi`.
 
 ## Safety Boundary
 
@@ -48,7 +50,7 @@ Optional secrets declared in `secrets/secrets.nix`:
 - `openclaw.env.age`: env file for provider keys, for example `OPENAI_API_KEY=...` or `BRAVE_API_KEY=...`
 - `openclaw-signal-account.age`: one-line Signal bot account, for example `+15551234567`
 
-The module generates a local `OPENCLAW_GATEWAY_TOKEN` at first boot in `/var/lib/openclaw/gateway-token` and passes it to the container through `/run/openclaw/openclaw.env`.
+The module keeps a generated local gateway token at `/var/lib/openclaw/gateway-token` as fallback state, but trusted-proxy mode does not pass `OPENCLAW_GATEWAY_TOKEN` into the OpenClaw container. If `openclaw.env.age` exists, any `OPENCLAW_GATEWAY_TOKEN=` line in it is filtered out before the container env file is generated.
 
 ## Signal Setup
 

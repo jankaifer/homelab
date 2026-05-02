@@ -22,6 +22,14 @@ let
   ] ++ lib.optionals cfg.exposeUi.enable [
     "https://${cfg.exposeUi.domain}"
   ];
+  gatewayTrustedProxies = [ "127.0.0.1" "::1" ];
+  trustedProxyRequiredHeaders = [
+    "remote-user"
+    "remote-email"
+    "x-forwarded-proto"
+    "x-forwarded-host"
+  ];
+  trustedProxyAllowedUsers = [ "jan@kaifer.cz" ];
 
   mkJsonList = values: builtins.toJSON values;
 in
@@ -216,12 +224,11 @@ in
           chmod 0400 ${lib.escapeShellArg tokenFile}
         fi
 
-        {
-          printf 'OPENCLAW_GATEWAY_TOKEN=%s\n' "$(tr -d '\n' < ${lib.escapeShellArg tokenFile})"
-          ${lib.optionalString (cfg.environmentFile != null) ''
-            sed '/^[[:space:]]*OPENCLAW_GATEWAY_TOKEN=/d' ${lib.escapeShellArg cfg.environmentFile}
-          ''}
-        } > ${lib.escapeShellArg generatedEnvFile}
+        ${if cfg.environmentFile == null then ''
+          : > ${lib.escapeShellArg generatedEnvFile}
+        '' else ''
+          sed '/^[[:space:]]*OPENCLAW_GATEWAY_TOKEN=/d' ${lib.escapeShellArg cfg.environmentFile} > ${lib.escapeShellArg generatedEnvFile}
+        ''}
         chmod 0400 ${lib.escapeShellArg generatedEnvFile}
 
         signal_account=""
@@ -239,6 +246,9 @@ in
           --argjson signalAllowFrom ${lib.escapeShellArg (mkJsonList signalCfg.allowFrom)} \
           --argjson signalMediaMaxMb ${toString signalCfg.mediaMaxMb} \
           --argjson controlUiAllowedOrigins ${lib.escapeShellArg (mkJsonList controlUiAllowedOrigins)} \
+          --argjson gatewayTrustedProxies ${lib.escapeShellArg (mkJsonList gatewayTrustedProxies)} \
+          --argjson trustedProxyRequiredHeaders ${lib.escapeShellArg (mkJsonList trustedProxyRequiredHeaders)} \
+          --argjson trustedProxyAllowedUsers ${lib.escapeShellArg (mkJsonList trustedProxyAllowedUsers)} \
           --argjson toolAllow ${lib.escapeShellArg (mkJsonList (
             [ "group:web" "message" "session_status" ]
             ++ lib.optionals cfg.allowBrowserTool [ "browser" ]
@@ -252,6 +262,16 @@ in
             gateway: {
               mode: "local",
               bind: "loopback",
+              trustedProxies: $gatewayTrustedProxies,
+              auth: {
+                mode: "trusted-proxy",
+                trustedProxy: {
+                  userHeader: "remote-email",
+                  requiredHeaders: $trustedProxyRequiredHeaders,
+                  allowUsers: $trustedProxyAllowedUsers,
+                  allowLoopback: true
+                }
+              },
               controlUi: {
                 allowedOrigins: $controlUiAllowedOrigins
               }
@@ -394,6 +414,9 @@ in
     homelab.services.caddy.protectedVirtualHosts = lib.mkIf cfg.exposeUi.enable {
       ${cfg.exposeUi.domain} = {
         upstream = "127.0.0.1:${toString cfg.port}";
+        extraConfig = ''
+          request_header X-OpenClaw-Scopes "operator.admin,operator.write,operator.read"
+        '';
       };
     };
   };

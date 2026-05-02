@@ -103,3 +103,5 @@ OpenClaw must be deployed behind the SSO foundation from Ticket 025 before it is
 - Exposed `https://openclaw.frame1.hobitin.eu` through the existing Caddy protected virtual-host path, so requests are authorized by Authelia before reaching the loopback-only OpenClaw gateway.
 - Clarified that Signal "bot" setup means a normal dedicated Signal account controlled by `signal-cli`, not a bot-token flow.
 - Added `gateway.controlUi.allowedOrigins` for `https://openclaw.frame1.hobitin.eu` so OpenClaw's own Control UI WebSocket origin check accepts the Authelia-protected reverse-proxy origin.
+- Switched the exposed OpenClaw UI from browser-supplied gateway token auth to OpenClaw `trusted-proxy` auth. Caddy remains the Authelia boundary, forwards the Authelia identity headers, and injects `X-OpenClaw-Scopes: operator.admin,operator.write,operator.read` for the OpenClaw virtual host.
+- Kept the local generated `/var/lib/openclaw/gateway-token` file as fallback state, but stopped passing `OPENCLAW_GATEWAY_TOKEN` into the container while trusted-proxy auth is active.
