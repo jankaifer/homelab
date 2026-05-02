@@ -55,6 +55,12 @@ in
       description = "Persistent OpenClaw bundled-plugin runtime dependency cache.";
     };
 
+    cacheDir = lib.mkOption {
+      type = lib.types.str;
+      default = "/var/lib/openclaw/cache";
+      description = "Persistent OpenClaw container cache directory mounted at /home/node/.cache.";
+    };
+
     environmentFile = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -176,6 +182,7 @@ in
       "d ${cfg.dataDir} 0700 1000 1000 - -"
       "d ${cfg.workspaceDir} 0700 1000 1000 - -"
       "d ${cfg.pluginRuntimeDir} 0700 1000 1000 - -"
+      "d ${cfg.cacheDir} 0700 1000 1000 - -"
       "d ${runtimeDir} 0700 root root - -"
     ] ++ lib.optionals signalCfg.enable [
       "d ${signalCfg.dataDir} 0700 openclaw-signal openclaw-signal - -"
@@ -330,6 +337,7 @@ in
         "${cfg.dataDir}:/home/node/.openclaw:rw"
         "${cfg.workspaceDir}:/home/node/.openclaw/workspace:rw"
         "${cfg.pluginRuntimeDir}:/var/lib/openclaw/plugin-runtime-deps:rw"
+        "${cfg.cacheDir}:/home/node/.cache:rw"
       ];
       environment = {
         HOME = "/home/node";
@@ -345,7 +353,6 @@ in
         "--security-opt=no-new-privileges"
         "--read-only"
         "--tmpfs=/tmp:rw,nosuid,nodev,noexec,size=256m"
-        "--tmpfs=/home/node/.cache:rw,nosuid,nodev,noexec,size=512m,uid=1000,gid=1000,mode=700"
         "--pids-limit=512"
         "--memory=3g"
         "--cpus=2"
