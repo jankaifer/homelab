@@ -87,4 +87,10 @@ in
   "authelia-oidc-issuer-private-key.age".publicKeys = allKeys;
   "authelia-users.age".publicKeys = allKeys;
   "grafana-oidc-client-secret.age".publicKeys = allKeys;
+
+  # OpenClaw provider/channel configuration.
+  # openclaw.env.age is an optional env file for model/search provider keys.
+  # openclaw-signal-account.age contains the Signal bot account in E.164 format.
+  "openclaw.env.age".publicKeys = allKeys;
+  "openclaw-signal-account.age".publicKeys = allKeys;
 }

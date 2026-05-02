@@ -7,6 +7,10 @@ let
   allUserKeys = builtins.attrValues sshKeys;
   evccTeslaEnvSecret = ../../secrets/evcc-tesla.env.age;
   evccTeslaEnvSecretExists = builtins.pathExists evccTeslaEnvSecret;
+  openclawEnvSecret = ../../secrets/openclaw.env.age;
+  openclawEnvSecretExists = builtins.pathExists openclawEnvSecret;
+  openclawSignalAccountSecret = ../../secrets/openclaw-signal-account.age;
+  openclawSignalAccountSecretExists = builtins.pathExists openclawSignalAccountSecret;
 in
 {
   imports = [
@@ -35,6 +39,7 @@ in
     ../../modules/services/frigate.nix
     ../../modules/services/frigate-notifier.nix
     ../../modules/services/mock-rtsp-camera.nix
+    ../../modules/services/openclaw.nix
   ];
 
   # Basic system settings
@@ -271,6 +276,20 @@ in
       file = ../../secrets/grafana-oidc-client-secret.age;
       owner = "grafana";
       group = "grafana";
+      mode = "0400";
+    };
+  } // lib.optionalAttrs openclawEnvSecretExists {
+    openclaw-env = {
+      file = openclawEnvSecret;
+      owner = "root";
+      group = "root";
+      mode = "0400";
+    };
+  } // lib.optionalAttrs openclawSignalAccountSecretExists {
+    openclaw-signal-account = {
+      file = openclawSignalAccountSecret;
+      owner = "openclaw-signal";
+      group = "openclaw-signal";
       mode = "0400";
     };
   } // lib.optionalAttrs evccTeslaEnvSecretExists {
@@ -544,6 +563,22 @@ in
     enable = true;
     domain = "eos-connect.frame1.hobitin.eu";
     mqtt.passwordFile = config.age.secrets.mqtt-eos-connect-password.path;
+  };
+
+  # OpenClaw - first-pass personal assistant with intentionally narrow tools.
+  # The gateway starts loopback-only. Signal is enabled automatically once
+  # secrets/openclaw-signal-account.age exists.
+  homelab.services.openclaw = {
+    enable = true;
+    environmentFile = lib.mkIf openclawEnvSecretExists config.age.secrets.openclaw-env.path;
+    exposeUi.enable = false;
+    allowBrowserTool = false;
+    signal = {
+      enable = openclawSignalAccountSecretExists;
+      accountFile = lib.mkIf openclawSignalAccountSecretExists config.age.secrets.openclaw-signal-account.path;
+      dmPolicy = "pairing";
+      groupPolicy = "disabled";
+    };
   };
 
   # Zigbee2MQTT - Sonoff coordinator bridge (containerized)

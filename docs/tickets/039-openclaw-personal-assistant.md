@@ -1,8 +1,8 @@
 # Ticket 039: OpenClaw Always-On Personal Assistant
 
-**Status**: PLANNING
+**Status**: IN_PROGRESS
 **Created**: 2026-05-01
-**Updated**: 2026-05-01
+**Updated**: 2026-05-02
 
 ## Task
 
@@ -90,3 +90,13 @@ OpenClaw must be deployed behind the SSO foundation from Ticket 025 before it is
 - Ticket created after deciding to pursue the "real deal" always-on assistant path.
 - Captured hard dependency on Authelia/Caddy protection before exposing OpenClaw.
 - Set the initial email policy to draft-only so Gmail integration can be useful without granting autonomous send authority.
+
+### 2026-05-02
+
+- Researched current upstream deployment docs. OpenClaw now publishes Docker images and documents Signal through `signal-cli` over HTTP JSON-RPC/SSE.
+- Added `modules/services/openclaw.nix` as a first-pass OCI deployment instead of a mutable `npm install -g` host install.
+- Pinned the OpenClaw `2026.4.29` image by per-architecture manifest digest for `x86_64-linux` and `aarch64-linux`.
+- Enabled the gateway on `frame1` loopback only with no public UI, no Docker socket, and no host filesystem mounts beyond OpenClaw-owned state directories.
+- Restricted initial tools to web search/fetch, messaging, and session status. Runtime execution, filesystem access, gateway automation, node/device tools, media tools, and full browser automation are denied.
+- Added optional agenix secret declarations for `openclaw.env.age` and `openclaw-signal-account.age`.
+- Made Signal activation conditional on `openclaw-signal-account.age` existing so the base gateway can evaluate and boot before the bot number is provisioned.
