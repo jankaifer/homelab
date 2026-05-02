@@ -256,7 +256,7 @@ in
               dmScope: "per-channel-peer"
             },
             messages: {
-              visibleReplies: true
+              visibleReplies: "message_tool"
             },
             channels: (
               if $signalEnabled then {
