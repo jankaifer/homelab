@@ -571,7 +571,10 @@ in
   homelab.services.openclaw = {
     enable = true;
     environmentFile = lib.mkIf openclawEnvSecretExists config.age.secrets.openclaw-env.path;
-    exposeUi.enable = false;
+    exposeUi = {
+      enable = true;
+      domain = "openclaw.frame1.hobitin.eu";
+    };
     allowBrowserTool = false;
     signal = {
       enable = openclawSignalAccountSecretExists;

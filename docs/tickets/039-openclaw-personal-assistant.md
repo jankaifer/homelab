@@ -100,3 +100,5 @@ OpenClaw must be deployed behind the SSO foundation from Ticket 025 before it is
 - Restricted initial tools to web search/fetch, messaging, and session status. Runtime execution, filesystem access, gateway automation, node/device tools, media tools, and full browser automation are denied.
 - Added optional agenix secret declarations for `openclaw.env.age` and `openclaw-signal-account.age`.
 - Made Signal activation conditional on `openclaw-signal-account.age` existing so the base gateway can evaluate and boot before the bot number is provisioned.
+- Exposed `https://openclaw.frame1.hobitin.eu` through the existing Caddy protected virtual-host path, so requests are authorized by Authelia before reaching the loopback-only OpenClaw gateway.
+- Clarified that Signal "bot" setup means a normal dedicated Signal account controlled by `signal-cli`, not a bot-token flow.

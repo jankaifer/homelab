@@ -2,7 +2,7 @@
 
 OpenClaw personal assistant gateway running as a Podman-managed OCI container.
 
-**Status:** enabled on `frame1` as a first-pass, loopback-only gateway
+**Status:** enabled on `frame1` with an Authelia-protected UI
 **Pattern:** `homelab.services.openclaw.enable`
 
 ## Configuration
@@ -15,16 +15,17 @@ OpenClaw personal assistant gateway running as a Podman-managed OCI container.
 | `homelab.services.openclaw.environmentFile` | `null` | Optional agenix env file for model/search provider keys |
 | `homelab.services.openclaw.allowBrowserTool` | `false` | Allow full browser automation; disabled for the initial deployment |
 | `homelab.services.openclaw.exposeUi.enable` | `false` | Expose the control UI through Caddy plus Authelia |
+| `homelab.services.openclaw.exposeUi.domain` | `openclaw.frame1.hobitin.eu` | Protected control UI domain |
 | `homelab.services.openclaw.signal.enable` | `false` | Enable Signal through a host-side `signal-cli` daemon |
 | `homelab.services.openclaw.signal.accountFile` | `null` | File containing the Signal bot account in E.164 format |
 
 ## Access
 
 - Gateway: `127.0.0.1:18789` on the host only
-- Public UI: disabled for the initial deployment
+- UI: `https://openclaw.frame1.hobitin.eu`, protected by Caddy forward-auth through Authelia
 - Signal channel: enabled automatically after `secrets/openclaw-signal-account.age` exists
 
-The container uses host networking so its loopback-bound gateway can be reached by host services and so it can talk to the host-side `signal-cli` daemon. The OpenClaw HTTP surface still binds to loopback and is not opened in the firewall.
+The container uses host networking so its loopback-bound gateway can be reached by host services and so it can talk to the host-side `signal-cli` daemon. The OpenClaw HTTP surface still binds to loopback, is not opened in the firewall, and is only proxied by Caddy after Authelia authorizes the request.
 
 ## Safety Boundary
 
@@ -49,7 +50,9 @@ The module generates a local `OPENCLAW_GATEWAY_TOKEN` at first boot in `/var/lib
 
 ## Signal Setup
 
-Use a dedicated Signal bot number if possible. OpenClaw upstream explicitly recommends this for "I text the bot and it replies" because running the bot on the same Signal account can trip loop protection.
+Use a dedicated Signal bot number if possible. Signal does not have a Telegram-style bot token. In this setup, the "bot" is just a normal Signal account controlled by `signal-cli`.
+
+Using the same Signal account you already use personally is possible only as a linked device, but it is awkward for "I text the bot and it replies" because the assistant is effectively logged in as you. A separate account is cleaner: you message that account from your normal Signal app, and OpenClaw replies as that account.
 
 After deploying the secret and service, link or register the account as `openclaw-signal`:
 
