@@ -17,6 +17,11 @@ let
   generatedConfigFile = "${cfg.dataDir}/openclaw.json";
   tokenFile = "${cfg.dataDir}/gateway-token";
   signalHttpUrl = "http://${signalCfg.httpHost}:${toString signalCfg.httpPort}";
+  controlUiAllowedOrigins = [
+    "http://127.0.0.1:${toString cfg.port}"
+  ] ++ lib.optionals cfg.exposeUi.enable [
+    "https://${cfg.exposeUi.domain}"
+  ];
 
   mkJsonList = values: builtins.toJSON values;
 in
@@ -233,6 +238,7 @@ in
           --arg signalGroupPolicy ${lib.escapeShellArg signalCfg.groupPolicy} \
           --argjson signalAllowFrom ${lib.escapeShellArg (mkJsonList signalCfg.allowFrom)} \
           --argjson signalMediaMaxMb ${toString signalCfg.mediaMaxMb} \
+          --argjson controlUiAllowedOrigins ${lib.escapeShellArg (mkJsonList controlUiAllowedOrigins)} \
           --argjson toolAllow ${lib.escapeShellArg (mkJsonList (
             [ "group:web" "message" "session_status" ]
             ++ lib.optionals cfg.allowBrowserTool [ "browser" ]
@@ -245,7 +251,10 @@ in
           {
             gateway: {
               mode: "local",
-              bind: "loopback"
+              bind: "loopback",
+              controlUi: {
+                allowedOrigins: $controlUiAllowedOrigins
+              }
             },
             tools: {
               profile: "minimal",

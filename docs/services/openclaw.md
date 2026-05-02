@@ -27,6 +27,8 @@ OpenClaw personal assistant gateway running as a Podman-managed OCI container.
 
 The container uses host networking so its loopback-bound gateway can be reached by host services and so it can talk to the host-side `signal-cli` daemon. The OpenClaw HTTP surface still binds to loopback, is not opened in the firewall, and is only proxied by Caddy after Authelia authorizes the request.
 
+When the UI is exposed, the module sets `gateway.controlUi.allowedOrigins` to include `https://openclaw.frame1.hobitin.eu`. This is required by OpenClaw's own browser-origin check; the error screen may display `controlUI`, but the valid config key is `controlUi`.
+
 ## Safety Boundary
 
 The first deployment intentionally allows only:

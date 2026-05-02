@@ -102,3 +102,4 @@ OpenClaw must be deployed behind the SSO foundation from Ticket 025 before it is
 - Made Signal activation conditional on `openclaw-signal-account.age` existing so the base gateway can evaluate and boot before the bot number is provisioned.
 - Exposed `https://openclaw.frame1.hobitin.eu` through the existing Caddy protected virtual-host path, so requests are authorized by Authelia before reaching the loopback-only OpenClaw gateway.
 - Clarified that Signal "bot" setup means a normal dedicated Signal account controlled by `signal-cli`, not a bot-token flow.
+- Added `gateway.controlUi.allowedOrigins` for `https://openclaw.frame1.hobitin.eu` so OpenClaw's own Control UI WebSocket origin check accepts the Authelia-protected reverse-proxy origin.
