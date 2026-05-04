@@ -55,7 +55,7 @@ Optional secrets declared in `secrets/secrets.nix`:
 
 The module keeps a generated local gateway token at `/var/lib/openclaw/gateway-token` as fallback state, but trusted-proxy mode does not pass `OPENCLAW_GATEWAY_TOKEN` into the OpenClaw container. If `openclaw.env.age` exists, any `OPENCLAW_GATEWAY_TOKEN=` line in it is filtered out before the container env file is generated.
 
-On `frame1`, `homelab.services.openclaw.openRouter.enable` is turned on only when `secrets/openclaw.env.age` exists. When enabled and no explicit `homelab.services.openclaw.model` override is set, OpenClaw writes `agents.defaults.model.primary = "openrouter/moonshotai/kimi-k2.6"` into its generated config.
+On `frame1`, `homelab.services.openclaw.openRouter.enable` is turned on only when `secrets/openclaw.env.age` exists. When enabled and no explicit `homelab.services.openclaw.model` override is set, OpenClaw writes `agents.defaults.model.primary = "openrouter/moonshotai/kimi-k2.6"` into its generated config. The bootstrap service preserves OpenClaw's `meta.lastTouchedVersion` field when rewriting `/var/lib/openclaw/openclaw.json`; OpenClaw 2026.4.29 treats a generated config without that metadata as stale and may restore the previous backup, which can drop the default model.
 
 ## Signal Setup
 
