@@ -25,7 +25,6 @@ OpenClaw personal assistant gateway running as a Podman-managed OCI container.
 | `homelab.services.openclaw.whatsapp.groupPolicy` | `disabled` | Disable WhatsApp group handling |
 | `homelab.services.openclaw.whatsapp.selfChatMode` | `true` | Favor personal-number/self-chat linked-device behavior |
 | `homelab.services.openclaw.whatsapp.textChunkLimit` | `3000` | WhatsApp outbound text chunk size |
-| `homelab.services.openclaw.whatsapp.mediaMaxMb` | `1` | Low media attachment cap for WhatsApp |
 | `homelab.services.openclaw.signal.enable` | `false` | Enable Signal through a host-side `signal-cli` daemon |
 | `homelab.services.openclaw.signal.accountFile` | `null` | File containing the Signal bot account in E.164 format |
 
@@ -62,7 +61,7 @@ WhatsApp is configured conservatively for the first deployment:
 - `allowFrom` is empty. OpenClaw's WhatsApp runtime allows the QR-linked self number by default when no allowlist is configured, which keeps personal self-chat practical without storing a phone number secret.
 - Groups are disabled with `groupPolicy = "disabled"` and an empty generated `groups` allowlist.
 - Channel config writes are disabled with `configWrites = false`.
-- Read receipts and reactions are disabled, long replies are chunked conservatively, and media is capped at 1 MB.
+- Read receipts and reactions are disabled, and long replies are chunked conservatively.
 
 ## Secrets
 

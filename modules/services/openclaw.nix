@@ -168,12 +168,6 @@ in
         default = 3000;
         description = "Maximum WhatsApp outbound text chunk size.";
       };
-
-      mediaMaxMb = lib.mkOption {
-        type = lib.types.ints.positive;
-        default = 1;
-        description = "Maximum WhatsApp media attachment size accepted by OpenClaw.";
-      };
     };
 
     signal = {
@@ -322,7 +316,6 @@ in
           --argjson whatsappGroupAllowFrom ${lib.escapeShellArg (mkJsonList whatsappCfg.groupAllowFrom)} \
           --argjson whatsappSelfChatMode ${if whatsappCfg.selfChatMode then "true" else "false"} \
           --argjson whatsappTextChunkLimit ${toString whatsappCfg.textChunkLimit} \
-          --argjson whatsappMediaMaxMb ${toString whatsappCfg.mediaMaxMb} \
           --argjson controlUiAllowedOrigins ${lib.escapeShellArg (mkJsonList controlUiAllowedOrigins)} \
           --argjson gatewayTrustedProxies ${lib.escapeShellArg (mkJsonList gatewayTrustedProxies)} \
           --argjson trustedProxyRequiredHeaders ${lib.escapeShellArg (mkJsonList trustedProxyRequiredHeaders)} \
@@ -398,8 +391,7 @@ in
                   sendReadReceipts: false,
                   reactionLevel: "off",
                   textChunkLimit: $whatsappTextChunkLimit,
-                  chunkMode: "newline",
-                  mediaMaxMb: $whatsappMediaMaxMb
+                  chunkMode: "newline"
                 }
               } else {} end)
             )

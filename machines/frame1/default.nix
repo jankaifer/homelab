@@ -586,7 +586,6 @@ in
       groupAllowFrom = [ ];
       selfChatMode = true;
       textChunkLimit = 3000;
-      mediaMaxMb = 1;
     };
     signal = {
       enable = openclawSignalAccountSecretExists;
