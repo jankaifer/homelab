@@ -272,7 +272,6 @@ in
           --argjson gatewayTrustedProxies ${lib.escapeShellArg (mkJsonList gatewayTrustedProxies)} \
           --argjson trustedProxyRequiredHeaders ${lib.escapeShellArg (mkJsonList trustedProxyRequiredHeaders)} \
           --argjson trustedProxyAllowedUsers ${lib.escapeShellArg (mkJsonList trustedProxyAllowedUsers)} \
-          --argjson browserEnabled ${if cfg.allowBrowserTool then "true" else "false"} \
           --argjson toolAllow ${lib.escapeShellArg (mkJsonList (
             [ "group:web" "message" "session_status" ]
             ++ lib.optionals cfg.allowBrowserTool [ "browser" ]
@@ -306,11 +305,7 @@ in
               deny: $toolDeny
             },
             browser: {
-              enabled: $browserEnabled,
-              defaultProfile: "openclaw",
-              profiles: {
-                openclaw: {}
-              }
+              enabled: false
             },
             session: {
               dmScope: "per-channel-peer"
