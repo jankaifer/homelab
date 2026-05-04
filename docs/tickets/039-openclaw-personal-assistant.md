@@ -113,3 +113,6 @@ OpenClaw must be deployed behind the SSO foundation from Ticket 025 before it is
 - Documented that `openclaw.env.age` must include `OPENROUTER_API_KEY=...` for the default OpenRouter configuration.
 - Checked OpenRouter's models API for Cursor Composer before changing the default. OpenRouter did not expose a Cursor Composer model id, so the implementation intentionally keeps the configurable Kimi K2.6 default instead of hardcoding a Cursor-specific name.
 - After deploying the OpenRouter secret, OpenClaw still restored the previous `openai/gpt-5.5` config because the generated config replaced OpenClaw-managed `meta` fields. Updated the bootstrap to preserve existing config metadata while applying the declarative model settings.
+- Fixed the minimal tool-profile mismatch by generating `tools.profile = "full"` with the existing explicit allow/deny policy, so `group:web` exposes `web_search` and `web_fetch` while runtime, filesystem, automation, node, and media tools remain denied.
+- Set the generated browser config to default to the isolated `openclaw` browser profile when `allowBrowserTool` is enabled.
+- Switched the tool baseline from `minimal` to `full` while keeping the explicit allowlist and denylist. OpenClaw's `minimal` profile only includes `session_status`, so it prevented the intended web search/fetch tools from being exposed.

@@ -42,9 +42,11 @@ The first deployment intentionally allows only:
 - `message` for replying through configured channels
 - `session_status` for lightweight status checks
 
-It denies runtime execution, filesystem tools, automation/gateway tools, node/device tools, media generation, and the full browser UI tool. No Docker socket is mounted. No host home directory, repository directory, NAS path, or credential directory is mounted into the container.
+The generated OpenClaw config uses `tools.profile = "full"` intentionally: OpenClaw treats profiles as a baseline allowlist, and the upstream `minimal` profile contains only `session_status`, so it prevents an explicit `tools.allow = ["group:web", ...]` from exposing `web_search` and `web_fetch`. The security boundary is the explicit allow/deny policy, not the profile name.
 
-Full browser automation is not enabled yet. Upstream documents that the standard container image does not include Chromium unless built with browser support, so enabling `allowBrowserTool` should be paired with a reviewed browser-capable image and another security pass.
+It still denies runtime execution, filesystem tools, automation/gateway tools, node/device tools, media generation, and the full browser UI tool. No Docker socket is mounted. No host home directory, repository directory, NAS path, or credential directory is mounted into the container.
+
+Full browser automation is not enabled yet. When `allowBrowserTool` is enabled, the generated config only adds the `browser` tool to the allowlist and sets `browser.defaultProfile = "openclaw"` so browser use defaults to the isolated OpenClaw-managed profile. Upstream documents that the standard container image does not include Chromium unless built with browser support, so enabling `allowBrowserTool` should be paired with a reviewed browser-capable image and another security pass.
 
 ## Secrets
 
