@@ -111,3 +111,4 @@ OpenClaw must be deployed behind the SSO foundation from Ticket 025 before it is
 - Added explicit OpenRouter default-provider support. When enabled, OpenClaw writes `agents.defaults.model.primary` with the cost-efficient default `openrouter/moonshotai/kimi-k2.6`.
 - Wired `frame1` to enable the OpenRouter default only when the optional `secrets/openclaw.env.age` agenix file exists, preserving the existing optional secret behavior.
 - Documented that `openclaw.env.age` must include `OPENROUTER_API_KEY=...` for the default OpenRouter configuration.
+- Checked OpenRouter's models API for Cursor Composer before changing the default. OpenRouter did not expose a Cursor Composer model id, so the implementation intentionally keeps the configurable Kimi K2.6 default instead of hardcoding a Cursor-specific name.
