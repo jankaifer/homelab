@@ -571,6 +571,7 @@ in
   homelab.services.openclaw = {
     enable = true;
     environmentFile = lib.mkIf openclawEnvSecretExists config.age.secrets.openclaw-env.path;
+    openRouter.enable = openclawEnvSecretExists;
     exposeUi = {
       enable = true;
       domain = "openclaw.frame1.hobitin.eu";

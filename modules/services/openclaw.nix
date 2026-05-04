@@ -30,6 +30,14 @@ let
     "x-forwarded-host"
   ];
   trustedProxyAllowedUsers = [ "jan@kaifer.cz" ];
+  defaultOpenRouterModel = "openrouter/moonshotai/kimi-k2.6";
+  effectiveModel =
+    if cfg.model != null then
+      cfg.model
+    else if cfg.openRouter.enable then
+      cfg.openRouter.model
+    else
+      "";
 
   mkJsonList = values: builtins.toJSON values;
 in
@@ -79,7 +87,7 @@ in
       default = null;
       description = ''
         Optional agenix-managed env file passed to the gateway container.
-        Use it for provider keys such as OPENAI_API_KEY or BRAVE_API_KEY.
+        Use it for provider keys such as OPENROUTER_API_KEY or BRAVE_API_KEY.
       '';
     };
 
@@ -87,7 +95,18 @@ in
       type = lib.types.nullOr lib.types.str;
       default = null;
       example = "openai/gpt-4.1-mini";
-      description = "Optional default OpenClaw model identifier. Leave null to configure through OpenClaw onboarding/config.";
+      description = "Optional default OpenClaw model identifier. Overrides openRouter.model when set.";
+    };
+
+    openRouter = {
+      enable = lib.mkEnableOption "OpenRouter as the default OpenClaw model provider";
+
+      model = lib.mkOption {
+        type = lib.types.str;
+        default = defaultOpenRouterModel;
+        example = "openrouter/anthropic/claude-sonnet-4-5";
+        description = "OpenRouter model reference used as OpenClaw's default primary model.";
+      };
     };
 
     allowBrowserTool = lib.mkOption {
@@ -177,6 +196,10 @@ in
         assertion = cfg.exposeUi.enable -> config.homelab.services.authelia.enable;
         message = "homelab.services.openclaw.exposeUi requires homelab.services.authelia.enable.";
       }
+      {
+        assertion = cfg.openRouter.enable -> cfg.environmentFile != null;
+        message = "homelab.services.openclaw.openRouter.enable requires environmentFile with OPENROUTER_API_KEY.";
+      }
     ];
 
     users.groups.openclaw-signal = lib.mkIf signalCfg.enable { };
@@ -237,7 +260,7 @@ in
         ''}
 
         jq -n \
-          --arg model ${lib.escapeShellArg (if cfg.model == null then "" else cfg.model)} \
+          --arg model ${lib.escapeShellArg effectiveModel} \
           --argjson signalEnabled ${if signalCfg.enable then "true" else "false"} \
           --arg signalAccount "$signal_account" \
           --arg signalHttpUrl ${lib.escapeShellArg signalHttpUrl} \
@@ -306,7 +329,15 @@ in
               } else {} end
             )
           }
-          + (if $model == "" then {} else { agent: { model: $model } } end)
+          + (if $model == "" then {} else {
+            agents: {
+              defaults: {
+                model: {
+                  primary: $model
+                }
+              }
+            }
+          } end)
           ' > ${lib.escapeShellArg generatedConfigFile}
 
         chown 1000:1000 ${lib.escapeShellArg generatedConfigFile}

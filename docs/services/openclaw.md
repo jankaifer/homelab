@@ -13,6 +13,9 @@ OpenClaw personal assistant gateway running as a Podman-managed OCI container.
 | `homelab.services.openclaw.image` | OpenClaw `2026.4.29` pinned per architecture | OCI image to run |
 | `homelab.services.openclaw.port` | `18789` | Host-loopback gateway port |
 | `homelab.services.openclaw.environmentFile` | `null` | Optional agenix env file for model/search provider keys |
+| `homelab.services.openclaw.model` | `null` | Optional explicit default model; overrides the OpenRouter default when set |
+| `homelab.services.openclaw.openRouter.enable` | `false` | Configure OpenRouter as the default model provider |
+| `homelab.services.openclaw.openRouter.model` | `openrouter/moonshotai/kimi-k2.6` | Cost-efficient Kimi K2.6 default model through OpenRouter |
 | `homelab.services.openclaw.allowBrowserTool` | `false` | Allow full browser automation; disabled for the initial deployment |
 | `homelab.services.openclaw.exposeUi.enable` | `false` | Expose the control UI through Caddy plus Authelia |
 | `homelab.services.openclaw.exposeUi.domain` | `openclaw.frame1.hobitin.eu` | Protected control UI domain |
@@ -47,10 +50,12 @@ Full browser automation is not enabled yet. Upstream documents that the standard
 
 Optional secrets declared in `secrets/secrets.nix`:
 
-- `openclaw.env.age`: env file for provider keys, for example `OPENAI_API_KEY=...` or `BRAVE_API_KEY=...`
+- `openclaw.env.age`: env file for provider keys. For the default OpenRouter setup, it must contain `OPENROUTER_API_KEY=sk-or-...`. It may also contain search/provider keys such as `BRAVE_API_KEY=...`.
 - `openclaw-signal-account.age`: one-line Signal bot account, for example `+15551234567`
 
 The module keeps a generated local gateway token at `/var/lib/openclaw/gateway-token` as fallback state, but trusted-proxy mode does not pass `OPENCLAW_GATEWAY_TOKEN` into the OpenClaw container. If `openclaw.env.age` exists, any `OPENCLAW_GATEWAY_TOKEN=` line in it is filtered out before the container env file is generated.
+
+On `frame1`, `homelab.services.openclaw.openRouter.enable` is turned on only when `secrets/openclaw.env.age` exists. When enabled and no explicit `homelab.services.openclaw.model` override is set, OpenClaw writes `agents.defaults.model.primary = "openrouter/moonshotai/kimi-k2.6"` into its generated config.
 
 ## Signal Setup
 

@@ -2,7 +2,7 @@
 
 **Status**: IN_PROGRESS
 **Created**: 2026-05-01
-**Updated**: 2026-05-02
+**Updated**: 2026-05-04
 
 ## Task
 
@@ -105,3 +105,9 @@ OpenClaw must be deployed behind the SSO foundation from Ticket 025 before it is
 - Added `gateway.controlUi.allowedOrigins` for `https://openclaw.frame1.hobitin.eu` so OpenClaw's own Control UI WebSocket origin check accepts the Authelia-protected reverse-proxy origin.
 - Switched the exposed OpenClaw UI from browser-supplied gateway token auth to OpenClaw `trusted-proxy` auth. Caddy remains the Authelia boundary, forwards the Authelia identity headers, and injects `X-OpenClaw-Scopes: operator.admin,operator.write,operator.read` for the OpenClaw virtual host.
 - Kept the local generated `/var/lib/openclaw/gateway-token` file as fallback state, but stopped passing `OPENCLAW_GATEWAY_TOKEN` into the container while trusted-proxy auth is active.
+
+### 2026-05-04
+
+- Added explicit OpenRouter default-provider support. When enabled, OpenClaw writes `agents.defaults.model.primary` with the cost-efficient default `openrouter/moonshotai/kimi-k2.6`.
+- Wired `frame1` to enable the OpenRouter default only when the optional `secrets/openclaw.env.age` agenix file exists, preserving the existing optional secret behavior.
+- Documented that `openclaw.env.age` must include `OPENROUTER_API_KEY=...` for the default OpenRouter configuration.
