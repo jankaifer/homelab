@@ -338,7 +338,18 @@ in
               }
             }
           } end)
-          ' > ${lib.escapeShellArg generatedConfigFile}
+          ' > ${lib.escapeShellArg "${runtimeDir}/openclaw.desired.json"}
+
+        if [ -s ${lib.escapeShellArg generatedConfigFile} ] && jq -e '.meta.lastTouchedVersion?' ${lib.escapeShellArg generatedConfigFile} >/dev/null; then
+          jq -s '.[1] + { meta: .[0].meta }' \
+            ${lib.escapeShellArg generatedConfigFile} \
+            ${lib.escapeShellArg "${runtimeDir}/openclaw.desired.json"} \
+            > ${lib.escapeShellArg "${runtimeDir}/openclaw.json.new"}
+        else
+          cp ${lib.escapeShellArg "${runtimeDir}/openclaw.desired.json"} ${lib.escapeShellArg "${runtimeDir}/openclaw.json.new"}
+        fi
+
+        mv ${lib.escapeShellArg "${runtimeDir}/openclaw.json.new"} ${lib.escapeShellArg generatedConfigFile}
 
         chown 1000:1000 ${lib.escapeShellArg generatedConfigFile}
         chmod 0600 ${lib.escapeShellArg generatedConfigFile}

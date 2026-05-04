@@ -112,3 +112,4 @@ OpenClaw must be deployed behind the SSO foundation from Ticket 025 before it is
 - Wired `frame1` to enable the OpenRouter default only when the optional `secrets/openclaw.env.age` agenix file exists, preserving the existing optional secret behavior.
 - Documented that `openclaw.env.age` must include `OPENROUTER_API_KEY=...` for the default OpenRouter configuration.
 - Checked OpenRouter's models API for Cursor Composer before changing the default. OpenRouter did not expose a Cursor Composer model id, so the implementation intentionally keeps the configurable Kimi K2.6 default instead of hardcoding a Cursor-specific name.
+- After deploying the OpenRouter secret, OpenClaw still restored the previous `openai/gpt-5.5` config because the generated config replaced OpenClaw-managed `meta` fields. Updated the bootstrap to preserve existing config metadata while applying the declarative model settings.
