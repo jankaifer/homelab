@@ -76,7 +76,7 @@ NixOS-based homelab using flakes for reproducible, declarative configuration.
 | evcc | 7070 (internal) | https://evcc.frame1.hobitin.eu | [docs/services/evcc.md](services/evcc.md) |
 | Akkudoktor EOS | 8503/8504 (internal) | https://eos.frame1.hobitin.eu | [docs/services/akkudoktor-eos.md](services/akkudoktor-eos.md) |
 | EOS Connect | 8081 (internal) | https://eos-connect.frame1.hobitin.eu | [docs/services/eos-connect.md](services/eos-connect.md) |
-| OpenClaw | 18789 (internal) | https://openclaw.frame1.hobitin.eu (Authelia protected); Signal pending account secret | [docs/services/openclaw.md](services/openclaw.md) |
+| OpenClaw | 18789 (internal) | https://openclaw.frame1.hobitin.eu (Authelia protected); WhatsApp QR login pending; Signal pending account secret | [docs/services/openclaw.md](services/openclaw.md) |
 | Zigbee2MQTT | 8080 (internal) | https://zigbee.frame1.hobitin.eu | [docs/services/zigbee2mqtt.md](services/zigbee2mqtt.md) |
 | Home Assistant | 8123 (internal) | https://home.frame1.hobitin.eu | [docs/services/homeassistant.md](services/homeassistant.md) |
 | Energy Scheduler | systemd only | planner daemon behind the UI/API | [docs/services/energy-scheduler.md](services/energy-scheduler.md) |

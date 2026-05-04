@@ -567,7 +567,8 @@ in
 
   # OpenClaw - first-pass personal assistant with intentionally narrow tools.
   # The gateway starts loopback-only. Signal is enabled automatically once
-  # secrets/openclaw-signal-account.age exists.
+  # secrets/openclaw-signal-account.age exists. WhatsApp uses QR login later,
+  # so it does not need a phone-number secret.
   homelab.services.openclaw = {
     enable = true;
     environmentFile = lib.mkIf openclawEnvSecretExists config.age.secrets.openclaw-env.path;
@@ -577,6 +578,16 @@ in
       domain = "openclaw.frame1.hobitin.eu";
     };
     allowBrowserTool = false;
+    whatsapp = {
+      enable = true;
+      dmPolicy = "pairing";
+      allowFrom = [ ];
+      groupPolicy = "disabled";
+      groupAllowFrom = [ ];
+      selfChatMode = true;
+      textChunkLimit = 3000;
+      mediaMaxMb = 1;
+    };
     signal = {
       enable = openclawSignalAccountSecretExists;
       accountFile = lib.mkIf openclawSignalAccountSecretExists config.age.secrets.openclaw-signal-account.path;

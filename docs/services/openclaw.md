@@ -19,6 +19,13 @@ OpenClaw personal assistant gateway running as a Podman-managed OCI container.
 | `homelab.services.openclaw.allowBrowserTool` | `false` | Allow full browser automation; disabled for the initial deployment |
 | `homelab.services.openclaw.exposeUi.enable` | `false` | Expose the control UI through Caddy plus Authelia |
 | `homelab.services.openclaw.exposeUi.domain` | `openclaw.frame1.hobitin.eu` | Protected control UI domain |
+| `homelab.services.openclaw.whatsapp.enable` | `false` | Enable WhatsApp Web channel support |
+| `homelab.services.openclaw.whatsapp.dmPolicy` | `pairing` | Owner-approved DM pairing for unknown senders |
+| `homelab.services.openclaw.whatsapp.allowFrom` | `[]` | Optional WhatsApp DM allowlist; empty keeps QR-linked self-chat friendly behavior |
+| `homelab.services.openclaw.whatsapp.groupPolicy` | `disabled` | Disable WhatsApp group handling |
+| `homelab.services.openclaw.whatsapp.selfChatMode` | `true` | Favor personal-number/self-chat linked-device behavior |
+| `homelab.services.openclaw.whatsapp.textChunkLimit` | `3000` | WhatsApp outbound text chunk size |
+| `homelab.services.openclaw.whatsapp.mediaMaxMb` | `1` | Low media attachment cap for WhatsApp |
 | `homelab.services.openclaw.signal.enable` | `false` | Enable Signal through a host-side `signal-cli` daemon |
 | `homelab.services.openclaw.signal.accountFile` | `null` | File containing the Signal bot account in E.164 format |
 
@@ -26,9 +33,10 @@ OpenClaw personal assistant gateway running as a Podman-managed OCI container.
 
 - Gateway: `127.0.0.1:18789` on the host only
 - UI: `https://openclaw.frame1.hobitin.eu`, protected by Caddy forward-auth through Authelia
+- WhatsApp channel: enabled on `frame1`, pending WhatsApp Web QR login
 - Signal channel: enabled automatically after `secrets/openclaw-signal-account.age` exists
 
-The container uses host networking so its loopback-bound gateway can be reached by host services and so it can talk to the host-side `signal-cli` daemon. The OpenClaw HTTP surface still binds to loopback, is not opened in the firewall, and is only proxied by Caddy after Authelia authorizes the request.
+The container uses host networking so its loopback-bound gateway can be reached by host services and so it can talk to the host-side `signal-cli` daemon when Signal is enabled. The OpenClaw HTTP surface still binds to loopback, is not opened in the firewall, and is only proxied by Caddy after Authelia authorizes the request.
 
 When the UI is exposed, the module configures OpenClaw gateway auth in `trusted-proxy` mode. Caddy performs Authelia forward-auth, copies the Authelia identity headers, and injects `X-OpenClaw-Scopes: operator.admin,operator.write,operator.read` for the protected OpenClaw host. OpenClaw accepts only the configured Authelia user `jan@kaifer.cz` through loopback trusted proxies.
 
@@ -47,6 +55,14 @@ The generated OpenClaw config uses `tools.profile = "full"` intentionally: OpenC
 It still denies runtime execution, filesystem tools, automation/gateway tools, node/device tools, media generation, and the full browser UI tool. No Docker socket is mounted. No host home directory, repository directory, NAS path, or credential directory is mounted into the container.
 
 Full browser automation is not enabled yet. Upstream documents that the standard container image does not include Chromium unless built with browser support, so enabling `allowBrowserTool` should be paired with a reviewed browser-capable image and another security pass.
+
+WhatsApp is configured conservatively for the first deployment:
+
+- DM policy is `pairing`, so unknown senders need owner approval.
+- `allowFrom` is empty. OpenClaw's WhatsApp runtime allows the QR-linked self number by default when no allowlist is configured, which keeps personal self-chat practical without storing a phone number secret.
+- Groups are disabled with `groupPolicy = "disabled"` and an empty generated `groups` allowlist.
+- Channel config writes are disabled with `configWrites = false`.
+- Read receipts and reactions are disabled, long replies are chunked conservatively, and media is capped at 1 MB.
 
 ## Secrets
 
@@ -79,6 +95,22 @@ sudo podman exec openclaw node openclaw.mjs pairing list signal
 sudo podman exec openclaw node openclaw.mjs pairing approve signal <CODE>
 ```
 
+## WhatsApp Setup
+
+WhatsApp does not use a bot token or a phone-number secret in this configuration. Link it later through WhatsApp Web QR login from the OpenClaw container:
+
+```bash
+sudo podman exec -it openclaw node openclaw.mjs channels login --channel whatsapp
+```
+
+After scanning the QR code, restart the gateway if needed and approve the first DM pairing request:
+
+```bash
+sudo systemctl restart podman-openclaw
+sudo podman exec openclaw node openclaw.mjs pairing list whatsapp
+sudo podman exec openclaw node openclaw.mjs pairing approve whatsapp <CODE>
+```
+
 ## Operations
 
 Check status:
@@ -105,6 +137,7 @@ curl -fsS http://127.0.0.1:18789/readyz
 ## Upstream References
 
 - [OpenClaw Docker install](https://docs.openclaw.ai/install/docker)
+- [OpenClaw WhatsApp channel](https://docs.openclaw.ai/channels/whatsapp)
 - [OpenClaw Signal channel](https://docs.openclaw.ai/channels/signal)
 - [OpenClaw tools configuration](https://docs.openclaw.ai/tools/index)
 - [OpenClaw security guidance](https://docs.openclaw.ai/gateway/security)

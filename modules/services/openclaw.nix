@@ -3,6 +3,7 @@
 let
   cfg = config.homelab.services.openclaw;
   signalCfg = cfg.signal;
+  whatsappCfg = cfg.whatsapp;
 
   defaultImage =
     if pkgs.stdenv.hostPlatform.isx86_64 then
@@ -126,6 +127,52 @@ in
         type = lib.types.str;
         default = "openclaw.frame1.hobitin.eu";
         description = "OpenClaw control UI domain when exposeUi.enable is true.";
+      };
+    };
+
+    whatsapp = {
+      enable = lib.mkEnableOption "OpenClaw WhatsApp Web channel";
+
+      dmPolicy = lib.mkOption {
+        type = lib.types.enum [ "pairing" "allowlist" "disabled" ];
+        default = "pairing";
+        description = "WhatsApp DM access policy. Pairing keeps unknown DMs owner-approved and allows later QR login without a phone-number secret.";
+      };
+
+      allowFrom = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Optional WhatsApp DM allowlist of E.164 numbers. Leave empty for QR-linked self-chat friendly pairing mode.";
+      };
+
+      groupPolicy = lib.mkOption {
+        type = lib.types.enum [ "allowlist" "disabled" ];
+        default = "disabled";
+        description = "WhatsApp group policy. Groups are disabled for the first deployment.";
+      };
+
+      groupAllowFrom = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Optional WhatsApp group sender allowlist. Ignored while groupPolicy is disabled.";
+      };
+
+      selfChatMode = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Enable OpenClaw's personal-number self-chat behavior for WhatsApp Web linked-device use.";
+      };
+
+      textChunkLimit = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 3000;
+        description = "Maximum WhatsApp outbound text chunk size.";
+      };
+
+      mediaMaxMb = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 1;
+        description = "Maximum WhatsApp media attachment size accepted by OpenClaw.";
       };
     };
 
@@ -268,6 +315,14 @@ in
           --arg signalGroupPolicy ${lib.escapeShellArg signalCfg.groupPolicy} \
           --argjson signalAllowFrom ${lib.escapeShellArg (mkJsonList signalCfg.allowFrom)} \
           --argjson signalMediaMaxMb ${toString signalCfg.mediaMaxMb} \
+          --argjson whatsappEnabled ${if whatsappCfg.enable then "true" else "false"} \
+          --arg whatsappDmPolicy ${lib.escapeShellArg whatsappCfg.dmPolicy} \
+          --arg whatsappGroupPolicy ${lib.escapeShellArg whatsappCfg.groupPolicy} \
+          --argjson whatsappAllowFrom ${lib.escapeShellArg (mkJsonList whatsappCfg.allowFrom)} \
+          --argjson whatsappGroupAllowFrom ${lib.escapeShellArg (mkJsonList whatsappCfg.groupAllowFrom)} \
+          --argjson whatsappSelfChatMode ${if whatsappCfg.selfChatMode then "true" else "false"} \
+          --argjson whatsappTextChunkLimit ${toString whatsappCfg.textChunkLimit} \
+          --argjson whatsappMediaMaxMb ${toString whatsappCfg.mediaMaxMb} \
           --argjson controlUiAllowedOrigins ${lib.escapeShellArg (mkJsonList controlUiAllowedOrigins)} \
           --argjson gatewayTrustedProxies ${lib.escapeShellArg (mkJsonList gatewayTrustedProxies)} \
           --argjson trustedProxyRequiredHeaders ${lib.escapeShellArg (mkJsonList trustedProxyRequiredHeaders)} \
@@ -314,7 +369,7 @@ in
               visibleReplies: "message_tool"
             },
             channels: (
-              if $signalEnabled then {
+              (if $signalEnabled then {
                 signal: {
                   enabled: true,
                   account: $signalAccount,
@@ -329,7 +384,24 @@ in
                   sendReadReceipts: false,
                   mediaMaxMb: $signalMediaMaxMb
                 }
-              } else {} end
+              } else {} end)
+              + (if $whatsappEnabled then {
+                whatsapp: {
+                  enabled: true,
+                  dmPolicy: $whatsappDmPolicy,
+                  allowFrom: $whatsappAllowFrom,
+                  groupPolicy: $whatsappGroupPolicy,
+                  groupAllowFrom: $whatsappGroupAllowFrom,
+                  groups: {},
+                  selfChatMode: $whatsappSelfChatMode,
+                  configWrites: false,
+                  sendReadReceipts: false,
+                  reactionLevel: "off",
+                  textChunkLimit: $whatsappTextChunkLimit,
+                  chunkMode: "newline",
+                  mediaMaxMb: $whatsappMediaMaxMb
+                }
+              } else {} end)
             )
           }
           + (if $model == "" then {} else {
