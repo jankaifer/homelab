@@ -10,7 +10,7 @@ OpenClaw personal assistant gateway running as a Podman-managed OCI container.
 | Option | Default | Description |
 |--------|---------|-------------|
 | `homelab.services.openclaw.enable` | `false` | Enable the OpenClaw gateway container |
-| `homelab.services.openclaw.image` | OpenClaw `2026.4.29` pinned per architecture | OCI image to run |
+| `homelab.services.openclaw.image` | OpenClaw `2026.5.4` pinned per architecture | OCI image to run |
 | `homelab.services.openclaw.port` | `18789` | Host-loopback gateway port |
 | `homelab.services.openclaw.environmentFile` | `null` | Optional agenix env file for model/search provider keys |
 | `homelab.services.openclaw.model` | `null` | Optional explicit default model; overrides the OpenRouter default when set |
@@ -75,7 +75,7 @@ Optional secrets declared in `secrets/secrets.nix`:
 
 The module keeps a generated local gateway token at `/var/lib/openclaw/gateway-token` as fallback state, but trusted-proxy mode does not pass `OPENCLAW_GATEWAY_TOKEN` into the OpenClaw container. If `openclaw.env.age` exists, any `OPENCLAW_GATEWAY_TOKEN=` line in it is filtered out before the container env file is generated.
 
-On `frame1`, `homelab.services.openclaw.openRouter.enable` is turned on only when `secrets/openclaw.env.age` exists. When enabled and no explicit `homelab.services.openclaw.model` override is set, OpenClaw writes `agents.defaults.model.primary = "openrouter/moonshotai/kimi-k2.6"` into its generated config. The bootstrap service preserves OpenClaw's `meta.lastTouchedVersion` field when rewriting `/var/lib/openclaw/openclaw.json`; OpenClaw 2026.4.29 treats a generated config without that metadata as stale and may restore the previous backup, which can drop the default model.
+On `frame1`, `homelab.services.openclaw.openRouter.enable` is turned on only when `secrets/openclaw.env.age` exists. When enabled and no explicit `homelab.services.openclaw.model` override is set, OpenClaw writes `agents.defaults.model.primary = "openrouter/moonshotai/kimi-k2.6"` into its generated config. The bootstrap service preserves OpenClaw's `meta.lastTouchedVersion` field when rewriting `/var/lib/openclaw/openclaw.json`; OpenClaw treats a generated config without that metadata as stale and may restore the previous backup, which can drop the default model.
 
 ## Signal Setup
 

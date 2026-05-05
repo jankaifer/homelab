@@ -123,3 +123,4 @@ OpenClaw must be deployed behind the SSO foundation from Ticket 025 before it is
 ### 2026-05-05
 
 - Allowed the exact OpenClaw tool `whatsapp_login` so WhatsApp Web QR login can be completed during setup without broadening tool groups or changing the existing denylist.
+- Updated the pinned OpenClaw container image from `2026.4.29` to `2026.5.4` after WhatsApp login attempts hit the upstream `401 Unauthorized`/QR-output regression pattern. The `2026.5.4` release includes the terminal WhatsApp QR output fix and newer bundled runtime dependencies.

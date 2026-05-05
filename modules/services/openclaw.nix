@@ -7,11 +7,11 @@ let
 
   defaultImage =
     if pkgs.stdenv.hostPlatform.isx86_64 then
-      "ghcr.io/openclaw/openclaw:2026.4.29@sha256:c2d59c17dee1e87e60e09a58111efd51eff2e043dc0b1dc0c5456ebbb16a0199"
+      "ghcr.io/openclaw/openclaw:2026.5.4@sha256:69895e31e3c36030b465b364365e9a22160737b000a0712082c7278e18f80e56"
     else if pkgs.stdenv.hostPlatform.isAarch64 then
-      "ghcr.io/openclaw/openclaw:2026.4.29@sha256:a0c8cb7f5e7857b4f40c3ceaeb37ec89641a9f3991e66957849e4e3f8e8497a6"
+      "ghcr.io/openclaw/openclaw:2026.5.4@sha256:0607ca997887bae89d95536859361a5f4475ad9dce0bf40c2fddc4c50dabbfcc"
     else
-      "ghcr.io/openclaw/openclaw:2026.4.29";
+      "ghcr.io/openclaw/openclaw:2026.5.4";
 
   runtimeDir = "/run/openclaw";
   generatedEnvFile = "${runtimeDir}/openclaw.env";
@@ -49,8 +49,8 @@ in
     image = lib.mkOption {
       type = lib.types.str;
       default = defaultImage;
-      defaultText = "OpenClaw 2026.4.29 pinned per target architecture";
-      description = "OpenClaw OCI image. Defaults to the 2026.4.29 per-architecture image manifest digest.";
+      defaultText = "OpenClaw 2026.5.4 pinned per target architecture";
+      description = "OpenClaw OCI image. Defaults to the 2026.5.4 per-architecture image manifest digest.";
     };
 
     port = lib.mkOption {
