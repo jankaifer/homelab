@@ -257,6 +257,7 @@ in
 
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0700 1000 1000 - -"
+      "d ${cfg.dataDir}/codex 0700 1000 1000 - -"
       "d ${cfg.workspaceDir} 0700 1000 1000 - -"
       "d ${cfg.pluginRuntimeDir} 0700 1000 1000 - -"
       "d ${cfg.cacheDir} 0700 1000 1000 - -"
@@ -277,6 +278,7 @@ in
         set -euo pipefail
 
         install -d -m 0700 -o 1000 -g 1000 ${lib.escapeShellArg cfg.dataDir}
+        install -d -m 0700 -o 1000 -g 1000 ${lib.escapeShellArg "${cfg.dataDir}/codex"}
         install -d -m 0700 -o 1000 -g 1000 ${lib.escapeShellArg cfg.workspaceDir}
         install -d -m 0700 -o 1000 -g 1000 ${lib.escapeShellArg cfg.pluginRuntimeDir}
         install -d -m 0700 ${lib.escapeShellArg runtimeDir}
@@ -479,6 +481,7 @@ in
       ];
       environment = {
         HOME = "/home/node";
+        CODEX_HOME = "/home/node/.openclaw/codex";
         TZ = config.time.timeZone;
         OPENCLAW_DISABLE_BONJOUR = "1";
         OPENCLAW_GATEWAY_PORT = toString cfg.port;
