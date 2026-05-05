@@ -2,7 +2,7 @@
 
 **Status**: IN_PROGRESS
 **Created**: 2026-05-01
-**Updated**: 2026-05-04
+**Updated**: 2026-05-05
 
 ## Task
 
@@ -119,3 +119,7 @@ OpenClaw must be deployed behind the SSO foundation from Ticket 025 before it is
 - Added conservative WhatsApp Web channel support without adding a phone-number secret. `frame1` now generates `channels.whatsapp` with DM `pairing`, empty `allowFrom` for QR-linked self-chat friendliness, `groupPolicy = "disabled"`, empty group allowlists, `configWrites = false`, read receipts/reactions disabled, and conservative text chunking.
 - Documented the later QR login flow with `openclaw.mjs channels login --channel whatsapp` and the pairing approval commands.
 - Pointed `CODEX_HOME` at `/home/node/.openclaw/codex` so OpenClaw's embedded Codex helper can run inside the read-only container during WhatsApp login without broadening writable mounts.
+
+### 2026-05-05
+
+- Allowed the exact OpenClaw tool `whatsapp_login` so WhatsApp Web QR login can be completed during setup without broadening tool groups or changing the existing denylist.

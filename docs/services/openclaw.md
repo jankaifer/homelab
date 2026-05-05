@@ -48,6 +48,7 @@ The first deployment intentionally allows only:
 - `group:web` for web search/fetch
 - `message` for replying through configured channels
 - `session_status` for lightweight status checks
+- `whatsapp_login` for WhatsApp Web QR login setup
 
 The generated OpenClaw config uses `tools.profile = "full"` intentionally: OpenClaw treats profiles as a baseline allowlist, and the upstream `minimal` profile contains only `session_status`, so it prevents an explicit `tools.allow = ["group:web", ...]` from exposing `web_search` and `web_fetch`. The security boundary is the explicit allow/deny policy, not the profile name.
 

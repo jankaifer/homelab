@@ -323,7 +323,7 @@ in
           --argjson trustedProxyRequiredHeaders ${lib.escapeShellArg (mkJsonList trustedProxyRequiredHeaders)} \
           --argjson trustedProxyAllowedUsers ${lib.escapeShellArg (mkJsonList trustedProxyAllowedUsers)} \
           --argjson toolAllow ${lib.escapeShellArg (mkJsonList (
-            [ "group:web" "message" "session_status" ]
+            [ "group:web" "message" "session_status" "whatsapp_login" ]
             ++ lib.optionals cfg.allowBrowserTool [ "browser" ]
           ))} \
           --argjson toolDeny ${lib.escapeShellArg (mkJsonList (
