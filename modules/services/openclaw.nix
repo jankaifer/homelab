@@ -363,6 +363,20 @@ in
             messages: {
               visibleReplies: "message_tool"
             },
+            plugins: {
+              entries: (
+                (if $model == "" then {} else {
+                  openrouter: {
+                    enabled: true
+                  }
+                } end)
+                + (if $whatsappEnabled then {
+                  whatsapp: {
+                    enabled: true
+                  }
+                } else {} end)
+              )
+            },
             channels: (
               (if $signalEnabled then {
                 signal: {
@@ -410,7 +424,10 @@ in
           ' > ${lib.escapeShellArg "${runtimeDir}/openclaw.desired.json"}
 
         if [ -s ${lib.escapeShellArg generatedConfigFile} ] && jq -e '.meta.lastTouchedVersion?' ${lib.escapeShellArg generatedConfigFile} >/dev/null; then
-          jq -s '.[1] + { meta: .[0].meta }' \
+          jq -s '.[1] + {
+            meta: .[0].meta,
+            plugins: ((.[0].plugins // {}) * (.[1].plugins // {}))
+          }' \
             ${lib.escapeShellArg generatedConfigFile} \
             ${lib.escapeShellArg "${runtimeDir}/openclaw.desired.json"} \
             > ${lib.escapeShellArg "${runtimeDir}/openclaw.json.new"}
@@ -482,6 +499,7 @@ in
       environment = {
         HOME = "/home/node";
         CODEX_HOME = "/home/node/.openclaw/codex";
+        NPM_CONFIG_CACHE = "/home/node/.cache/npm";
         TZ = config.time.timeZone;
         OPENCLAW_DISABLE_BONJOUR = "1";
         OPENCLAW_GATEWAY_PORT = toString cfg.port;

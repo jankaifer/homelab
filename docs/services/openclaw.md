@@ -54,7 +54,7 @@ The generated OpenClaw config uses `tools.profile = "full"` intentionally: OpenC
 
 It still denies runtime execution, filesystem tools, automation/gateway tools, node/device tools, media generation, and the full browser UI tool. No Docker socket is mounted. No host home directory, repository directory, NAS path, or credential directory is mounted into the container.
 
-The container root filesystem is read-only. OpenClaw state, workspace, bundled plugin dependencies, and cache are the only writable mounts. `CODEX_HOME` is set to `/home/node/.openclaw/codex` so the embedded Codex helper used by OpenClaw can write its own config without making `/home/node` writable.
+The container root filesystem is read-only. OpenClaw state, workspace, bundled plugin dependencies, and cache are the only writable mounts. `CODEX_HOME` is set to `/home/node/.openclaw/codex` so the embedded Codex helper used by OpenClaw can write its own config without making `/home/node` writable. `NPM_CONFIG_CACHE` is set to `/home/node/.cache/npm` so OpenClaw-managed external plugins can install while keeping npm cache writes inside the mounted cache directory.
 
 Full browser automation is not enabled yet. Upstream documents that the standard container image does not include Chromium unless built with browser support, so enabling `allowBrowserTool` should be paired with a reviewed browser-capable image and another security pass.
 
