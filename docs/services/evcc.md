@@ -21,6 +21,7 @@ EV charging and loadpoint service for the homelab energy stack.
 | `homelab.services.evcc.domain` | string | `evcc.frame1.hobitin.eu` | Caddy-routed domain |
 | `homelab.services.evcc.siteTitle` | string | `Frame1` | UI site title |
 | `homelab.services.evcc.demoMode` | bool | true | Run with simulated demo devices |
+| `homelab.services.evcc.databasePath` | string | `/var/lib/evcc/.evcc/evcc.db` | Persistent evcc SQLite database path |
 | `homelab.services.evcc.restrictNetworkToLoopback` | bool | true | Restrict evcc networking to loopback with systemd filtering |
 | `homelab.services.evcc.allowedNetworkCIDRs` | list of string | `[]` | Additional CIDRs allowed through the systemd IP filter |
 | `homelab.services.evcc.settings` | attrs | `{}` | Extra evcc YAML settings merged over defaults |
@@ -61,6 +62,7 @@ homelab.services.evcc = {
 - Internal UI/API: `127.0.0.1:7070`
 - Systemd service: `evcc.service`
 - State directory: `/var/lib/evcc`
+- SQLite database: `/var/lib/evcc/.evcc/evcc.db`
 
 The service is exposed through Caddy and is not opened directly in the firewall.
 evcc itself listens on all interfaces for its configured port, but production no
@@ -83,8 +85,8 @@ TCP endpoint at `192.168.2.32:502` using the upstream `victron-evcs` template:
 - `demoMode = false`, so site meters are real.
 - The loadpoint uses the real `victron-evcs` charger.
 - The loadpoint assigns `Tesla Model 3` as its default vehicle and polls vehicle
-  SoC only while charging, reducing unnecessary Tesla API use and avoiding EVCC's
-  unplugged polling battery-drain warning.
+  SoC every 5 minutes while plugged in, catching final SoC shortly after
+  charging stops while still avoiding unplugged Tesla polling.
 - No wallbox API credentials are present.
 - No OCPP endpoint is configured for a real charger.
 - Live Tesla API data requires `secrets/evcc-tesla.env.age`.
@@ -141,16 +143,18 @@ evcc's current Tesla template uses `clientId`, `accessToken`, and
 `refreshToken`. `vin` should be set when the Tesla account has more than one
 vehicle.
 
-The loadpoint intentionally uses `soc.poll.mode = "charging"` so EVCC only asks
-the Tesla API for fresh SoC during active charging. Unplugged vehicle state may
-therefore be stale until the next charging session.
+The loadpoint intentionally uses `soc.poll.mode = "connected"` with
+`soc.poll.interval = "5m"`. This polls Tesla more often while the car is plugged
+in so EVCC can catch the final SoC shortly after charging stops, but it avoids
+the higher-risk `always` behavior and does not poll the vehicle while unplugged.
+Unplugged vehicle state may therefore be stale until the next plug-in session.
 
 ## Admin Password
 
 The evcc web UI admin password is stored in `secrets/evcc-admin-password.age`.
 `evcc-admin-password.service` runs before `evcc.service` and applies that secret
-to evcc's SQLite database with the upstream `evcc password set` command. This
-keeps the admin password out of `evcc.yaml` and the Nix store.
+to `/var/lib/evcc/.evcc/evcc.db` with the upstream `evcc password set` command.
+This keeps the admin password out of `evcc.yaml` and the Nix store.
 
 ## Troubleshooting
 

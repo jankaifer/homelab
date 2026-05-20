@@ -5,6 +5,7 @@ let
   homepageHttpsPort = lib.attrByPath [ "homelab" "services" "homepage" "publicHttpsPort" ] null config;
   homepageHref = "https://${cfg.domain}"
     + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
+  stateDir = "/var/lib/evcc";
   mqttEnvDir = "/run/evcc-secrets";
   mqttEnvFile = "${mqttEnvDir}/mqtt.env";
   adminPasswordFile =
@@ -72,6 +73,12 @@ in
       type = lib.types.str;
       default = "30s";
       description = "evcc control loop interval.";
+    };
+
+    databasePath = lib.mkOption {
+      type = lib.types.str;
+      default = "${stateDir}/.evcc/evcc.db";
+      description = "Persistent evcc SQLite database path.";
     };
 
     demoMode = lib.mkOption {
@@ -163,7 +170,7 @@ in
     services.evcc = {
       enable = true;
       environmentFile = lib.mkIf (cfg.mqtt.enable || cfg.extraEnvironmentFiles != [ ]) mqttEnvFile;
-      extraArgs = lib.optional cfg.demoMode "--demo";
+      extraArgs = [ "--database" cfg.databasePath ] ++ lib.optional cfg.demoMode "--demo";
       settings = lib.recursiveUpdate defaultSettings cfg.settings;
     };
 
@@ -201,7 +208,7 @@ in
       script = ''
         set -euo pipefail
 
-        db="/var/lib/evcc/.evcc/evcc.db"
+        db=${lib.escapeShellArg cfg.databasePath}
         install -d -m 0700 "$(dirname "$db")"
 
         password="$(tr -d '\n' < ${lib.escapeShellArg adminPasswordFile})"
