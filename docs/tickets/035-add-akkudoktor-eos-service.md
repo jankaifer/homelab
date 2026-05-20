@@ -51,6 +51,7 @@ Control boundary:
 - Updated the service module so `/var/lib/akkudoktor-eos` is owned by the EOS container UID/GID (`100:101`) instead of `root:root`.
 - Confirmed a second Plan failure after fresh optimizer results: EOS had no prediction providers enabled, `/v1/prediction/keys` returned `[]`, and the Plan dashboard crashed while plotting a solution whose prediction dataframe only contained `date_time`.
 - Added module support for a declarative `/data/config/EOS.config.json` and configured `frame1` with advisory prediction providers for Prague-area PV/weather/load/electricity-price data.
+- Adjusted the placeholder PV plane azimuth from exact south (`180`) to `179` degrees. EOS translates exact south to Akkudoktor API `azimuth=0`, which the upstream forecast API rejects with HTTP 400; `179` preserves the intended orientation while allowing dynamic PV forecast requests to succeed.
 
 ## Validation Notes
 

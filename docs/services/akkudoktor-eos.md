@@ -45,10 +45,12 @@ homelab.services.akkudoktorEos = {
 };
 ```
 
-`frame1` currently uses Prague-area coordinates, one 5 kWp south-facing PV plane,
-and a 3000 kWh/year baseline load so EOSdash has prediction data for the
-advisory Plan and Prediction pages. Replace those values with exact site
-geometry and annual load when available.
+`frame1` currently uses Prague-area coordinates, one 5 kWp near-south-facing PV
+plane, and a 3000 kWh/year baseline load so EOSdash has prediction data for the
+advisory Plan and Prediction pages. The plane is configured at azimuth `179.0`
+instead of exact south because EOS translates exact south to Akkudoktor API
+`azimuth=0`, which the upstream forecast API currently rejects. Replace those
+values with exact site geometry and annual load when available.
 
 ## Access
 

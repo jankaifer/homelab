@@ -570,7 +570,8 @@ in
         planes = [
           {
             peakpower = 5.0;
-            surface_azimuth = 180.0;
+            # Akkudoktor's forecast API rejects exact south after EOS translates it to azimuth=0.
+            surface_azimuth = 179.0;
             surface_tilt = 30.0;
             userhorizon = [ 0.0 0.0 0.0 0.0 ];
             inverter_paco = 5000.0;
