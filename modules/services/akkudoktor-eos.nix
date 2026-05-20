@@ -51,6 +51,12 @@ in
       default = 101;
       description = "Numeric GID of the EOS group inside the container.";
     };
+
+    extraEnvironment = lib.mkOption {
+      type = lib.types.attrsOf lib.types.str;
+      default = { };
+      description = "Additional environment variables passed to the EOS container.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -82,7 +88,7 @@ in
         EOS_SERVER__EOSDASH_PORT = "8504";
         EOS_SERVER__EOSDASH_SESSKEY = "homelab-eos-dashboard";
         DOCKER_COMPOSE_DATA_DIR = "/data";
-      };
+      } // cfg.extraEnvironment;
       extraOptions = [
         "--ulimit=nproc=65535:65535"
         "--ulimit=nofile=65535:65535"

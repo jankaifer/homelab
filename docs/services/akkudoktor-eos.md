@@ -23,6 +23,7 @@ Akkudoktor EOS optimizer API and dashboard for advisory energy planning.
 | `homelab.services.akkudoktorEos.dataDir` | string | `/var/lib/akkudoktor-eos` | Persistent data directory |
 | `homelab.services.akkudoktorEos.dataUid` | int | 100 | Numeric UID of the EOS user inside the container |
 | `homelab.services.akkudoktorEos.dataGid` | int | 101 | Numeric GID of the EOS group inside the container |
+| `homelab.services.akkudoktorEos.extraEnvironment` | attrs | `{}` | Extra EOS environment variables |
 
 Production wiring:
 
@@ -30,8 +31,23 @@ Production wiring:
 homelab.services.akkudoktorEos = {
   enable = true;
   domain = "eos.frame1.hobitin.eu";
+  extraEnvironment = {
+    EOS_GENERAL__TIMEZONE = "Europe/Prague";
+    EOS_EMS__MODE = "PREDICTION";
+    EOS_ELECPRICE__PROVIDER = "ElecPriceEnergyCharts";
+    EOS_ELECPRICE__ENERGYCHARTS__BIDDING_ZONE = "CZ";
+    EOS_PVFORECAST__PROVIDER = "PVForecastAkkudoktor";
+    EOS_WEATHER__PROVIDER = "OpenMeteo";
+    EOS_LOAD__PROVIDER = "LoadAkkudoktor";
+    EOS_FEEDINTARIFF__PROVIDER = "FeedInTariffFixed";
+  };
 };
 ```
+
+`frame1` currently uses Prague-area coordinates, one 5 kWp south-facing PV plane,
+and a 3000 kWh/year baseline load so EOSdash has prediction data for the
+advisory Plan and Prediction pages. Replace those values with exact site
+geometry and annual load when available.
 
 ## Access
 
@@ -59,6 +75,7 @@ systemctl status podman-akkudoktor-eos
 journalctl -u podman-akkudoktor-eos -n 200 --no-pager
 ss -ltnp | egrep ':8503|:8504'
 stat -c '%u:%g %a %n' /var/lib/akkudoktor-eos
+curl -s http://127.0.0.1:8503/v1/prediction/keys
 ```
 
 ## Dependencies
