@@ -39,11 +39,23 @@ in
       default = "/var/lib/akkudoktor-eos";
       description = "Persistent EOS data directory.";
     };
+
+    dataUid = lib.mkOption {
+      type = lib.types.int;
+      default = 100;
+      description = "Numeric UID of the EOS user inside the container.";
+    };
+
+    dataGid = lib.mkOption {
+      type = lib.types.int;
+      default = 101;
+      description = "Numeric GID of the EOS group inside the container.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     systemd.tmpfiles.rules = [
-      "d ${cfg.dataDir} 0750 root root - -"
+      "d ${cfg.dataDir} 0750 ${toString cfg.dataUid} ${toString cfg.dataGid} - -"
     ];
 
     virtualisation.oci-containers.containers.akkudoktor-eos = {

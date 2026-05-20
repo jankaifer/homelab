@@ -2,7 +2,7 @@
 
 **Status**: DONE
 **Created**: 2026-04-26
-**Updated**: 2026-04-26
+**Updated**: 2026-05-20
 
 ## Task
 
@@ -43,6 +43,12 @@ Control boundary:
 - Configured the upstream `akkudoktor/eos` image with persistent `/data`, host-local API port `8503`, and host-local dashboard port `8504`.
 - Routed the dashboard through Caddy at `https://eos.frame1.hobitin.eu` and added a Homepage entry.
 - Documented the service in `docs/services/akkudoktor-eos.md`.
+
+### 2026-05-20
+
+- Reproduced the EOSdash `Plan` click failure: `GET /eosdash/plan?dark=false` returned HTTP 500 while `Prediction` returned HTTP 200.
+- Live logs showed EOS could serve optimization requests but failed to write `/data/measurement.json` and `/data/cache` after dropping to the in-container `eos` user.
+- Updated the service module so `/var/lib/akkudoktor-eos` is owned by the EOS container UID/GID (`100:101`) instead of `root:root`.
 
 ## Validation Notes
 
