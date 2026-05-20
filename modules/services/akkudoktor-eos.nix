@@ -1,10 +1,12 @@
-{ config, lib, ... }:
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.homelab.services.akkudoktorEos;
   homepageHttpsPort = lib.attrByPath [ "homelab" "services" "homepage" "publicHttpsPort" ] null config;
   homepageHref = "https://${cfg.domain}"
     + lib.optionalString (homepageHttpsPort != null) ":${toString homepageHttpsPort}";
+  jsonFormat = pkgs.formats.json { };
+  eosConfigFile = jsonFormat.generate "EOS.config.json" cfg.settings;
 in
 {
   options.homelab.services.akkudoktorEos = {
@@ -57,11 +59,18 @@ in
       default = { };
       description = "Additional environment variables passed to the EOS container.";
     };
+
+    settings = lib.mkOption {
+      type = jsonFormat.type;
+      default = { };
+      description = "EOS configuration written to the persistent data config directory.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0750 ${toString cfg.dataUid} ${toString cfg.dataGid} - -"
+      "d ${cfg.dataDir}/config 0750 ${toString cfg.dataUid} ${toString cfg.dataGid} - -"
     ];
 
     virtualisation.oci-containers.containers.akkudoktor-eos = {
@@ -101,6 +110,11 @@ in
       Restart = lib.mkForce "always";
       RestartSec = 5;
     };
+
+    systemd.services.podman-akkudoktor-eos.preStart = ''
+      install -d -m 0750 -o ${toString cfg.dataUid} -g ${toString cfg.dataGid} ${lib.escapeShellArg "${cfg.dataDir}/config"}
+      install -m 0640 -o ${toString cfg.dataUid} -g ${toString cfg.dataGid} ${eosConfigFile} ${lib.escapeShellArg "${cfg.dataDir}/config/EOS.config.json"}
+    '';
 
     homelab.services.caddy.virtualHosts.${cfg.domain} =
       "reverse_proxy 127.0.0.1:${toString cfg.dashboardPort}";

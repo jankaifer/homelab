@@ -50,7 +50,7 @@ Control boundary:
 - Live logs showed EOS could serve optimization requests but failed to write `/data/measurement.json` and `/data/cache` after dropping to the in-container `eos` user.
 - Updated the service module so `/var/lib/akkudoktor-eos` is owned by the EOS container UID/GID (`100:101`) instead of `root:root`.
 - Confirmed a second Plan failure after fresh optimizer results: EOS had no prediction providers enabled, `/v1/prediction/keys` returned `[]`, and the Plan dashboard crashed while plotting a solution whose prediction dataframe only contained `date_time`.
-- Added an `extraEnvironment` module option and configured `frame1` with advisory prediction providers for Prague-area PV/weather/load/electricity-price data.
+- Added module support for a declarative `/data/config/EOS.config.json` and configured `frame1` with advisory prediction providers for Prague-area PV/weather/load/electricity-price data.
 
 ## Validation Notes
 

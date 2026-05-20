@@ -557,30 +557,39 @@ in
   homelab.services.akkudoktorEos = {
     enable = true;
     domain = "eos.frame1.hobitin.eu";
-    extraEnvironment = {
-      EOS_GENERAL__LATITUDE = "50.0755";
-      EOS_GENERAL__LONGITUDE = "14.4378";
-      EOS_GENERAL__TIMEZONE = "Europe/Prague";
-      EOS_EMS__MODE = "PREDICTION";
-
-      EOS_PVFORECAST__PROVIDER = "PVForecastAkkudoktor";
-      EOS_PVFORECAST__PLANES = builtins.toJSON [
-        {
-          peakpower = 5.0;
-          surface_azimuth = 180.0;
-          surface_tilt = 30.0;
-          userhorizon = [ 0.0 0.0 0.0 0.0 ];
-          inverter_paco = 5000.0;
-        }
-      ];
-
-      EOS_WEATHER__PROVIDER = "OpenMeteo";
-      EOS_ELECPRICE__PROVIDER = "ElecPriceEnergyCharts";
-      EOS_ELECPRICE__ENERGYCHARTS__BIDDING_ZONE = "CZ";
-      EOS_LOAD__PROVIDER = "LoadAkkudoktor";
-      EOS_LOAD__LOADAKKUDOKTOR__LOADAKKUDOKTOR_YEAR_ENERGY_KWH = "3000";
-      EOS_FEEDINTARIFF__PROVIDER = "FeedInTariffFixed";
-      EOS_FEEDINTARIFF__PROVIDER_SETTINGS__FEEDINTARIFFFIXED__FEED_IN_TARIFF_KWH = "0.0";
+    settings = {
+      general = {
+        latitude = 50.0755;
+        longitude = 14.4378;
+        timezone = "Europe/Prague";
+      };
+      ems.mode = "PREDICTION";
+      pvforecast = {
+        provider = "PVForecastAkkudoktor";
+        max_planes = 1;
+        planes = [
+          {
+            peakpower = 5.0;
+            surface_azimuth = 180.0;
+            surface_tilt = 30.0;
+            userhorizon = [ 0.0 0.0 0.0 0.0 ];
+            inverter_paco = 5000.0;
+          }
+        ];
+      };
+      weather.provider = "OpenMeteo";
+      elecprice = {
+        provider = "ElecPriceEnergyCharts";
+        energycharts.bidding_zone = "CZ";
+      };
+      load = {
+        provider = "LoadAkkudoktor";
+        loadakkudoktor.loadakkudoktor_year_energy_kwh = 3000;
+      };
+      feedintariff = {
+        provider = "FeedInTariffFixed";
+        provider_settings.FeedInTariffFixed.feed_in_tariff_kwh = 0.0;
+      };
     };
   };
 

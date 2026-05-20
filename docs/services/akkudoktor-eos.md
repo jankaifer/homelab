@@ -24,6 +24,7 @@ Akkudoktor EOS optimizer API and dashboard for advisory energy planning.
 | `homelab.services.akkudoktorEos.dataUid` | int | 100 | Numeric UID of the EOS user inside the container |
 | `homelab.services.akkudoktorEos.dataGid` | int | 101 | Numeric GID of the EOS group inside the container |
 | `homelab.services.akkudoktorEos.extraEnvironment` | attrs | `{}` | Extra EOS environment variables |
+| `homelab.services.akkudoktorEos.settings` | attrs | `{}` | EOS config written to `/data/config/EOS.config.json` |
 
 Production wiring:
 
@@ -31,15 +32,15 @@ Production wiring:
 homelab.services.akkudoktorEos = {
   enable = true;
   domain = "eos.frame1.hobitin.eu";
-  extraEnvironment = {
-    EOS_GENERAL__TIMEZONE = "Europe/Prague";
-    EOS_EMS__MODE = "PREDICTION";
-    EOS_ELECPRICE__PROVIDER = "ElecPriceEnergyCharts";
-    EOS_ELECPRICE__ENERGYCHARTS__BIDDING_ZONE = "CZ";
-    EOS_PVFORECAST__PROVIDER = "PVForecastAkkudoktor";
-    EOS_WEATHER__PROVIDER = "OpenMeteo";
-    EOS_LOAD__PROVIDER = "LoadAkkudoktor";
-    EOS_FEEDINTARIFF__PROVIDER = "FeedInTariffFixed";
+  settings = {
+    general.timezone = "Europe/Prague";
+    ems.mode = "PREDICTION";
+    elecprice.provider = "ElecPriceEnergyCharts";
+    elecprice.energycharts.bidding_zone = "CZ";
+    pvforecast.provider = "PVForecastAkkudoktor";
+    weather.provider = "OpenMeteo";
+    load.provider = "LoadAkkudoktor";
+    feedintariff.provider = "FeedInTariffFixed";
   };
 };
 ```
@@ -56,6 +57,7 @@ geometry and annual load when available.
 - Internal dashboard: `127.0.0.1:8504`
 - Systemd service: `podman-akkudoktor-eos.service`
 - State directory: `/var/lib/akkudoktor-eos`
+- Config file: `/var/lib/akkudoktor-eos/config/EOS.config.json`
 
 The API and dashboard bind only to localhost on the host. Caddy exposes the dashboard over HTTPS.
 The state directory is owned by the EOS container user (`100:101`) because the
