@@ -64,7 +64,10 @@ Validation completed:
 - `nix fmt`
 - `nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x: x.drvPath'`
 - `./scripts/run-vm-docker.sh --build`
-- Deployment retry pending after best-effort startup fix.
+- Deployed with `nix run .#deploy -- .#frame1 --skip-checks`
 - Verified EOS logs show the API on `0.0.0.0:8503` and EOSdash on `0.0.0.0:8504`
 - Verified `https://eos.frame1.hobitin.eu` returns HTTP 200
+- Verified `https://eos.frame1.hobitin.eu/eosdash/plan?dark=false` and `/eosdash/prediction?dark=false` return HTTP 200
+- Verified `eos-evcc-readonly-measurements.timer` is active and recurring.
+- Verified EOS stores live evcc SoC measurements for `frame1-battery-soc-factor` and `tesla-model-3-soc-factor`.
 - Verified Homepage contains the `Akkudoktor EOS` link
