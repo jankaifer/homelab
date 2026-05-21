@@ -58,7 +58,9 @@ Live state is mirrored one-way from evcc into EOS measurements by
 `eos-evcc-readonly-measurements.timer`. The timer reads evcc's local
 `/api/state` endpoint and writes only EOS measurement values for battery SoC,
 battery power, Tesla SoC, and Tesla charge power. It does not call evcc command
-endpoints, publish MQTT commands, or control the charger.
+endpoints, publish MQTT commands, or control the charger. The refresh is
+best-effort: if evcc or the EOS API is restarting, it logs the condition and the
+next timer run retries.
 
 ## Access
 

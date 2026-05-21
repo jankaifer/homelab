@@ -54,6 +54,8 @@ Control boundary:
 - Adjusted the placeholder PV plane azimuth from exact south (`180`) to `179` degrees. EOS translates exact south to Akkudoktor API `azimuth=0`, which the upstream forecast API rejects with HTTP 400; `179` preserves the intended orientation while allowing dynamic PV forecast requests to succeed.
 - Replaced the initial placeholder PV/EV model with frame1 installation data: aggregate 12.87 kWp PV, 13.5 kW inverter capacity, 14 kWh Pylontech battery, and 75 kWh Tesla Model 3 behind the Victron EVCS.
 - Added `eos-evcc-readonly-measurements.timer`, a one-way bridge that reads evcc `/api/state` and writes only EOS measurement values for battery and Tesla SoC/power. It does not call evcc command endpoints or publish control messages.
+- First production deploy rolled back because the new timer fired during activation while the EOS container was restarting and the measurement API still refused connections.
+- Made the read-only measurement bridge best-effort around service startup: evcc unavailability skips the refresh, EOS unavailability retries briefly and then skips, and the timer now starts relative to timer activation instead of system boot.
 
 ## Validation Notes
 
@@ -62,8 +64,7 @@ Validation completed:
 - `nix fmt`
 - `nix eval .#nixosConfigurations.frame1-vm.config.system.build.toplevel --apply 'x: x.drvPath'`
 - `./scripts/run-vm-docker.sh --build`
-- Deployed with `nix run .#deploy -- .#frame1 --skip-checks`
-- Verified `podman-akkudoktor-eos.service` active
+- Deployment retry pending after best-effort startup fix.
 - Verified EOS logs show the API on `0.0.0.0:8503` and EOSdash on `0.0.0.0:8504`
 - Verified `https://eos.frame1.hobitin.eu` returns HTTP 200
 - Verified Homepage contains the `Akkudoktor EOS` link

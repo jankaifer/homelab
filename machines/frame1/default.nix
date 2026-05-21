@@ -661,12 +661,17 @@ in
     script = ''
       python3 - <<'PY'
       import datetime
+      import http.client
       import json
+      import time
+      import urllib.error
       import urllib.parse
       import urllib.request
 
       EVCC_STATE_URL = "http://127.0.0.1:7070/api/state"
       EOS_MEASUREMENT_URL = "http://127.0.0.1:8503/v1/measurement/value"
+      EOS_READY_TIMEOUT_SECONDS = 90
+      EOS_RETRY_INTERVAL_SECONDS = 5
 
       def get_json(url):
           with urllib.request.urlopen(url, timeout=10) as response:
@@ -689,13 +694,36 @@ in
           with urllib.request.urlopen(request, timeout=10) as response:
               response.read()
 
-      state = get_json(EVCC_STATE_URL)
+      def put_measurements_when_eos_is_ready(timestamp, measurements):
+          deadline = time.monotonic() + EOS_READY_TIMEOUT_SECONDS
+          while True:
+              try:
+                  for key, value in measurements:
+                      put_measurement(timestamp, key, value)
+                  return True
+              except urllib.error.HTTPError as error:
+                  last_error = error
+              except (urllib.error.URLError, TimeoutError, http.client.HTTPException) as error:
+                  last_error = error
+
+              if time.monotonic() >= deadline:
+                  print(f"EOS measurement API is not ready, skipping this refresh: {last_error}")
+                  return False
+              time.sleep(EOS_RETRY_INTERVAL_SECONDS)
+
+      try:
+          state = get_json(EVCC_STATE_URL)
+      except (urllib.error.URLError, TimeoutError, http.client.HTTPException, json.JSONDecodeError) as error:
+          print(f"evcc state API is not ready, skipping this refresh: {error}")
+          raise SystemExit(0)
+
       timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+      measurements = []
 
       battery_soc = state.get("batterySoc")
       if battery_soc is not None:
-          put_measurement(timestamp, "frame1-battery-soc-factor", float(battery_soc) / 100.0)
-      put_measurement(timestamp, "frame1-battery-power-3-phase-sym-w", state.get("batteryPower"))
+          measurements.append(("frame1-battery-soc-factor", float(battery_soc) / 100.0))
+      measurements.append(("frame1-battery-power-3-phase-sym-w", state.get("batteryPower")))
 
       loadpoints = state.get("loadpoints") or []
       tesla = next(
@@ -710,15 +738,17 @@ in
       if tesla:
           vehicle_soc = tesla.get("vehicleSoc")
           if vehicle_soc is not None:
-              put_measurement(timestamp, "tesla-model-3-soc-factor", float(vehicle_soc) / 100.0)
+              measurements.append(("tesla-model-3-soc-factor", float(vehicle_soc) / 100.0))
 
           charge_power = tesla.get("chargePower")
-          put_measurement(timestamp, "tesla-model-3-power-3-phase-sym-w", charge_power)
+          measurements.append(("tesla-model-3-power-3-phase-sym-w", charge_power))
           if charge_power is not None:
               per_phase_power = float(charge_power) / 3.0
-              put_measurement(timestamp, "tesla-model-3-power-l1-w", per_phase_power)
-              put_measurement(timestamp, "tesla-model-3-power-l2-w", per_phase_power)
-              put_measurement(timestamp, "tesla-model-3-power-l3-w", per_phase_power)
+              measurements.append(("tesla-model-3-power-l1-w", per_phase_power))
+              measurements.append(("tesla-model-3-power-l2-w", per_phase_power))
+              measurements.append(("tesla-model-3-power-l3-w", per_phase_power))
+
+      put_measurements_when_eos_is_ready(timestamp, measurements)
       PY
     '';
   };
@@ -727,7 +757,7 @@ in
     description = "Refresh read-only evcc measurements for Akkudoktor EOS";
     wantedBy = [ "timers.target" ];
     timerConfig = {
-      OnBootSec = "2m";
+      OnActiveSec = "2m";
       OnUnitActiveSec = "1m";
       Unit = "eos-evcc-readonly-measurements.service";
     };
