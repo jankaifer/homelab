@@ -45,12 +45,20 @@ homelab.services.akkudoktorEos = {
 };
 ```
 
-`frame1` currently uses Prague-area coordinates, one 5 kWp near-south-facing PV
-plane, and a 3000 kWh/year baseline load so EOSdash has prediction data for the
-advisory Plan and Prediction pages. The plane is configured at azimuth `179.0`
-instead of exact south because EOS translates exact south to Akkudoktor API
-`azimuth=0`, which the upstream forecast API currently rejects. Replace those
-values with exact site geometry and annual load when available.
+`frame1` currently uses Prague-area coordinates, an aggregate 12.87 kWp
+near-south-facing PV plane, a 14 kWh Pylontech battery behind the Victron
+MultiPlus-II stack, one 75 kWh Tesla Model 3, and a 3000 kWh/year baseline load
+so EOSdash has prediction data for the advisory Plan and Prediction pages. The
+PV plane is configured at azimuth `179.0` instead of exact south because EOS
+translates exact south to Akkudoktor API `azimuth=0`, which the upstream forecast
+API currently rejects. Replace the aggregate PV geometry with exact per-plane
+site geometry when available.
+
+Live state is mirrored one-way from evcc into EOS measurements by
+`eos-evcc-readonly-measurements.timer`. The timer reads evcc's local
+`/api/state` endpoint and writes only EOS measurement values for battery SoC,
+battery power, Tesla SoC, and Tesla charge power. It does not call evcc command
+endpoints, publish MQTT commands, or control the charger.
 
 ## Access
 
@@ -76,10 +84,13 @@ The first rollout treats optimizer output as advisory. EOS Connect is the planne
 
 ```bash
 systemctl status podman-akkudoktor-eos
+systemctl status eos-evcc-readonly-measurements.timer
 journalctl -u podman-akkudoktor-eos -n 200 --no-pager
+journalctl -u eos-evcc-readonly-measurements -n 100 --no-pager
 ss -ltnp | egrep ':8503|:8504'
 stat -c '%u:%g %a %n' /var/lib/akkudoktor-eos
 curl -s http://127.0.0.1:8503/v1/prediction/keys
+curl -s http://127.0.0.1:8503/v1/measurement/keys
 ```
 
 ## Dependencies

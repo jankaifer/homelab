@@ -52,6 +52,8 @@ Control boundary:
 - Confirmed a second Plan failure after fresh optimizer results: EOS had no prediction providers enabled, `/v1/prediction/keys` returned `[]`, and the Plan dashboard crashed while plotting a solution whose prediction dataframe only contained `date_time`.
 - Added module support for a declarative `/data/config/EOS.config.json` and configured `frame1` with advisory prediction providers for Prague-area PV/weather/load/electricity-price data.
 - Adjusted the placeholder PV plane azimuth from exact south (`180`) to `179` degrees. EOS translates exact south to Akkudoktor API `azimuth=0`, which the upstream forecast API rejects with HTTP 400; `179` preserves the intended orientation while allowing dynamic PV forecast requests to succeed.
+- Replaced the initial placeholder PV/EV model with frame1 installation data: aggregate 12.87 kWp PV, 13.5 kW inverter capacity, 14 kWh Pylontech battery, and 75 kWh Tesla Model 3 behind the Victron EVCS.
+- Added `eos-evcc-readonly-measurements.timer`, a one-way bridge that reads evcc `/api/state` and writes only EOS measurement values for battery and Tesla SoC/power. It does not call evcc command endpoints or publish control messages.
 
 ## Validation Notes
 

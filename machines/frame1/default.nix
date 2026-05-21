@@ -569,14 +569,57 @@ in
         max_planes = 1;
         planes = [
           {
-            peakpower = 5.0;
+            # Aggregate SmartSolar MPPT RS 450/200 PV capacity from Victron telemetry.
+            peakpower = 12.87;
             # Akkudoktor's forecast API rejects exact south after EOS translates it to azimuth=0.
             surface_azimuth = 179.0;
             surface_tilt = 30.0;
             userhorizon = [ 0.0 0.0 0.0 0.0 ];
-            inverter_paco = 5000.0;
+            inverter_paco = 13500.0;
           }
         ];
+      };
+      devices = {
+        max_batteries = 1;
+        batteries = [
+          {
+            device_id = "frame1-battery";
+            capacity_wh = 14000;
+            charging_efficiency = 0.95;
+            discharging_efficiency = 0.95;
+            max_charge_power_w = 7000.0;
+            min_charge_power_w = 50.0;
+            charge_rates = [ 0.0 0.25 0.5 0.75 1.0 ];
+            min_soc_percentage = 20;
+            max_soc_percentage = 100;
+          }
+        ];
+        max_electric_vehicles = 1;
+        electric_vehicles = [
+          {
+            device_id = "tesla-model-3";
+            capacity_wh = 75000;
+            charging_efficiency = 0.95;
+            discharging_efficiency = 0.95;
+            max_charge_power_w = 11000.0;
+            min_charge_power_w = 4100.0;
+            charge_rates = [ 0.0 0.375 0.5 0.625 0.75 0.875 1.0 ];
+            min_soc_percentage = 0;
+            max_soc_percentage = 80;
+          }
+        ];
+        max_inverters = 1;
+        inverters = [
+          {
+            device_id = "multiplus-ii-3p";
+            battery_id = "frame1-battery";
+            max_power_w = 13500.0;
+            max_ac_charge_power_w = 7000.0;
+            ac_to_dc_efficiency = 0.95;
+            dc_to_ac_efficiency = 0.95;
+          }
+        ];
+        max_home_appliances = 0;
       };
       weather.provider = "OpenMeteo";
       elecprice = {
@@ -598,6 +641,96 @@ in
     enable = true;
     domain = "eos-connect.frame1.hobitin.eu";
     mqtt.passwordFile = config.age.secrets.mqtt-eos-connect-password.path;
+  };
+
+  systemd.services.eos-evcc-readonly-measurements = {
+    description = "Mirror read-only evcc state into Akkudoktor EOS measurements";
+    after = [
+      "evcc.service"
+      "podman-akkudoktor-eos.service"
+    ];
+    wants = [
+      "evcc.service"
+      "podman-akkudoktor-eos.service"
+    ];
+    path = [ pkgs.python3 ];
+    serviceConfig = {
+      Type = "oneshot";
+      DynamicUser = true;
+    };
+    script = ''
+      python3 - <<'PY'
+      import datetime
+      import json
+      import urllib.parse
+      import urllib.request
+
+      EVCC_STATE_URL = "http://127.0.0.1:7070/api/state"
+      EOS_MEASUREMENT_URL = "http://127.0.0.1:8503/v1/measurement/value"
+
+      def get_json(url):
+          with urllib.request.urlopen(url, timeout=10) as response:
+              return json.loads(response.read().decode("utf-8"))
+
+      def put_measurement(timestamp, key, value):
+          if value is None:
+              return
+          try:
+              numeric = float(value)
+          except (TypeError, ValueError):
+              return
+
+          query = urllib.parse.urlencode({
+              "datetime": timestamp,
+              "key": key,
+              "value": numeric,
+          })
+          request = urllib.request.Request(f"{EOS_MEASUREMENT_URL}?{query}", method="PUT")
+          with urllib.request.urlopen(request, timeout=10) as response:
+              response.read()
+
+      state = get_json(EVCC_STATE_URL)
+      timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+      battery_soc = state.get("batterySoc")
+      if battery_soc is not None:
+          put_measurement(timestamp, "frame1-battery-soc-factor", float(battery_soc) / 100.0)
+      put_measurement(timestamp, "frame1-battery-power-3-phase-sym-w", state.get("batteryPower"))
+
+      loadpoints = state.get("loadpoints") or []
+      tesla = next(
+          (
+              loadpoint
+              for loadpoint in loadpoints
+              if loadpoint.get("vehicleName") == "tesla-model-3"
+              or loadpoint.get("title") == "Victron EVCS"
+          ),
+          None,
+      )
+      if tesla:
+          vehicle_soc = tesla.get("vehicleSoc")
+          if vehicle_soc is not None:
+              put_measurement(timestamp, "tesla-model-3-soc-factor", float(vehicle_soc) / 100.0)
+
+          charge_power = tesla.get("chargePower")
+          put_measurement(timestamp, "tesla-model-3-power-3-phase-sym-w", charge_power)
+          if charge_power is not None:
+              per_phase_power = float(charge_power) / 3.0
+              put_measurement(timestamp, "tesla-model-3-power-l1-w", per_phase_power)
+              put_measurement(timestamp, "tesla-model-3-power-l2-w", per_phase_power)
+              put_measurement(timestamp, "tesla-model-3-power-l3-w", per_phase_power)
+      PY
+    '';
+  };
+
+  systemd.timers.eos-evcc-readonly-measurements = {
+    description = "Refresh read-only evcc measurements for Akkudoktor EOS";
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnBootSec = "2m";
+      OnUnitActiveSec = "1m";
+      Unit = "eos-evcc-readonly-measurements.service";
+    };
   };
 
   # OpenClaw - first-pass personal assistant with intentionally narrow tools.
